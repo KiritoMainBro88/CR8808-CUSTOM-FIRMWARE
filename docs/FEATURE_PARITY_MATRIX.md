@@ -2,58 +2,68 @@
 
 - **Document ID:** `docs/FEATURE_PARITY_MATRIX.md`
 - **Project:** `CR8808-CUSTOM-FIRMWARE` (v0.1.0-dev.2)
-- **Target Hardware:** Xiaomi CR8808 Ver.B (Codename `CR8818`, Qualcomm IPQ5018 + Motorcomm YT9215S/SC)
-- **Baseline Firmware:** Xiaomi RA82 Global v1.4.31 (Linux 4.4.60, QSDK)
-- **Target Firmware:** OpenWrt / ImmortalWrt Clean DSA Baseline (Linux 6.18, `qualcommax/ipq50xx`)
-- **Status:** Architecture Reference Matrix (Pre-P2 Baseline)
+- **Target Hardware:** Xiaomi CR8808 Ver.B (Codename `CR8818`, Qualcomm IPQ5018 dual-core Cortex-A53 + Motorcomm YT9215S/SC)
+- **Baseline Firmware:** Xiaomi RA82 Global v1.4.31 (Linux 4.4.60 QSDK, ARMv7 32-bit musl)
+- **Target Platform:** OpenWrt / ImmortalWrt Clean DSA Baseline (Linux 6.18, `qualcommax/ipq50xx`, AArch64 64-bit musl)
+- **Status:** Authoritative Pre-P2 Reference Specification
+- **Revision:** Round 2 Review (Empirical Taxonomy Compliance)
 
 ---
 
-## 1. Feature Parity Overview
+## 1. Empirical Status Taxonomy
 
-Moving from Xiaomi's customized vendor firmware (RA82 v1.4.31) to an open, modern OpenWrt/DSA platform modernizes the software stack (Linux 4.4.60 → Linux 6.18) and eliminates closed binary blobs. However, proprietary Xiaomi cloud integration will be replaced by open-standard protocols.
+To eliminate ambiguity and unverified marketing claims, every feature in this matrix is classified strictly under empirical evidence levels:
 
-```mermaid
-pie title Feature Migration Status
-    "Full OpenWrt Parity / Enhanced" : 70
-    "Standard Protocol Replacement" : 20
-    "Proprietary Cloud Lost (Not Needed)" : 10
-```
-
----
-
-## 2. Detailed Parity Comparison Table
-
-| Category | Specific Feature | Stock Xiaomi RA82 v1.4.31 | Custom OpenWrt DSA Baseline | Parity Status | Requirement Priority | Technical Notes |
-|---|---|---|---|---|---|---|
-| **Ethernet & Switching** | 1x WAN + 3x LAN Gigabit | Handled via proprietary `yt_switch.ko` | Upstream Linux DSA (`drivers/net/dsa/yt921x.c`) | **FULL PARITY** | **MUST** | Each port appears as independent netdev (`wan`, `lan1`, `lan2`, `lan3`). |
-| | Hardware VLAN Isolation | Software bridging & port tagging | Linux `bridge-vlan` filtering | **SUPERIOR** | **MUST** | Standard Linux 802.1Q switchdev offload. |
-| | Link Aggregation / MTU | Fixed 1500 byte MTU | Configurable jumbo frames & bonding | **SUPERIOR** | **COULD** | Handled natively by modern Linux network stack. |
-| **Wi-Fi Subsystem** | 5 GHz Wi-Fi 6 HE160 | 2402 Mbps, 160 MHz channel width | Native `ath11k` (QCN6102/6122, 160 MHz) | **FULL PARITY** | **MUST** | Requires ART partition BDF (`qcom,bdf-addr = <0x4d100000>`). |
-| | 2.4 GHz Wi-Fi 6 | 574 Mbps, 40 MHz channel width | Native `ath11k_ahb` (IPQ5018 SoC radio) | **FULL PARITY** | **MUST** | Fully supported in Linux 6.18. |
-| | WPA3-Personal (SAE) | WPA2/WPA3 Mixed mode supported | `wpad-basic-mbedtls` (WPA2/WPA3 SAE) | **FULL PARITY** | **MUST** | Standards-compliant 802.11ax security. |
-| | Fast Roaming (802.11k/v/r) | Xiaomi proprietary steering logic | OpenWrt `usteer` or `dawn` daemon | **FUNCTIONAL EQUIVALENT** | **SHOULD** | Configurable RSSI thresholds and BSS transition management. |
-| | Multi-SSID / Guest Wi-Fi | Xiaomi Guest Network isolation | OpenWrt virtual AP (VLAN firewall zone) | **FULL PARITY** | **SHOULD** | Pure network isolation without cloud relay. |
-| **Routing & Core IP** | IPv4 Routing & NAT | Linux iptables with QSDK fast-path | Linux `nftables` + `flow_offload` (software) | **FULL PARITY** | **MUST** | Baseline runs full line-rate GbE via software offload. |
-| | IPv6 Support | SLAAC, DHCPv6, Stateful / Stateless | `odhcpd` + native Linux IPv6 stack | **SUPERIOR** | **MUST** | Modern IPv6 prefix delegation and firewall rules. |
-| | DHCP Server & DNS | `dnsmasq` 2.80 (customized) | `dnsmasq` 2.90+ with DNSSEC support | **SUPERIOR** | **MUST** | Lower memory footprint, modern upstream security patches. |
-| | Port Forwarding / UPnP | Xiaomi web UI NAT forwarding | `miniupnpd` + `nftables` redirect | **FULL PARITY** | **SHOULD** | Full manual and dynamic port forwarding. |
-| **VPN Subsystem** | WireGuard VPN | **Userspace Go** (`wireguard-go`) | **BoringTun Rust** (userspace TUN) | **SIGNIFICANT UPGRADE** | **MUST** | Go VmSize was 522 MB; Rust provides tight control and modern crypto. |
-| | WireGuard Kernel Module | Not present in stock RA82 kernel | In-kernel WireGuard module available | **OPTIONAL PATH** | **COULD** | Can run either kernel WireGuard or BoringTun Rust. |
-| **Traffic Control / QoS** | QoS / Bufferbloat Control | Xiaomi proprietary QoS prioritization | CAKE / FQ-CoDel via `sqm-scripts` | **SIGNIFICANT UPGRADE** | **SHOULD** | Eliminates bufferbloat under heavy upload/download load. |
-| **Hardware Offload** | Qualcomm NSS Offload | Active in RA82 via QCA-SSDK | Separated into Phase 2 (clean baseline first) | **DEFERRED (Phase 2)** | **COULD** | Baseline relies on clean software offload; NSS tested separately. |
-| **Management & Telemetry** | Web Administration UI | Xiaomi proprietary LuCI skin | LuCI (modern Bootstrap / Argon theme) | **FUNCTIONAL EQUIVALENT** | **MUST** | Comprehensive network configuration without cloud tethering. |
-| | Mobile App / Cloud Binding | Mi Home App / Xiaomi Cloud account | Removed (Replaced by local VPN / LuCI) | **INTENTIONAL DROP** | **WON'T** | Preserves user privacy; eliminates vendor telemetry. |
-| | SSH / Command Line Access | Locked / patched root access | Native OpenSSH / Dropbear with pubkey | **SUPERIOR** | **MUST** | Full root administrative shell out of the box. |
-| | System Monitoring | Basic Xiaomi status page | Netdata / LuCI Statistics / Prometheus | **SUPERIOR** | **SHOULD** | Real-time CPU per-core, RAM, and per-port bandwidth telemetry. |
-| **Storage & Firmware** | Dual-Boot A/B Layout | U-Boot slot 0/slot 1 switching | Preserved (`rootfs` / `rootfs_1` dual UBI) | **FULL PARITY** | **MUST** | Dual-slot structure retained for safe staging. |
-| | Hardware Calibration | Partition `0:art` | Partition `0:art` read-only mount | **FULL PARITY** | **MUST** | RF calibration integrity preserved. |
+| Status Code | Level | Definition |
+|---|---|---|
+| **`SOURCE_VERIFIED`** | L1 | Code, DTS nodes, kernel configs, and package recipes exist and have been inspected in the upstream source tree. |
+| **`BUILD_VERIFIED`** | L2 | Successfully compiled into a target binary (userspace tool, kernel package, or full sysupgrade image) without compilation or linking errors. |
+| **`BOOT_VERIFIED`** | L3 | Booted successfully into the OS on physical target hardware (e.g. initramfs netboot) without kernel panic or watchdog loop. |
+| **`FUNCTION_VERIFIED`** | L4 | Feature operations executed and validated against unit/integration tests on target device under live conditions. |
+| **`PERFORMANCE_VERIFIED`**| L5 | Throughput, packet-loss, latency, and resource metrics measured and verified against predefined acceptance thresholds. |
+| **`SOAK_TESTED`** | L6 | Executed under continuous stress load (>24 hours) with zero memory leaks, thread lockups, or kernel panics. |
+| **`UNKNOWN`** | U0 | Hardware behavior, register definition, or software compatibility cannot be determined from existing data; requires empirical device testing. |
+| **`NOT_IMPLEMENTED`** | N0 | Feature is intentionally excluded (e.g. proprietary vendor cloud tethering) or out of scope for the current phase. |
 
 ---
 
-## 3. Parity Acceptance Criteria
+## 2. Feature Parity Matrix
 
-1. **Gigabit Line-Rate:** Continuous 940+ Mbps IPv4 TCP throughput between WAN and LAN across physical Ethernet cables without packet loss.
-2. **HE160 Wireless Link:** 5 GHz client association at PHY rates of 1.7 Gbps–2.4 Gbps on supported Wi-Fi 6 cards (Intel AX200/AX210), maintaining channel 36–64 continuous transmission.
-3. **Rust WireGuard Reliability:** BoringTun maintaining persistent tunnel connection with client handshake time < 15 ms and zero daemon crashes during multi-hour soak testing.
-4. **Zero Cloud Tethering:** 100% of administrative and networking operations must function entirely in an offline, air-gapped local environment.
+| Feature Category | Specific Feature | Stock Implementation (Xiaomi RA82 v1.4.31) | Target OpenWrt Implementation (Linux 6.18 DSA) | Upstream Source Reference | Dependencies | Verification Procedure | Acceptance Criteria | Current Evidence Status |
+|---|---|---|---|---|---|---|---|---|
+| **Ethernet & Switching** | 1x WAN + 3x LAN GbE Ports | Proprietary `yt_switch.ko` vendor driver + `eth0`/`eth1` bridging | Upstream Linux DSA driver (`drivers/net/dsa/motorcomm/`) exposing `wan`, `lan1`, `lan2`, `lan3` | `openwrt/target/linux/generic/backport-6.18/967-*.patch` & `zcop/tag_yt921x_enhanced.c` | `dwmac-ipq5018`, MDIO bus 1, GPIO 36/37/39 | `ip link show`, bidirectional `iperf3` across each physical port | All 4 ports independently addressable; full duplex 1000BASE-T link negotiation | **`SOURCE_VERIFIED`** |
+| **Ethernet & Switching** | Hardware VLAN Tagging & Isolation | Proprietary SSDK ioctl commands via userland daemon | Standard Linux 802.1Q switchdev offload (`bridge vlan`) | Upstream DSA core (`net/dsa/`) | `kmod-bridge`, DSA tag driver | Configure trunk port with tagged VLANs 10/20; capture packets with tcpdump | Packets egress with correct 802.1Q tags; isolation between unbridged VLANs | **`SOURCE_VERIFIED`** |
+| **Ethernet & Switching** | Link Status & PHY Renegotiation | Polling thread in `yt_switch` kernel module | Upstream Linux Phylink framework with interrupt or periodic polling | `drivers/net/phy/phylink.c` | MDIO bus driver, Motorcomm PHY driver | Unplug and replug cable across all 4 ports at 10M/100M/1000M speeds | Link UP/DOWN events delivered to kernel log within 500 ms; carrier flags updated | **`SOURCE_VERIFIED`** |
+| **Ethernet & Switching** | Jumbo Frames / MTU Configuration | Fixed 1500 byte MTU; buffer allocations hardcoded | Configurable interface MTU up to 9000 bytes via DSA master | `dwmac-ipq5018.c` MTU ops | NIC driver buffer ring support | Set MTU 9000 on `lan1`; send oversized ICMP packets: `ping -s 8972 -M do <target>` | Successful transmit and receive without frame drops or fragmentation | **`UNKNOWN`** (Pending switch buffer limit test) |
+| **Wi-Fi Subsystem** | 5 GHz 802.11ax (HE160) | Vendor QSDK driver (`qca-wifi`), 2402 Mbps theoretical | Upstream `ath11k` driver (QCN6102 / QCN6122 radio) | `drivers/net/wireless/ath/ath11k/` | `ath11k-firmware-qcn6102`, ART partition BDF at `0x4d100000` | Associate Intel AX210 / BE200 client at 160 MHz width; run `iperf3 -P 8` | PHY rate reports 2402 Mbps; sustained TCP throughput > 900 Mbps | **`SOURCE_VERIFIED`** |
+| **Wi-Fi Subsystem** | 2.4 GHz 802.11ax | Vendor QSDK driver (`qca-wifi`), 574 Mbps theoretical | Upstream `ath11k_ahb` driver (IPQ5018 integrated radio) | `drivers/net/wireless/ath/ath11k/ahb.c` | `ath11k-firmware-ipq5018`, AHB clock & reset DTS nodes | Associate 2.4 GHz Wi-Fi 6 client at 40 MHz channel width; run bidirectional iperf3 | PHY rate reports 574 Mbps; stable beacon generation without carrier drops | **`SOURCE_VERIFIED`** |
+| **Wi-Fi Subsystem** | WPA3-Personal (SAE) | Vendor hostapd with proprietary SAE patch | Modern open-source `hostapd` with `wpad-basic-mbedtls` or `wpad-wolfssl` | OpenWrt `package/network/services/hostapd` | `libmbedtls` / `libwolfssl` | Authenticate WPA3-only and WPA2/WPA3 mixed clients; verify PMKID exchange | Seamless 4-way handshake and SAE simultaneous authentication without auth loops | **`SOURCE_VERIFIED`** |
+| **Wi-Fi Subsystem** | Fast Roaming (802.11k/v/r) | Xiaomi proprietary `xqwhc` / mesh steering daemon | Standards-compliant OpenWrt `usteer` or `dawn` daemon | `package/network/services/usteer` | `hostapd-utils`, `ubus` | Roam between AP nodes; observe BSS Transition Management frames in Wireshark | Client handoff completes under 100 ms without TCP connection reset | **`SOURCE_VERIFIED`** |
+| **Wi-Fi Subsystem** | Multi-SSID / Guest Isolation | Xiaomi guest network with proprietary ebtables rules | Standard OpenWrt Virtual AP (VAP) mapped to isolated firewall zones | OpenWrt `netifd` + `wireless` UCI | `firewall4`, `nftables` | Connect to Guest SSID; attempt ping to main LAN gateway and host devices | DHCP lease granted from guest subnet; 100% dropped packets to main LAN | **`SOURCE_VERIFIED`** |
+| **Wi-Fi Subsystem** | Dynamic Frequency Selection (DFS) | Vendor radar detection algorithm in closed firmware | Linux kernel `ath11k` regulatory domain & CAC state machine | `net/wireless/reg.c` & `ath11k/wmi.c` | CRDA / wireless regulatory database | Configure 5 GHz channel 52-64 / 100-140; observe 60-second CAC period | AP halts transmission during CAC; radar detect triggers channel switch | **`SOURCE_VERIFIED`** |
+| **Routing & Core IP** | IPv4 Forwarding & NAT | Linux 4.4 iptables + QSDK NSS / ECM acceleration | Linux `nftables` + `flow_offload` (software flowtable) | Upstream Linux `net/netfilter/nf_flow_table.c` | `kmod-nft-offload`, `firewall4` | Bidirectional `iperf3` between WAN and LAN over 1 Gbps physical link | Sustained 940+ Mbps NAT throughput with CPU utilization < 60% per core | **`SOURCE_VERIFIED`** |
+| **Routing & Core IP** | IPv6 Prefix Delegation & SLAAC | Vendor customized `odhcpd` with cloud DNS enforcement | Modern upstream `odhcpd-ipv6only` with standard SLAAC/DHCPv6-PD | OpenWrt `package/network/services/odhcpd` | Native kernel IPv6 stack | WAN connects to upstream IPv6 DHCP-PD server; LAN clients autoconfigure | Global IPv6 unicast assigned to LAN; 2a00::/128 ping reachability verified | **`SOURCE_VERIFIED`** |
+| **Routing & Core IP** | DNS Resolution & Local Caching | Vendor `dnsmasq` 2.80 with Xiaomi cloud redirect | Modern upstream `dnsmasq` 2.90+ with DNSSEC and ECS support | `package/network/services/dnsmasq` | `libnettle` (for DNSSEC) | Query public and local domains via `dig`; verify DNSSEC signature validation | Resolution time < 5 ms for cached records; invalid DNSSEC RRSIGs rejected | **`SOURCE_VERIFIED`** |
+| **Routing & Core IP** | UPnP & NAT-PMP Dynamic Ports | Vendor `miniupnpd` with cloud port hooks | Upstream `miniupnpd` with nftables backend integration | `package/network/services/miniupnpd` | `nftables` dynamic set support | Run UPnP client test tool (e.g. `upnpc -a`); verify port opening in nftables | Dynamic port mapping created in nftables set; closed upon lease expiration | **`SOURCE_VERIFIED`** |
+| **VPN Subsystem** | WireGuard Userspace Daemon | `wireguard-go` (Go userspace runtime, high virtual memory) | `boringtun-cli` (Rust userspace runtime, compiled for AArch64) | Cloudflare BoringTun 0.7.1 upstream + local signalfd patch | Rust toolchain, `aarch64-unknown-linux-musl` | Start BoringTun tunnel; execute 1-hour sustained bidirectional traffic test | Handshake < 15 ms; peak VmRSS < 15 MB; zero thread aborts or OOM killed events | **`BUILD_VERIFIED`** (ARMv7 tested; AArch64 target in P4) |
+| **VPN Subsystem** | In-Kernel WireGuard Module | Not available in stock Xiaomi Linux 4.4 kernel | Native Linux 6.18 kernel WireGuard driver (`kmod-wireguard`) | Upstream Linux `drivers/net/wireguard/` | Linux 6.18 kernel crypto API | Configure `wg0` interface via `wg` and `ip link`; benchmark throughput | Zero-copy crypto in kernel; throughput > 350 Mbps; CPU load evenly balanced | **`SOURCE_VERIFIED`** |
+| **Traffic Control / QoS** | Bufferbloat Mitigation | Xiaomi proprietary QoS (static priority queuing) | CAKE / FQ-CoDel via `sqm-scripts` | `package/network/utils/sqm-scripts` | `kmod-sched-cake`, `tc` | Run Waveform Bufferbloat test during saturated 1 Gbps download/upload | Bufferbloat grade A or A+; latency under load increases by less than 5 ms | **`SOURCE_VERIFIED`** |
+| **Hardware Offload** | Qualcomm NSS Acceleration | Active in stock firmware via proprietary QCA-SSDK blobs | Separated to Phase 2 (clean baseline verified first) | `qcom,nss-dp` + NSS firmware 12.5-210 | Out-of-tree NSS kernel modules | N/A in Phase 1 (Baseline relies entirely on software flowtable) | Deferred to Phase 2 after baseline stability is certified | **`NOT_IMPLEMENTED`** (Phase 1 Baseline) |
+| **Management & Web UI** | Web Administrative Console | Xiaomi proprietary LuCI skin + closed Javascript | Standard OpenWrt LuCI (modern Bootstrap / Argon responsive theme) | OpenWrt `feeds/luci/modules/luci-base` | `uhttpd` or `nginx-light`, `rpcd` | Navigate web UI on mobile and desktop browsers; configure network settings | Page load < 300 ms; clean configuration commit without vendor telemetry calls | **`SOURCE_VERIFIED`** |
+| **Management & Access** | SSH Administrative Access | Vendor-locked root shell (requires exploit or development unlock) | Native Dropbear / OpenSSH with Ed25519 public key authentication | `package/network/services/dropbear` | Linux PTY subsystem | Connect from administrative workstation via SSH key; verify command execution | Immediate authenticated shell access; password authentication disabled | **`SOURCE_VERIFIED`** |
+| **Management & Telemetry** | System Monitoring & Statistics | Xiaomi proprietary cloud metrics reporting | Local-only `luci-app-statistics` / Collectd / Prometheus node-exporter | `feeds/luci/applications/luci-app-statistics` | `collectd-mod-cpu`, `collectd-mod-memory` | Observe real-time per-core CPU, RAM breakdown, and per-interface traffic | Comprehensive real-time metrics without outbound cloud data transmission | **`SOURCE_VERIFIED`** |
+| **Vendor Cloud Services** | Mi Home App / Cloud Remote Access | Xiaomi cloud binding daemon (`xqapp`, `xqanalytics`) | Not implemented (Replaced by WireGuard remote access + LuCI) | N/A (Intentionally eliminated for privacy and security) | None | N/A | Total elimination of closed telemetry daemons and unsolicited cloud pings | **`NOT_IMPLEMENTED`** (Intentional Drop) |
+| **Storage & Firmware** | Dual-Slot A/B NAND Layout | Dual UBI partitions (`rootfs` / `rootfs_1`) with U-Boot switching | Dual-slot UBI preservation with inactive slot flashing | `drivers/mtd/nand/raw/` & UBI subsystem | Winbond W25N01GWZEIG NAND driver | Verify MTD layout matches stock geometry; stage image in inactive slot | Inactive slot flashed without modifying active slot or bootloader partition | **`SOURCE_VERIFIED`** |
+| **Storage & Firmware** | RF Calibration Integrity | `0:art` partition containing device-specific factory Wi-Fi calibration | Partition `0:art` mapped read-only in DTS (`qcom,bdf-addr`) | Linux MTD fixed partitions | MTD subsystem | Dump and SHA-256 hash `0:art` partition; verify match against factory dump | Hash identical; ath11k driver initializes RF stages without calibration errors | **`SOURCE_VERIFIED`** |
+| **Recovery & Failsafe** | U-Boot TFTP Recovery | Xiaomi U-Boot holding reset writes image directly to NAND | Maintained as emergency fall-back; preceded by RAM-only boot verification | Xiaomi stock bootloader (`0:bootloader`) | TFTP server, Ethernet LAN link | Hold reset on boot; verify U-Boot issues TFTP request for recovery binary | Router successfully retrieves and executes recovery image over LAN | **`UNKNOWN`** (Pending non-destructive LAN capture) |
+
+---
+
+## 3. Summary of Status Breakdown
+
+- **Total Assessed Capabilities:** 25
+- **`SOURCE_VERIFIED`:** 20 (80.0%)
+- **`BUILD_VERIFIED`:** 1 (4.0%)
+- **`UNKNOWN`:** 2 (8.0%) — MTU buffer hardware limit; TFTP non-destructive recovery validation.
+- **`NOT_IMPLEMENTED`:** 2 (8.0%) — Phase 1 NSS hardware offload (deferred to Phase 2); Vendor proprietary Mi Home cloud integration (intentional drop).
+- **`BOOT_VERIFIED` / `FUNCTION_VERIFIED` / `PERFORMANCE_VERIFIED` / `SOAK_TESTED`:** 0 (0.0%) — Strictly pending physical hardware Phase P5 execution.

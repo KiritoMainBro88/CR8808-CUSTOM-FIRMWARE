@@ -55,7 +55,7 @@ In response to the history leakage of workstation netbios hostname (`DESKTOP-FH9
 All technical discrepancies highlighted by Architecture Lead have been reconciled across all project files:
 1. **Switch Identification Hierarchy:**
    - Physical switch chip suffix: Strictly labeled **`UNKNOWN / REPORTED_UNVERIFIED`** on physical device until read back in Phase P2-001.
-   - DTS source configuration: Strictly labeled **`SOURCE_VERIFIED`** (`motorcomm,yt9215-enhanced` at MDIO address `0x1d` with internal PHY ID `0x004dd0c0`).
+   - DTS source configuration: Strictly labeled **`SOURCE_VERIFIED`** (`motorcomm,yt9215-enhanced` at MDIO address `0x1d` on MDIO bus 1). Distinct from the Qualcomm IPQ5018 internal GE PHY at MDIO address `88000.mdio:07` (PHY ID `0x004dd0c0`).
 2. **Scope of Switch Drivers in `kuncy7`:**
    - Corrected earlier general phrasing: `kuncy7/openwrt-nss-edma` contains support for multiple switches across different device targets (e.g., RTL8367 on AX55, generic DSA backports), but for the specific Xiaomi CR880x profile (`ipq5018-cr880x.dtsi`) it hardcodes the **Qualcomm QCA8337** switch at MDIO `0x17`.
 3. **GPIO 39 Function:**

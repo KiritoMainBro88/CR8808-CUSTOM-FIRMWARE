@@ -65,7 +65,7 @@ All technical items raised by Architecture Lead have been corrected across the p
 
 | Subsystem / Topic | Prior Phrasing / Claim | Corrected Technical Baseline | Updated File |
 |---|---|---|---|
-| **Switch Suffix** | Asserted as `YT9215SC` | Suffix marked as `UNKNOWN / REPORTED_UNVERIFIED` (internal PHY ID `0x004dd0c0`, MDIO address `0x1d` confirmed in DTS) | [`G1_DISCOVERY_REPORT.md`](G1_DISCOVERY_REPORT.md) & [`docs/02_DEVICE_BASELINE.md`](../../docs/02_DEVICE_BASELINE.md) |
+| **Switch Suffix** | Asserted as `YT9215SC` | Suffix marked as `UNKNOWN / REPORTED_UNVERIFIED` (MDIO address `0x1d` on MDIO Bus 1 confirmed in DTS; distinct from Qualcomm internal PHY `0x004dd0c0` at `88000.mdio:07`) | [`G1_DISCOVERY_REPORT.md`](G1_DISCOVERY_REPORT.md) & [`docs/02_DEVICE_BASELINE.md`](../../docs/02_DEVICE_BASELINE.md) |
 | **GPIO 39 Function** | Claimed as LDO power & reset | Declared as `reset-gpios` in DTS; LDO power control marked as `INFERRED / UNVERIFIED` | [`G1_DISCOVERY_REPORT.md`](G1_DISCOVERY_REPORT.md) |
 | **DTS vs Hardware** | Mixed source and readback labels | DTS configuration strictly labeled `SOURCE_VERIFIED`; router hardware state labeled `DEVICE_READBACK` | [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md) |
 | **Linux Routing CPU** | Stated CPU 70–90% as measured | Labeled as `INFERRED / THEORETICAL ESTIMATE` (requires empirical bench verification) | [`G1_DISCOVERY_REPORT.md`](G1_DISCOVERY_REPORT.md) |

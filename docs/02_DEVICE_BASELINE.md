@@ -12,7 +12,8 @@
 | SoC | Qualcomm IPQ5018 | REPORTED_UNVERIFIED |
 | CPU | Dual Cortex-A53, approximately 1 GHz | REPORTED_UNVERIFIED |
 | RAM | 256 MB physical | REPORTED_UNVERIFIED |
-| Switch | Motorcomm YT9215S or YT9215SC | REPORTED_UNVERIFIED; exact suffix unresolved |
+| Switch | Motorcomm YT9215S or YT9215SC at MDIO 0x1d | REPORTED_UNVERIFIED; physical chip suffix unresolved |
+| Internal SoC PHY | Qualcomm IPQ5018 Internal GE PHY (PHY ID 0x004dd0c0 at 88000.mdio:07) | DEVICE_READBACK (Prior stock audit) |
 | 5 GHz radio | QCN6102 | REPORTED_UNVERIFIED |
 | 2.4 GHz | Integrated IPQ5018 radio | REPORTED_UNVERIFIED |
 | NAND | Winbond W25N01GWZEIG, 128 MB | REPORTED_UNVERIFIED |

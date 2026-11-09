@@ -228,7 +228,8 @@ All 8 candidate repositories specified in `manifests/sources.yaml` were audited 
 |---|---|---|---|---|---|
 | **SoC / CPU** | Qualcomm IPQ5018 (Dual-Core Cortex-A53 @ 1.0 GHz) | Supported (`qualcommax/ipq50xx`) | Supported (`qualcommax/ipq50xx`) | Supported (`qualcommax/ipq50xx`) | **Compatible** across modern trees |
 | **Physical RAM** | 256 MB DDR3L (182 MB usable) | Default configs tune for 512M | Documented 256M profile | Configured for 256M profile | **Strict 256M configs required** |
-| **Ethernet Switch** | **Motorcomm YT9215S/SC** (suffix UNKNOWN, internal PHY ID 0x004dd0c0, MDIO 0x1d) | Driver backported, but no board wiring | **INCOMPATIBLE** (targets QCA8337 @ 0x17) | **COMPATIBLE** (`motorcomm,yt9215-enhanced` @ 0x1d) | **Only zcop supports this switch wiring** |
+| **Ethernet Switch** | **Motorcomm YT9215S/SC** (physical chip suffix UNKNOWN; MDIO address `0x1d` on MDIO Bus 1) | Driver backported, but no board wiring | **INCOMPATIBLE** (targets QCA8337 @ 0x17) | **COMPATIBLE** (`motorcomm,yt9215-enhanced` @ 0x1d) | **Only zcop supports this switch wiring** |
+| **Internal SoC PHY** | Qualcomm IPQ5018 Internal GE PHY (PHY ID `0x004dd0c0` at `88000.mdio:07`) | Supported in Linux Ethernet drivers | Supported | Supported | Separate from external switch chip |
 | **Switch Reset / Power** | GPIO 39 (Reset in DTS; LDO power INFERRED), GPIO 36/37 (MDIO) | Not mapped for CR881x | Not mapped | Fully mapped in `ipq5018-cr881x.dts` | **Critical for cold-boot switch probe** |
 | **Wi-Fi 2.4 GHz** | Integrated IPQ5018 (2x2 802.11ax) | Supported in `ath11k` | Supported in `ath11k` | Supported in `ath11k` | **Compatible** |
 | **Wi-Fi 5 GHz** | Qualcomm QCN6102/QCN6122 (2x2 HE160) | Supported in `ath11k` | Supported in `ath11k` | Supported in `ath11k` | **Compatible** (Requires BDF from board) |
@@ -272,7 +273,7 @@ All 8 candidate repositories specified in `manifests/sources.yaml` were audited 
 
 ### 7.1 Motorcomm YT9215S/SC Hardware Control (Physical Suffix UNKNOWN)
 Empirical source code inspection of `zcop/immortalwrt` reveals the exact hardware binding:
-- **Switch Chip ID:** Motorcomm YT9215S / YT9215SC (exact physical suffix UNKNOWN; internal PHY ID `0x004dd0c0`, MDIO address `0x1d`). 7-port non-blocking switch with 5 integrated 1 GbE PHYs.
+- **Switch Chip ID:** Motorcomm YT9215S / YT9215SC (exact physical suffix UNKNOWN; configured at MDIO address `0x1d` on MDIO Bus 1). Distinct from Qualcomm SoC internal PHY (`0x004dd0c0` at `88000.mdio:07`). 7-port non-blocking switch with 5 integrated 1 GbE PHYs.
 - **MII / Bus Interface:** SGMII / 2500Base-X SerDes between IPQ5018 GMAC1 and YT9215 Port 8. Secondary conduit connected to GMAC0.
 - **Power & Reset Sequencing:**
   - GPIO 39 is wired to switch power LDO and hardware reset.
@@ -344,7 +345,7 @@ pie title CR8808 Ver.B Physical RAM Allocation (256 MB)
 | **R-04** | **Dual-Boot Slot Flip Confusion:** U-Boot `flag_boot_rootfs` environment variable corruption. | **MEDIUM** | Do not modify U-Boot NVRAM or MTD partition tables in discovery or early build phases. |
 
 ### 11.2 Unknowns
-1. **Exact Switch Silicon Marking:** Whether the silicon is physically YT9215S or YT9215SC (internal register readback shows `PHY ID 0x004dd0c0` for internal PHY and `0x1d` on MDIO).
+1. **Exact Switch Silicon Marking:** Whether the silicon is physically YT9215S or YT9215SC (MDIO address `0x1d` on MDIO Bus 1; distinct from Qualcomm internal GE PHY `0x004dd0c0` at `88000.mdio:07`).
 2. **Stock U-Boot TFTP Ramdisk Support:** Whether the Xiaomi bootloader can boot an `initramfs-recovery.ubi` image over TFTP without touching NAND flash.
 
 ### 11.3 Blocked Items

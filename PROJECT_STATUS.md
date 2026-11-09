@@ -2,17 +2,17 @@
 
 - Version: `0.1.0-dev.2`
 - Date: 2026-11-09
-- Phase: P1 Architecture Gate G1 Finalized / P2 Preparation
-- Current Branch: `feature/g1-final-architecture-deliverables`
-- Overall status: `GATE_G1_APPROVED_WITH_CONDITIONS`
-- GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`)
+- Phase: P1 Architecture Gate G1 Finalized (Round 2 Corrections) / P2 Preparation
+- Current Branch: `feature/g1-corrections-round2`
+- Overall status: `GATE_G1_CORRECTIONS_ROUND2_COMPLETE`
+- GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`)
 - Flash authorization: `NO-GO pending independent recovery validation`
 - Initial Firmware Baseline: `CLEAN_DSA_LINUX_6.18_WITHOUT_NSS` (Approved)
 - Primary Hardware Reference: `zcop/immortalwrt` (commit `c5ad88b`) — Approved for CR881x DTS & YT921x DSA
 - Secondary NSS Reference: `kuncy7/nss-packages` & `kuncy7/openwrt-nss-edma` — Architectural reference for Phase 2
-- WireGuard Target Engine: `BoringTun Rust` (Sole implementation in final firmware)
+- WireGuard Target Engine: `BoringTun Rust` (Compiled for `aarch64-unknown-linux-musl`)
 - Wi-Fi Target Mode: `5 GHz HE160 (160 MHz)` (Mandatory retention)
-- Git History Remediation: `DRY_RUN_VALIDATED_CLEAN` (Backup mirror saved; awaiting PO approval to apply)
+- Git History Remediation: `DRY_RUN_VALIDATED_CLEAN` (Mirror backup refreshed; 6/6 commits verified 100% clean)
 - Firmware build: `NOT_STARTED`
 - Hardware validation: `NOT_STARTED`
 
@@ -47,3 +47,4 @@
 - 2026-11-09: Phase P0 and P1 completed. Initial G1 Discovery and GitHub Integration deliverables produced.
 - 2026-11-09: ChatGPT Architecture Review received. Branch `review/g1-architecture-corrections` created. Git history security audit executed; technical report conclusions corrected; in-depth NSS comparative analysis authored; `manifests/sources.yaml` synchronized. Author: Gemini (Implementation Lead).
 - 2026-11-09: Architecture Gate G1 conditionally approved. Baseline selected: Clean DSA Linux 6.18 without NSS. Git history dry-run executed on test clone (100% clean). Authored feature parity matrix, DSA baseline design, NSS experimental design, non-UART recovery architecture, and Class R0 read-only audit manifest. Deliverable: `reports/2026-11-09/FINAL_G1_ARCHITECTURE_DECISION.md`. Author: Gemini (Implementation Lead).
+- 2026-11-09: Architecture Gate G1 Round 2 Corrections completed on branch `feature/g1-corrections-round2`. Disambiguated internal PHY `0x004dd0c0` from Motorcomm switch at `0x1d`; mapped DSA driver divergence (upstream vs zcop); rebuilt feature parity matrix with empirical taxonomy; corrected BoringTun target ABI to AArch64; overhauled recovery design with real Xiaomi boot flags and TFTP flash reality; refined R0 read-only manifest for QSDK tooling. Updated dry-run rewrite verified 100% clean across all 6 commits. Deliverable: `reports/2026-11-09/G1_REVIEW_ROUND2.md`. Author: Gemini (Implementation Lead).

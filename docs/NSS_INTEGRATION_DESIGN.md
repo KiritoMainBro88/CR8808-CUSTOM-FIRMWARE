@@ -2,17 +2,18 @@
 
 - **Document ID:** `docs/NSS_INTEGRATION_DESIGN.md`
 - **Project:** `CR8808-CUSTOM-FIRMWARE` (v0.1.0-dev.2)
-- **Target Hardware:** Xiaomi CR8808 Ver.B (Qualcomm IPQ5018 NPU @ 1.0 GHz)
-- **Architecture Lead Decision:** Experimental Optimization Stage (Post-DSA Baseline)
+- **Target Hardware:** Xiaomi CR8808 Ver.B (Qualcomm IPQ5018 dual-core Cortex-A53 + NPU @ 1.0 GHz)
+- **Architecture Lead Decision:** Experimental Optimization Stage (Strictly Post-DSA Baseline)
 - **Status:** Architectural Blueprint & Feasibility Study
+- **Revision:** Round 2 Review (Driver Ownership & Phased Gate Enforcement)
 
 ---
 
 ## 1. Overview and Engineering Scope
 
-Qualcomm Network Subsystem (NSS) is a dedicated 1.0 GHz hardware network processor integrated into the IPQ5018 SoC designed to offload packet processing (IPv4/IPv6 routing, NAT, PPPoE, VLAN, and QoS) from the host Cortex-A53 CPU cores.
+Qualcomm Network Subsystem (NSS) is a dedicated 1.0 GHz hardware network processing unit (NPU) integrated into the IPQ5018 SoC designed to offload packet processing (IPv4/IPv6 routing, NAT, PPPoE, VLAN, and QoS) from the host Cortex-A53 CPU cores.
 
-In accordance with the **Architecture Gate G1 Final Review**, NSS integration is classified as an **experimental post-baseline phase**. It will be analyzed and tested only after the clean DSA baseline is proven stable and fully functional.
+In accordance with the **Architecture Gate G1 Final Review**, NSS integration is classified as an **experimental post-baseline Phase 2 deliverable**. It will be analyzed and tested only after the clean Phase 1 DSA baseline is proven 100% stable, boot-verified, function-verified, and soak-tested on physical hardware.
 
 ```mermaid
 graph TD
@@ -23,7 +24,7 @@ graph TD
     subgraph "Linux Host Kernel 6.18"
         ECM["qca-nss-ecm.ko (Enhanced Connection Manager)"]
         DRV["qca-nss-drv.ko (NSS Core Driver)"]
-        DP["qca-nss-dp.ko (Datapath Interface)"]
+        DP["qca-nss-dp.ko (Datapath Interface - Mutually Exclusive with stmmac)"]
         DSA["yt921x_driver.ko (Motorcomm DSA Driver)"]
     end
 
@@ -41,15 +42,29 @@ graph TD
 
 ---
 
-## 2. Core Subsystems and Driver Dependencies
+## 2. Driver Ownership: Clean DSA Baseline vs. NSS Datapath
 
-### 2.1 Firmware Line Selection
+A critical architectural distinction between Phase 1 and Phase 2 lies in **hardware GMAC controller ownership**:
+
+| Architectural Phase | Ethernet MAC Driver | Conduit Netdev | Switch Driver | Flow Offload Engine | Memory Overhead |
+|---|---|---|---|---|---|
+| **Phase 1: Clean DSA Baseline** | Upstream `dwmac-ipq5018` (`stmmac`) | `eth0` / `eth1` (Linux netdev) | Upstream / backported `motorcomm,yt9215` DSA | In-kernel `nftables flowtable` (Software offload on CPU) | **Zero NSS reservation** (Full ~182 MB usable RAM for Linux) |
+| **Phase 2: NSS Acceleration** | Qualcomm `qcom,nss-dp` (`qca-nss-dp.ko`) | NSS virtual datapath interface | `motorcomm,yt9215-enhanced` DSA slave cluster | `qca-nss-ecm.ko` + NPU hardware flow tables | **8–16 MiB DRAM pinned** for NSS firmware + pbuf pool |
+
+> **Driver Conflict & Mutually Exclusive Binding:**
+> The Synopsys DesignWare MAC driver (`stmmac` / `dwmac-ipq5018`) and Qualcomm's proprietary datapath driver (`qca-nss-dp`) cannot both bind to GMAC0/GMAC1 simultaneously. Phase 1 relies strictly on standard upstream `stmmac`. Phase 2 requires switching device tree bindings and kernel module configurations to `qcom,nss-dp`. Mixing these layers during initial board bringup is strictly prohibited.
+
+---
+
+## 3. Core Subsystems and Driver Dependencies (Phase 2 Target)
+
+### 3.1 Firmware Line Selection
 - **Firmware Recipe:** `nss-firmware` (v2025.05.01) from `kuncy7/nss-packages` or `qosmio/qca-sdk-nss-fw`.
 - **Target Firmware Version:** **NSS 12.5 Release 210** (`QCA_Networking_2024.SPF_12.5/ED1`).
 - **Binary Image:** `/lib/firmware/qca-nss0-retail.bin` (extracted from `retail_router0.bin` for IPQ5018 `MP` profile).
 - **Secondary Option:** NSS 12.2 Release 156 (retained for regression fallback).
 
-### 2.2 Datapath & Driver Architecture (`zcop` Model)
+### 3.2 Datapath & Driver Architecture (`zcop` Model)
 Unlike `kuncy7`'s approach (which unbinds DSA to load a private 802.1Q switch fabric driver `kmod-qca8337-nss`), `zcop/immortalwrt`'s architecture **maintains Linux DSA intact**:
 - **Device Tree:** `target/linux/qualcommax/dts/ipq5018-cr881x-nss.dts`.
 - **GMAC Datapath:** Both GMAC0 and GMAC1 bind to `compatible = "qcom,nss-dp"`.
@@ -58,7 +73,7 @@ Unlike `kuncy7`'s approach (which unbinds DSA to load a private 802.1Q switch fa
 
 ---
 
-## 3. Strict 256 MB RAM Budgeting for NSS
+## 4. Strict 256 MB RAM Budgeting for NSS
 
 On 256 MB devices (which have only ~182 MB usable after U-Boot), NSS memory allocation must be strictly bounded:
 
@@ -71,7 +86,7 @@ On 256 MB devices (which have only ~182 MB usable after U-Boot), NSS memory allo
 
 ---
 
-## 4. Known Upstream NSS Limitations to Resolve
+## 5. Known Upstream NSS Limitations to Resolve
 
 Empirical review of `zcop` development logs (`docs/cr881x/NSS Offload status.md`) identifies the following open technical hurdles:
 
@@ -89,7 +104,7 @@ Empirical review of `zcop` development logs (`docs/cr881x/NSS Offload status.md`
 
 ---
 
-## 5. Phase 2 Verification & Benchmarking Suite
+## 6. Phase 2 Verification & Benchmarking Suite
 
 When Phase 2 begins, NSS will be judged against strict quantitative gates:
 1. **Throughput & CPU Idle:** Demonstrate continuous 930+ Mbps routed IPv4 TCP throughput with host CPU idle > 90% (vs. ~35–50% idle on standard Linux flowtable).
