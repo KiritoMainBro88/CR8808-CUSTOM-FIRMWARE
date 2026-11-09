@@ -4,7 +4,7 @@
 - **Project:** `CR8808-CUSTOM-FIRMWARE` (v0.1.0-dev.2)
 - **Target Hardware:** Xiaomi CR8808 Ver.B (Codename `CR8818`, Board Profile `ap-mp03.3`, Qualcomm IPQ5018 + Motorcomm YT9215S + QCN6102)
 - **Status:** Authoritative Upstream & Community Source Audit
-- **Revision:** Round 5.1 Review (Audit of `yangfl/openwrt`, `zcop/immortalwrt`, and `kuncy7/openwrt-nss-edma`)
+- **Revision:** Round 5.2 Review (Strict 3-Tier Evidence Taxonomy, Kuncy CR8806/8808/8818 Clarification, User-Reported NSS Bug Nuance, and 512K Coherent Pool Alignment)
 
 ---
 
@@ -57,9 +57,10 @@ This document performs an exhaustive technical audit of the three primary commun
     reset-assert-us = <10000>;  /* 10ms */
     reset-deassert-us = <50000>; /* 50ms */
     ```
-- **Wi-Fi Calibration Offsets (Authoritative):**
-  - 2.4 GHz (`ath11k/IPQ5018/hw1.0/caldata.bin`): Partition `0:art`, offset **`0x1000`**, length **`0x20000`** (128 KiB).
-  - 5 GHz (`ath11k/qcn6122/hw1.0/caldata.bin`): Partition `0:art`, offset **`0x26800`**, length **`0x20000`** (128 KiB).
+- **Wi-Fi Calibration Request Paths & Offsets (Authoritative):**
+  - 2.4 GHz request: `ath11k/IPQ5018/hw1.0/cal-ahb-c000000.wifi.bin`, partition `0:art`, offset **`0x1000`**, length **`0x20000`** (128 KiB).
+  - 5 GHz request: `ath11k/QCN6122/hw1.0/cal-ahb-b00a040.wifi1.bin` (and `.wifi.bin`), partition `0:art`, offset **`0x26800`**, length **`0x20000`** (128 KiB).
+  - Both radios probe as AHB platform devices (`c000000.wifi` and `b00a040.wifi1`), handled by `ath11k_ahb`.
   - **Zero MAC address patching** is performed in userspace hotplug for `xiaomi,cr8818`.
 
 ---
@@ -71,14 +72,17 @@ This document performs an exhaustive technical audit of the three primary commun
 - **Key Artifacts:** `README.yt921x.md`, `tag_yt921x_enhanced.c`, `drivers/net/dsa/yt921x*.{c,h}`, `ipq5018-cr881x.dts`.
 - **Validation Scope:** Validated on live CR881x hardware by community developer `zcop`.
 
-### 3.2 Evidence Demarcation Across 3 Capability Levels
-To prevent unjustified extrapolation, we strictly distinguish three levels of functionality:
+### 3.2 Evidence Demarcation Across 3-Tier Classification
+To eliminate extrapolation and distinguish third-party claims from verified lab results, we classify capabilities under three strict tiers:
+- **`SOURCE_DOCUMENTED`:** Present in source code, DTS, or documentation in the repository.
+- **`AUTHOR_REPORTED_TESTED`:** The project author states that the feature was tested on physical hardware.
+- **`INDEPENDENTLY_VERIFIED`:** Confirmed by our own lab or an independent party with reproducible test logs.
 
 | Level | Capability | Status in `zcop` | Empirical Basis & Audit Evidence |
 |---|---|---|---|
-| **Level A** | **YT921x DSA Switch Driver** | **`VERIFIED`** | Documented in `README.yt921x.md`. Confirmed 7-port architecture, 5x PHY, 9K jumbo frames, 802.1Q VLAN, storm control, and DWRR egress scheduling. |
-| **Level B** | **Dual-Conduit Architecture** | **`VERIFIED`** | Documented in `README.yt921x.md` ("Secondary conduit raw-frame fallback handling"). Uses `tag_yt921x_enhanced.c` to parse `secondary-conduit-user-mask = <0x8>`. |
-| **Level C** | **NSS Hardware Offload (NSS-DP & ECM) on CR8818** | **`NSS_NOT_VERIFIED`** | **CRITICAL AUDIT FINDING:** `README.yt921x.md` does **NOT** mention NSS offload, `qca-nss-dp`, or `qca-nss-ecm`. The presence of a functional DSA driver does NOT prove that NSS hardware NAT acceleration operates successfully on CR8818. |
+| **Level A** | **YT921x DSA Switch Driver** | **`AUTHOR_REPORTED_TESTED`** | Documented in `README.yt921x.md`. Author reports testing 7-port architecture, 5x PHY, 9K jumbo frames, 802.1Q VLAN, storm control, and DWRR egress scheduling on CR881x. |
+| **Level B** | **Dual-Conduit Architecture** | **`AUTHOR_REPORTED_TESTED`** | Documented in `README.yt921x.md` ("Secondary conduit raw-frame fallback handling"). Uses `tag_yt921x_enhanced.c` to parse `secondary-conduit-user-mask = <0x8>`. |
+| **Level C** | **NSS Hardware Offload (NSS-DP & ECM) on CR8818** | **`NSS_NOT_VERIFIED`** | **CRITICAL AUDIT FINDING:** `README.yt921x.md` does **NOT** mention NSS offload, `qca-nss-dp`, or `qca-nss-ecm`. The presence of a functional DSA switch driver does NOT prove that NSS hardware NAT acceleration operates successfully on CR8818. |
 
 ### 3.3 Known Deficiencies & Unfinished Features in `zcop` Driver (`README.yt921x.md`)
 1. **Active Queue Management (WRED/RED):** Marked **`UNSUPPORTED / hardware limitation`** (no validated silicon support for probabilistic drop math path).
@@ -95,7 +99,15 @@ To prevent unjustified extrapolation, we strictly distinguish three levels of fu
 - **Concept:** Uses upstream `stmmac` / `dwmac-ipq5018` for GMAC control, patched with `kmod-qca-dwmac-nss` to claim the data plane at runtime.
 - **DSA Offload Mechanism:** Operates the switch conduit via **`tag_8021q`** (`qca-8021q`, `rtl8365mb-8021q`, `an8855-8021q`).
 
-### 4.2 Objective Re-Evaluation of Kuncy7 for CR8818
+### 4.2 Disambiguation of Commercial Names in Kuncy Tree (CR8806 vs. CR8808 vs. CR8818)
+- **The Ambiguity in README:** Kuncy's README notes that `xiaomi_cr8806` is also known commercially as CR8808 or CR8809 in certain telecom carrier distributions.
+- **The Physical Reality:**
+  - Telecom operator branding often reuses commercial shells (CR8806 for China Unicom, CR8809 for China Telecom, early CR8808 Ver.A for China Mobile). Those early models used the Qualcomm QCA8337 switch at MDIO `0x17`.
+  - However, David Yang's upstream work confirms that **Xiaomi CR8808 Ver.B is internally `CR8818`**, featuring the Motorcomm YT9215 switch at MDIO `0x1d`.
+  - Kuncy's release lists only `xiaomi_cr8806`. It does **NOT** build an image for `xiaomi_cr8818`.
+  - **MANDATE:** Never conflate commercial marketing names with internal hardware models. Flashing Kuncy's `xiaomi_cr8806` onto a CR8818 device will result in immediate Ethernet failure (soft-brick).
+
+### 4.3 Technical Analysis of Tag Protocol Incompatibility
 Rather than declaring integration "impossible", we classify the technical reality under strict evidence taxonomy:
 
 | Technical Question | Status | Objective Engineering Finding |
@@ -105,14 +117,18 @@ Rather than declaring integration "impossible", we classify the technical realit
 | Can YT9215 be configured in 802.1Q mode? | **`EXPERIMENTAL / UNKNOWN`** | It is theoretically possible to configure YT9215 ports in 802.1Q VLAN trunking mode instead of DSA tagging, but this has **never been developed or validated** for this switch. |
 | Could a translation shim be created? | **`THEORETICALLY_POSSIBLE / HIGH_EFFORT`** | A kernel shim translating `tag_yt921x` frames to 802.1Q before passing to NSS is conceptually possible, but would introduce CPU overhead and represents an unverified R&D project. |
 
-### 4.3 Severe Known Issue in Kuncy7 (Release 2026.11.09): NSS 12.5 on 256MB Devices
-> [!CAUTION]
-> **24/7 Workstation Reliability Risk:**
-> Kuncy's official release notes (dated 09/11/2026) document a critical bug on **256 MB RAM devices**:
-> - Under high Wi-Fi client packet retransmissions, NSS 12.5 buffer descriptors can be held without timely release.
-> - On 256 MB devices (with constrained packet buffer pools), this memory starvation causes **wired Ethernet traffic to completely stall / freeze**.
-> - The author explicitly noted that the **256 MB device group was NOT tested** in that release.
-> - This directly threatens our Product Owner's mandate for an uninterrupted 24/7 workstation connection.
+### 4.4 User-Reported NSS 12.5 Buffer Holding Risk on 256MB Devices (Release 2026.11.09)
+> [!WARNING]
+> **User-Reported Reliability Risk for 24/7 Workstation Router:**
+> In the official release notes of `kuncy7/openwrt-nss-edma` (dated 09/11/2026), a critical buffer management anomaly was reported by users on **256 MB RAM devices**:
+> - Under conditions where Wi-Fi clients experience heavy packet retransmissions, NSS 12.5 buffer descriptors can be retained without timely release.
+> - On 256 MB devices with constrained buffer pools, this buffer exhaustion is reported to cause **all wired Ethernet traffic to freeze / stall**.
+> - The author explicitly noted that this was a **user-reported issue not yet reproduced by the author**, and the **256 MB device group was NOT tested** in that release.
+> - While not an independently verified bug in our lab, this reported failure mode represents a high risk for our 24/7 workstation uptime requirement.
+
+### 4.5 Memory Profile Sizing: Coherent Pool Alignment
+- In Kuncy's 256MB configuration profile and patch `0828-coherent-pool.patch`, the DMA coherent pool is tuned down to **`coherent_pool=512k`** (512 KB), rather than 2 MB, specifically to maximize usable host RAM on 256 MB targets.
+- Setting `coherent_pool=2M` without testing may consume unnecessary contiguous physical memory on a router with only ~182 MB usable RAM.
 
 ---
 

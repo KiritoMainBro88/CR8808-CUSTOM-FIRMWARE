@@ -23,7 +23,7 @@ To make an informed architectural decision, three distinct approaches to network
 
 ```mermaid
 flowchart TD
-    subgraph "Arch A: Clean DSA Baseline (Phase 1 Approved)"
+    subgraph "Arch A: Clean DSA Baseline (Phase 1 Proposal Under Review)"
         A_MAC["Upstream stmmac (dwmac-ipq5018)"]
         A_COND["Single CPU Conduit: GMAC1 / Port 8 (SGMII 1000M)"]
         A_TAG["Upstream-Derived DSA Tagger (tag_yt921x.c)"]
@@ -65,7 +65,7 @@ flowchart TD
 | **Host CPU Utilization @ 1 Gbps** | 50–65% (`ENGINEERING_ESTIMATE`). | <10% (`ACCEPTANCE_TARGET` on supported hardware). | <10% (`ACCEPTANCE_TARGET`). |
 | **Throughput Acceptance Target** | 940 Mbps IPv4 NAT (`ACCEPTANCE_TARGET`). | 940 Mbps IPv4 NAT. | 940 Mbps IPv4 NAT (`ACCEPTANCE_TARGET`). |
 | **Memory Footprint Impact** | **0 MiB NPU reservation** (~182 MB usable DRAM for Linux). | **8–16 MiB pinned DRAM** (`nss_region`) + `qca-nss-pbuf`. | **8–16 MiB pinned DRAM** (`nss_region`) + `qca-nss-pbuf`. |
-| **Firmware Blob Dependencies** | **None** for Ethernet datapath. | `retail_router0.bin` (Qualcomm NSS 12.5-210). | `retail_router0.bin` (Qualcomm NSS 12.5-210). |
+| **Firmware Blob Dependencies** | **None** for Ethernet datapath (Note: Wi-Fi still requires Qualcomm Q6/M3 firmware blobs). | `retail_router0.bin` (Qualcomm NSS 12.5-210) + Wi-Fi blobs. | `retail_router0.bin` (Qualcomm NSS 12.5-210) + Wi-Fi blobs. |
 | **Community Track Record on CR8818** | High confidence (`yangfl/openwrt` commit `b230c2f`). | **ZERO:** Kuncy7 has no CR8818 board support. | Driver & dual-conduit verified in `zcop`; NSS offload is **`NSS_NOT_VERIFIED`**. |
 | **Recommendation** | **PROPOSED: Phase 1 Clean Baseline (Under Architecture Review).** | **NOT VIABLE WITHOUT R&D:** Requires custom tag translation or 802.1Q mode. | **RESERVED FOR PHASE 2:** Pending proof of NSS-DP operation on CR8818. |
 
@@ -87,21 +87,21 @@ The `kuncy7/openwrt-nss-edma` project provides an elegant architecture for offlo
      - *Path B (Kernel Translation Layer):* Implement a shim between `tag_yt921x` and NSS firmware. Status: **`HIGH_EFFORT_R&D`** (adds CPU overhead and complexity).
    - **Conclusion:** Kuncy7 is **`CURRENTLY_INCOMPATIBLE`** with CR8818 out-of-the-box, as confirmed by the complete absence of YT9215 support in Kuncy's repository.
 
-### 3.2 Critical NSS 12.5 Stability Bug on 256MB Devices (Kuncy Release 2026.11.09)
+### 3.2 User-Reported NSS 12.5 Stability Bug on 256MB Devices (Kuncy Release 2026.11.09)
 > [!CAUTION]
 > **Severe Reliability Hazard for 24/7 Deployment:**
-> In the official release notes of `kuncy7/openwrt-nss-edma` (dated 09/11/2026), a critical NSS 12.5 defect is documented on **256 MB RAM devices**:
-> - Under high Wi-Fi client packet retransmissions, NSS 12.5 buffer descriptors can be held without timely release.
-> - On 256 MB devices with constrained memory pools, this buffer starvation causes **all wired Ethernet traffic to completely stall / freeze**.
-> - The author explicitly stated that the **256 MB device group was NOT tested** in that release.
-> - For our workstation router, which must operate 24/7 without lockups, this is an unacceptable risk for the baseline firmware.
+> In the release notes of `kuncy7/openwrt-nss-edma` (release 2026.11.09), a critical issue is recorded:
+> - A user reported that under heavy Wi-Fi packet retransmissions, NSS 12.5 buffer descriptors can stall or leak.
+> - On 256 MB devices with small buffer headroom, this buffer starvation causes **all wired Ethernet traffic to completely stall / freeze**.
+> - **Note on Evidence:** The repository author explicitly stated that this bug was **unreproduced by the author**, and that **256 MB device targets were not tested** in that release cycle.
+> - Regardless of reproduction status, for a workstation router requiring 24/7 uninterrupted operation, this presents an unacceptable operational risk for the baseline firmware.
 
 ### 3.3 Re-Evaluation of zcop ImmortalWrt: Demarcating DSA from NSS Evidence
-A detailed audit of `zcop/immortalwrt` and its `README.yt921x.md` establishes a strict separation across three technical levels:
-1. **Level A (YT921x DSA Driver): `VERIFIED`.** The driver initializes the 7-port switch, manages 5 internal PHYs, supports 9K jumbo frames, 802.1Q VLAN, and storm control.
-2. **Level B (Dual-Conduit Architecture): `VERIFIED`.** The enhanced driver (`tag_yt921x_enhanced.c`) successfully implements secondary conduit raw-frame fallback handling.
+A detailed audit of `zcop/immortalwrt` and its `README.yt921x.md` establishes a strict separation across three technical levels using our standardized evidence taxonomy:
+1. **Level A (YT921x DSA Driver): `AUTHOR_REPORTED_TESTED` / `SOURCE_DOCUMENTED`.** The driver initializes the 7-port switch, manages 5 internal PHYs, supports 9K jumbo frames, 802.1Q VLAN, and storm control.
+2. **Level B (Dual-Conduit Architecture): `AUTHOR_REPORTED_TESTED`.** The enhanced driver (`tag_yt921x_enhanced.c`) implements secondary conduit raw-frame fallback handling.
 3. **Level C (NSS Hardware NAT Acceleration on CR8818): `NSS_NOT_VERIFIED`.**
-   - **Audit Fact:** `README.yt921x.md` focuses exclusively on the DSA switch driver and does **NOT** document or demonstrate NSS offload (`qcom,nss-dp` or `qca-nss-ecm`).
+   - **Audit Fact:** `README.yt921x.md` focuses exclusively on the DSA switch driver and does **NOT** document, demonstrate, or mention NSS offload (`qcom,nss-dp` or `qca-nss-ecm`).
    - We cannot use evidence of a functioning DSA driver to claim that NSS hardware offload is working on CR8818.
 4. **Documented Driver Limitations (`README.yt921x.md`):**
    - Active Queue Management (WRED/RED) is **UNSUPPORTED** due to hardware silicon limits.
@@ -116,8 +116,11 @@ A key lesson from the Kuncy7 project is the rigorous tuning required to run mode
 
 If Phase 2 NSS is implemented, the following **256 MB Memory Engineering Profile** must be applied:
 
+> [!NOTE]
+> The breakdown below is an **illustrative-only theoretical estimate** (unmeasured on running Phase 2 system):
+
 ```mermaid
-pie title Usable Physical DRAM Breakdown (Total ~182 MB)
+pie title Illustrative Usable DRAM Breakdown (Theoretical Estimate ~182 MB)
     "Linux Slab & Page Allocator" : 90
     "BoringTun Rust Daemon" : 15
     "ath11k Ring Buffers (256M Profile)" : 20
@@ -142,8 +145,8 @@ pie title Usable Physical DRAM Breakdown (Total ~182 MB)
      };
      ```
 3. **Kernel Memory Subsystem Tuning:**
-   - Set `coherent_pool=2M` in kernel boot arguments to prevent DMA allocation panics under burst traffic.
-   - Enforce `vm.min_free_kbytes=8192` in `/etc/sysctl.conf`. This guarantees an 8 MiB atomic memory reserve so that network interrupt handlers (NAPI) never fail an allocation during sudden traffic bursts.
+   - Set `coherent_pool=512k` in kernel boot arguments (aligned with Kuncy's 256MB profile and patch 0828, which sizes coherent pool to 512 KB to avoid excessive DMA slab reservation on 256MB devices).
+   - Enforce `vm.min_free_kbytes=8192` in `/etc/sysctl.conf` to provide an 8 MiB atomic memory reserve, mitigating allocation failures under burst traffic without eliminating them entirely.
 4. **Userspace Lean Policy:**
    - Prohibit heavy userspace runtimes (Python, Node.js, Samba4, Docker).
    - Enforce lightweight utilities: `dropbear` instead of OpenSSH server, `mbedtls` instead of OpenSSL where possible, and **BoringTun Rust** (peak RSS < 15 MB) as the sole WireGuard daemon.

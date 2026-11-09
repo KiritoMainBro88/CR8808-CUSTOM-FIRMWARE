@@ -45,8 +45,8 @@
 | **Board Profile** | `ap-mp03.3` | `DEVICE_READBACK` | Extracted from stock firmware metadata. |
 | **SoC** | Qualcomm IPQ5018 | `DEVICE_READBACK` | Dual-core Cortex-A53 @ 1.0 GHz (AArch64 capable). |
 | **Physical RAM** | 256 MB DDR3L | `DEVICE_READBACK` | `MemTotal` reported ~182 MB usable by Linux kernel after TZ/U-Boot reserved regions. |
-| **Physical Flash (NAND)** | Winbond W25N01GWZEIG (128 MB SPI NAND) | `SOURCE_VERIFIED` (DTS) / `REPORTED_UNVERIFIED` (Part marking) | MTD layout with dual UBI system slots (`rootfs`, `rootfs_1`). |
-| **Switch IC** | Motorcomm YT9215S or YT9215SC at MDIO `0x1d` | `SOURCE_VERIFIED` (DTS) / `UNKNOWN` (Physical Suffix) | Managed over bit-banged MDIO Bus 1 (GPIO 36 MDC, GPIO 37 MDIO, GPIO 39 reset). |
+| **Physical Flash (NAND)** | Winbond W25N01GWZEIG (128 MB SPI NAND) | `DEVICE_READBACK` / `SOURCE_VERIFIED` | JEDEC `0xef 0xaa 0x21`, 2K page + 64B OOB, 128K block, on-die HW ECC. Other Xiaomi IPQ50xx devices use GigaDevice GD5F1GQ4UBYIG or ESMT F50L1G41LB; SPI NAND ICs are NOT drop-in interchangeable without driver/ECC audit. |
+| **Switch IC** | Motorcomm YT9215S or YT9215SC at MDIO `0x1d` | `SOURCE_VERIFIED` (DTS) / `UNKNOWN` (Physical Suffix) | Managed over bit-banged MDIO Bus 1 (GPIO 36 MDC, GPIO 37 MDIO, GPIO 39 reset active-low). "LDO rail" was community speculation; without schematics, hardware wiring is `UNKNOWN / SOURCE_DERIVED_DTS_RESET`. |
 | **Internal SoC PHY** | Qualcomm IPQ5018 Internal GE PHY (PHY ID `0x004dd0c0`) | `DEVICE_READBACK` | Resides at internal MDIO bus `88000.mdio:07`. Distinct from external switch. |
 | **Switch Port 0** | Physical Port LAN 1 | `SOURCE_VERIFIED` (zcop DTS) | `port@0`: `label = "lan1"`, internal PHY 0. |
 | **Switch Port 1** | Physical Port LAN 2 | `SOURCE_VERIFIED` (zcop DTS) | `port@1`: `label = "lan2"`, internal PHY 1. |
@@ -55,8 +55,8 @@
 | **Switch Port 4** | CPU Conduit (Secondary in zcop NSS) | `SOURCE_VERIFIED` (zcop DTS) | Fixed-link 1000 Mbps full-duplex internal GE PHY (`phy-mode = "internal"`). |
 | **Switch Port 8** | CPU Conduit (Primary SGMII) | `SOURCE_VERIFIED` (zcop DTS) | **SGMII fixed-link 1000 Mbps full-duplex** (`phy-mode = "sgmii"`, `speed = <1000>`). NOT 2500Base-X. |
 | **Switch Port 10** | Internal MCU / Switch Control | `SOURCE_VERIFIED` (zcop DTS) | Internal management channel. |
-| **2.4 GHz Wi-Fi Radio** | Integrated IPQ5018 AHB Radio (`wifi0`) | `SOURCE_VERIFIED` (DTS) | 2x2 802.11ax (up to 574 Mbps). |
-| **5 GHz Wi-Fi Radio** | Qualcomm QCN6102 / QCN6122 (`wifi1`) | `SOURCE_VERIFIED` (DTS) | 2x2 802.11ax HE160 (up to 2402 Mbps, 160 MHz channel width). |
+| **2.4 GHz Wi-Fi Radio** | Integrated IPQ5018 AHB Radio (`wifi0`) | `SOURCE_VERIFIED` (DTS) | 2x2 802.11ax (up to 574 Mbps). Probed by `ath11k_ahb`. Requests `ath11k/IPQ5018/hw1.0/cal-ahb-c000000.wifi.bin`. |
+| **5 GHz Wi-Fi Radio** | Qualcomm QCN6102 companion radio (`wifi1`) | `SOURCE_VERIFIED` (DTS) / `DEVICE_READBACK` | 2x2 802.11ax HE160 (up to 2402 Mbps, 160 MHz channel width). Registered via Hexagon Q6 WPSS / Remoteproc, probed as AHB platform device by `ath11k_ahb`. Uses QCN6122 firmware path (`cal-ahb-b00a040.wifi1.bin` / `.wifi.bin`). PCIe ID is `UNKNOWN / INCONCLUSIVE` (prior `17cb:1104` attribution belonged to QCN9074). |
 | **RF Calibration (NAND)** | Partition `0:ART` at offset `0x00780000`, size 1 MiB | `SOURCE_VERIFIED` (DTS) | Read-only factory calibration partition on Winbond SPI NAND. |
 | **Wi-Fi BDF (RAM Staging)** | 2.4 GHz at `0x4c400000`, 5 GHz at `0x4d100000` | `SOURCE_VERIFIED` (DTS) | **DRAM memory staging addresses** for ath11k Q6 WCSS firmware, NOT NAND offsets. |
 | **Active Stock Firmware** | Xiaomi RA82 Global v1.4.31 (Linux 4.4.60) | `DEVICE_READBACK` | Active on NAND Slot 1 (`flag_boot_rootfs=1`). |

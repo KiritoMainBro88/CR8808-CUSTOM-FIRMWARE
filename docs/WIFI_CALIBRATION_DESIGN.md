@@ -5,19 +5,23 @@
 - **Target Hardware:** Xiaomi CR8808 Ver.B (Codename `CR8818`, Qualcomm IPQ5018 + QCN6102)
 - **Target Platform:** OpenWrt Clean DSA Baseline (`qualcommax/ipq50xx`, Linux 6.18, AArch64 musl)
 - **Status:** Authoritative RF & Calibration Engineering Blueprint
-- **Revision:** Round 5.1 Review (Reconciled with yangfl's Authoritative 11-ath11k-caldata: 0x1000/0x26800 Offsets, 0x20000 Lengths, and Removal of Erroneous MAC Patching)
+- **Revision:** Round 5.2 Review (Precise AHB Calibration Request Paths cal-ahb-*, AHB Driver Attachment, Removal of Erroneous PCI ID, and Firmware Blob Clarification)
 
 ---
 
 ## 1. Executive Summary & RF System Overview
 
 The Xiaomi CR8808 Ver.B utilizes a dual-radio Qualcomm 802.11ax (Wi-Fi 6) architecture:
-1. **2.4 GHz Radio (`wifi0`):** Qualcomm IPQ5018 SoC-integrated 2x2 802.11b/g/n/ax radio connected via internal AHB bus, supporting channel widths up to 40 MHz (max theoretical PHY rate: 574 Mbps).
-2. **5 GHz Radio (`wifi1`):** Discrete Qualcomm **QCN6102** 2x2 802.11a/n/ac/ax radio connected via PCIe Gen2 x1 bus, supporting **160 MHz channel bandwidth (HE160)** and 1024-QAM (max theoretical PHY rate: **2402 Mbps**).
+1. **2.4 GHz Radio (`wifi0`):** Qualcomm IPQ5018 SoC-integrated 2x2 802.11b/g/n/ax radio connected via internal AHB bus, supporting channel widths up to 40 MHz (max theoretical PHY rate: 574 Mbps). Probed as an AHB platform device (`c000000.wifi`).
+2. **5 GHz Radio (`wifi1`):** Discrete Qualcomm **QCN6102** 2x2 802.11a/n/ac/ax radio physically attached via PCIe bus, but **managed and registered by the Hexagon Q6 WPSS (Wireless Processor Subsystem) / Remoteproc as an AHB platform device (`b00a040.wifi1` / `b00a040.wifi`)**, supporting **160 MHz channel bandwidth (HE160)** and 1024-QAM (max theoretical PHY rate: **2402 Mbps**). Probed by `ath11k_ahb`, NOT `ath11k_pci`.
 
 > [!IMPORTANT]
 > **Mandatory HE160 Retention:**
 > Operating at 160 MHz channel width (2402 Mbps PHY rate) on the 5 GHz band is a non-negotiable project requirement. Down-negotiating or limiting the radio to 80 MHz (1201 Mbps) represents a 50% throughput penalty and constitutes an architectural regression.
+
+> [!NOTE]
+> **Binary Firmware Blob Clarification:**
+> While the Clean DSA Ethernet datapath operates with **zero NSS binary blobs**, the Wi-Fi subsystem strictly requires proprietary Qualcomm Hexagon Q6 WCSS and M3 firmware blobs (`q6_fw.mdt`, `m3_fw.mdt` provided by `ath11k-firmware-ipq5018` and `ath11k-firmware-qcn6122`). Clean DSA refers strictly to the Ethernet datapath, not a 100% blob-free system.
 
 ---
 
@@ -40,7 +44,7 @@ sequenceDiagram
     NAND->>Hotplug: OpenWrt MTD subsystem exposes /dev/mtdX (0:ART partition)
     
     Note over Hotplug,ath11k: Stage 2: Userspace Extraction (caldata_extract)
-    ath11k->>Hotplug: Kernel emits firmware uevent (ath11k/IPQ5018/hw1.0/caldata.bin)
+    ath11k->>Hotplug: Kernel emits uevent (cal-ahb-c000000.wifi.bin / cal-ahb-b00a040.wifi1.bin)
     Hotplug->>Hotplug: caldata.sh extracts raw binary slice from 0:art (no MAC patching)
     Hotplug->>ath11k: Returns raw caldata to kernel firmware loader
 
@@ -64,11 +68,11 @@ sequenceDiagram
 - **Security & Protection:** DTS marks this partition with `read-only;`. It must never be written to or erased during sysupgrade.
 
 ### Stage 2: OpenWrt Hotplug Extraction (`11-ath11k-caldata`)
-- When the `ath11k_ahb` (for IPQ5018 integrated `wifi0`) or `ath11k_pci` (for QCN6102/QCN6122 `wifi1`) module probes during boot, it requests calibration data from userspace via the Linux kernel firmware loader (`request_firmware`).
-- OpenWrt's firmware hotplug script `/etc/hotplug.d/firmware/11-ath11k-caldata` (as authoritatively implemented in `yangfl` commit `b230c2f`) handles `xiaomi,cr8818` as follows:
+- Both the integrated 2.4 GHz radio (`wifi0`) and the companion 5 GHz radio (`wifi1`) are probed as **AHB platform devices** (`ath11k_ahb`), because the companion radio is attached via PCIe but managed by Qualcomm's Hexagon Q6 WPSS (Wireless Processor Subsystem) / Remoteproc and exposed to Linux APSS as an AHB platform device (`b00a040.wifi1` / `b00a040.wifi`).
+- During driver probe, the kernel firmware loader requests calibration files via uevents. In OpenWrt (authoritatively implemented in `yangfl` commit `b230c2f`), the firmware request names are:
   ```sh
   case "$FIRMWARE" in
-  "ath11k/IPQ5018/hw1.0/caldata.bin")
+  "ath11k/IPQ5018/hw1.0/cal-ahb-c000000.wifi.bin")
       case "$(board_name)" in
       xiaomi,ax6000|\
       xiaomi,cr8818)
@@ -76,7 +80,8 @@ sequenceDiagram
           ;;
       esac
       ;;
-  "ath11k/qcn6122/hw1.0/caldata.bin")
+  "ath11k/QCN6122/hw1.0/cal-ahb-b00a040.wifi1.bin" | \
+  "ath11k/QCN6122/hw1.0/cal-ahb-b00a040.wifi.bin")
       case "$(board_name)" in
       xiaomi,cr8818)
           caldata_extract "0:art" 0x26800 0x20000
@@ -85,11 +90,12 @@ sequenceDiagram
       ;;
   esac
   ```
-- **Critical Corrections from Authoritative yangfl Reference:**
-  1. **2.4 GHz Caldata Geometry:** Stored at offset **`0x1000`** with length **`0x20000`** (128 KiB), NOT `0x10000` (64 KiB).
-  2. **5 GHz Caldata Geometry:** Stored at offset **`0x26800`** with length **`0x20000`** (128 KiB), NOT `0x20000` offset and NOT `0x10000` length.
-  3. **No Userspace MAC Patching:** `caldata_extract` is called directly without running `ath11k_patch_mac` or reading MAC from `0:bdata`. MAC address configuration is handled natively via device tree NVMEM cells (`mac_addr_dp1`, `mac_addr_dp2`).
+- **Key Technical Findings on Firmware Request Names:**
+  1. **2.4 GHz Exact Request Name:** `ath11k/IPQ5018/hw1.0/cal-ahb-c000000.wifi.bin` (identifying the AHB base address `c000000.wifi`).
+  2. **5 GHz Exact Request Name:** `ath11k/QCN6122/hw1.0/cal-ahb-b00a040.wifi1.bin` in OpenWrt 6.12 (`yangfl`). In newer upstream OpenWrt mainline revisions, this request was evolved/renamed to `ath11k/QCN6122/hw1.0/cal-ahb-b00a040.wifi.bin`. Both string variants must be handled in hotplug scripts to maintain kernel cross-version compatibility.
+  3. **No Userspace MAC Patching:** `caldata_extract` is called directly without running `ath11k_patch_mac`. The MAC address configuration is handled natively via device tree NVMEM cells (`mac_addr_dp1`, `mac_addr_dp2`).
   4. **Partition Label:** Partition is referenced as `"0:art"` (lowercase).
+  5. **Geometry:** 2.4 GHz offset `0x1000` (length `0x20000` = 128 KiB); 5 GHz offset `0x26800` (length `0x20000` = 128 KiB).
 
 ### Stage 3: Kernel DRAM Staging (`bdf_region`)
 - The Linux `ath11k` driver receives the calibration data from userspace and stages the binaries into designated physical DRAM reserved memory regions:
@@ -127,15 +133,17 @@ A frequent point of confusion in Qualcomm documentation is the relationship betw
 | **RF Stream Configuration** | 2x2 MU-MIMO (Dual stream) | 2x2 MU-MIMO (Dual stream) / 4x4 options |
 | **Max Channel Width** | **160 MHz (HE160)** | **160 MHz (HE160)** |
 | **Max Theoretical PHY Rate** | **2402 Mbps** (at 1024-QAM, 160 MHz) | **2402 Mbps** (at 1024-QAM, 160 MHz) |
-| **PCIe Device ID** | `17cb:1104` (Subsystem: Qualcomm QCN6102) | `17cb:1104` (Subsystem: Qualcomm QCN6122) |
+| **Device Attachment & Driver** | AHB platform device via Q6 WPSS (`ath11k_ahb`) | AHB platform device via Q6 WPSS (`ath11k_ahb`) |
+| **PCIe Device ID Status** | **`UNKNOWN / INCONCLUSIVE`** (Not exposed as standard PCI netdev) | **`UNKNOWN / INCONCLUSIVE`** |
 | **OpenWrt DTS Include** | `ipq5018-qcn6122.dtsi` | `ipq5018-qcn6122.dtsi` |
-| **ath11k Firmware Family** | `ath11k/qcn6122/hw1.0/` | `ath11k/qcn6122/hw1.0/` |
+| **ath11k Firmware Family** | `ath11k/QCN6122/hw1.0/` | `ath11k/QCN6122/hw1.0/` |
 
 ### Key Engineering Analysis & Evidence Status:
-1. **Physical Silicon vs. Firmware Path:**
+1. **Physical Silicon vs. Firmware Path & Driver Attachment:**
    - On-device audit certifies the physical 5 GHz silicon as **Qualcomm QCN6102** (`DEVICE_READBACK`).
-   - The authoritative `yangfl` DTS (`ipq5018-cr8818.dts`) and hotplug script specify the firmware path as **`ath11k/qcn6122/hw1.0/caldata.bin`** and target package **`ath11k-firmware-qcn6122`**.
-   - While Qualcomm's driver architecture uses `ipq5018-qcn6122.dtsi` as a shared family include (due to identical PCIe registers and baseband core), the exact behavior of the QCN6122 firmware binary on physical QCN6102 silicon under high transmit power is classified as **`UNKNOWN / PENDING_ON_DEVICE_VERIFICATION`**.
+   - The authoritative `yangfl` DTS (`ipq5018-cr8818.dts`) and hotplug script specify the firmware path as **`ath11k/QCN6122/hw1.0/cal-ahb-b00a040.wifi1.bin`** (or `.wifi.bin` in newer mainline) and target package **`ath11k-firmware-qcn6122`**.
+   - **Correction on PCIe ID:** Prior documentation erroneously associated PCIe ID `17cb:1104` with QCN6102. LKDDb and Linux mainline sources attribute `17cb:1104` to QCN6024/9024/9074. On IPQ5018, the companion 5 GHz chip is managed directly by the Hexagon Q6 WPSS remote core and registers with APSS as an **AHB platform device** (`b00a040.wifi1` / `b00a040.wifi`), probed by `ath11k_ahb`, NOT `ath11k_pci`. The PCI ID is therefore marked **`UNKNOWN / INCONCLUSIVE`**.
+   - While Qualcomm's driver architecture uses `ipq5018-qcn6122.dtsi` as a shared family include (due to identical baseband core), the exact behavior of the QCN6122 firmware binary on physical QCN6102 silicon under high transmit power is classified as **`UNKNOWN / PENDING_ON_DEVICE_VERIFICATION`**.
 2. **Pre-Build Gate:**
    - Under no circumstances will calibration extraction or radio firmware parameters be frozen for production installation until this equivalence is empirically confirmed on physical hardware in Phase P5.
 
