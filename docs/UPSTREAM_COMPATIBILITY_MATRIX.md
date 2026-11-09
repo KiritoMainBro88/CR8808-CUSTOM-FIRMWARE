@@ -5,17 +5,17 @@
 - **Target Hardware:** Xiaomi CR8808 Ver.B (Codename `CR8818`, Board String `ap-mp03.3`, Qualcomm IPQ5018 + Motorcomm YT9215)
 - **Target Platform:** OpenWrt Clean DSA Baseline (Linux 6.18 Kernel, `qualcommax/ipq50xx`, AArch64 musl)
 - **Status:** Authoritative Upstream Integration Specification
-- **Revision:** Round 5 Review (Upstream Kernel 6.19 Inclusion vs. OpenWrt 6.18 Backport Architecture)
+- **Revision:** Round 5.1 Review (Integration of yangfl/openwrt Commit b230c2f, David Yang Upstream Provenance, and SerDes REVSGMII Analysis)
 
 ---
 
 ## 1. Executive Summary & Kernel Divergence Analysis
 
 A critical architectural finding must be formally established:
-- **Upstream Kernel 6.19:** Motorcomm YT9215 support was officially merged into upstream Linux mainline in **Linux 6.19** via commit series introducing `CONFIG_NET_DSA_YT921X` (`drivers/net/dsa/yt921x.c`) and DSA tagger `CONFIG_NET_DSA_TAG_YT921X` (`net/dsa/tag_yt921x.c`).
-- **Target Kernel Linux 6.18:** The OpenWrt target kernel planned for our baseline is **Linux 6.18**. Because Linux 6.18 predates Linux 6.19, the Motorcomm YT921X switch driver does **NOT** exist natively in the clean Linux 6.18 source tree.
+- **Upstream Author & Mainline Merge (Linux 6.19):** Motorcomm YT9215 support was authored by **David Yang (`mmyangfl@gmail.com`)**, reviewed by Andrew Lunn, signed off by Jakub Kicinski, and officially merged into Linux mainline in **Linux 6.19** via `CONFIG_NET_DSA_YT921X` (`drivers/net/dsa/yt921x.c`) and DSA tagger `CONFIG_NET_DSA_TAG_YT921X` (`net/dsa/tag_yt921x.c`).
+- **Target Kernel Linux 6.18:** The OpenWrt target kernel planned for our baseline is **Linux 6.18**. Because Linux 6.18 predates Linux 6.19, the Motorcomm YT921X switch driver does **NOT** exist natively in clean Linux 6.18.
 - **Architectural Consequence:** Our Phase 1 firmware is **NOT** "pure unpatched upstream 6.18". It is **Upstream-Derived DSA Backported from Linux 6.19 to Linux 6.18**.
-- In OpenWrt build terminology, this requires an upstream-derived backport patch series placed in `target/linux/qualcommax/patches-6.18/` or `target/linux/generic/backport-6.18/`.
+- **Crucial SerDes Role Patch:** David Yang's OpenWrt implementation for CR8818 (`yangfl/openwrt` commit `b230c2f`) includes patch `940-net-dsa-yt921x-Abuse-SGMII-for-REVSGMII.patch`, which is mandatory for resolving the MAC-to-MAC collision over the SGMII SerDes between IPQ5018 and YT9215 Port 8.
 
 ---
 
@@ -41,10 +41,24 @@ To build the Phase 1 Clean DSA baseline on Linux 6.18, the following patch artif
 
 ```
 target/linux/qualcommax/patches-6.18/
-├── 700-net-dsa-yt921x-driver.patch     # Adds drivers/net/dsa/yt921x.c and Kconfig/Makefile hooks
-├── 701-net-dsa-tag-yt921x.patch        # Adds net/dsa/tag_yt921x.c and tag protocol enum
-└── 702-net-dsa-phylink-motorcomm.patch  # Adds Motorcomm PHY link-state hooks if required
+├── 700-net-dsa-yt921x-driver.patch               # Adds drivers/net/dsa/yt921x.c and Kconfig/Makefile hooks
+├── 701-net-dsa-tag-yt921x.patch                  # Adds net/dsa/tag_yt921x.c and tag protocol enum
+├── 702-net-dsa-phylink-motorcomm.patch            # Adds Motorcomm PHY link-state hooks if required
+└── 703-net-dsa-yt921x-Abuse-SGMII-for-REVSGMII.patch # Forces YT921X_SERDES_MODE_REVSGMII on Port 8 (yangfl patch 940)
 ```
+
+### 3.1 Analysis of REVSGMII SerDes Mode Requirement (yangfl Patch 940)
+- **Problem:** The IPQ5018 Uniphy SerDes interface connecting to switch Port 8 acts as a MAC. The Motorcomm switch SerDes must operate in **PHY role** (`REVSGMII`).
+- However, Linux kernel phylink lacks a distinct `PHY_INTERFACE_MODE_REVSGMII` enum. Unpatched mainline `yt921x.c` configures `YT921X_SERDES_MODE_SGMII` (MAC role), creating two conflicting MACs and preventing link synchronization.
+- **Solution:** As authored by David Yang in patch `940-net-dsa-yt921x-Abuse-SGMII-for-REVSGMII.patch`:
+  ```c
+  switch (interface) {
+  case PHY_INTERFACE_MODE_SGMII:
+      /* abuse SGMII for REVSGMII */
+      ctrl = YT921X_SERDES_MODE_REVSGMII;
+      break;
+  ```
+- **Conclusion:** Patch 703 is strictly mandatory for establishing an SGMII link between IPQ5018 GMAC1 and YT9215 Port 8.
 
 ### 3.1 Kernel Configuration Symbols (`kconfig`)
 ```ini

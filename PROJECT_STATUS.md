@@ -2,14 +2,16 @@
 
 - Version: `0.1.0-dev.2`
 - Date: 2026-11-09
-- Phase: P1 Architecture Gate G1 Finalized (Round 5 Upstream & Architecture Audit) / P2 Preparation
-- Current Branch: `feature/g1-corrections-round5`
-- Overall status: `GATE_G1_CORRECTIONS_ROUND5_COMPLETE`
-- GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`, `feature/g1-corrections-round3`, `feature/g1-corrections-round4`, `feature/g1-corrections-round5`)
+- Phase: P1 Architecture Gate G1 Finalized (Round 5.1 CR8818 Exact Hardware Reference Audit) / P2 Preparation
+- Current Branch: `feature/g1-corrections-round5.1`
+- Overall status: `GATE_G1_CORRECTIONS_ROUND5_1_COMPLETE`
+- GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`, `feature/g1-corrections-round3`, `feature/g1-corrections-round4`, `feature/g1-corrections-round5`, `feature/g1-corrections-round5.1`)
 - Flash authorization: `NO-GO pending independent recovery validation`
-- Initial Firmware Baseline: `CLEAN_DSA_LINUX_6.18_WITHOUT_NSS` (Approved)
-- Primary Hardware Reference: `zcop/immortalwrt` (commit `c5ad88b`) — Approved for CR881x DTS & YT921x DSA
-- Secondary NSS Reference: `kuncy7/nss-packages` & `kuncy7/openwrt-nss-edma` — Architectural reference for Phase 2
+- Initial Firmware Baseline Proposal: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Architecture Proposal under review; NOT yet approved for implementation by Product Owner)
+- Primary Hardware References:
+  - `yangfl/openwrt` (commit `b230c2f`) — Authoritative CR8818 DTS, SerDes REVSGMII abuse patch 940, caldata geometry
+  - `zcop/immortalwrt` — Register reverse-engineering reference for YT9215 (NSS offload on CR8818: `NSS_NOT_VERIFIED`)
+- Secondary Reference: `kuncy7/openwrt-nss-edma` — Low-memory profile reference (NSS tagger currently incompatible with YT9215)
 - WireGuard Target Engine: `BoringTun Rust` (Target ABI: `aarch64-unknown-linux-musl`; sole engine)
 - Wi-Fi Target Mode: `5 GHz HE160 (160 MHz)` (Mandatory retention)
 - Git History Remediation: `DRY_RUN_VALIDATED_CLEAN` (All commits verified 100% clean)
@@ -51,3 +53,4 @@
 - 2026-11-09: Architecture Gate G1 Round 3 Corrections completed on branch `feature/g1-corrections-round3`. Grounded switch port mapping in zcop reference DTS (P0-P2 LAN1-3, P3 WAN, P4 CPU2 dp1 internal GE PHY, P8 CPU1 dp2 SGMII 1000M, P10 MCU); removed erroneous 2500Base-X claims; investigated Issue #5 GPIO39 switch init bug (0xffff chip ID) and established 4-part 20-cycle reboot test protocol; separated upstream OpenWrt stmmac from zcop nss-dp dual-conduit; disambiguated DRAM BDF staging (0x4c400000/0x4d100000) from physical NAND 0:ART (0x780000); decoupled generic packages in parity matrix; established BoringTun Rust as sole WireGuard engine (in-kernel marked NOT_SELECTED); reconciled Git commit history evidence. Deliverable: `reports/2026-11-09/G1_REVIEW_ROUND3.md`. Author: Gemini (Implementation Lead).
 - 2026-11-09: Architecture Gate G1 Round 4 Corrections completed on branch `feature/g1-corrections-round4`. Resolved DSA vs NSS architecture contradiction: Phase 1 defined strictly on upstream `dwmac-ipq5018` (`stmmac`) single-conduit SGMII 1000M Port 8 (zero NSS Datapath, Port 4 disabled); Phase 2 defined on `qcom,nss-dp` dual-conduit (`dp1`/`dp2`); performed deep analysis of Issue #5 GPIO 39 reset bug, rejecting userspace procd hook and designing 20-cycle reboot test; detailed Wi-Fi calibration pipeline from NAND 0:ART to DRAM and Q6 WCSS; decoupled unmeasured performance assertions from source availability in parity matrix; re-established `CR8818` and `ap-mp03.3` as `DEVICE_READBACK`; reinforced strict non-UART `NO-GO` on flashing. Deliverable: `reports/2026-11-09/G1_REVIEW_ROUND4.md`. Author: Gemini (Implementation Lead).
 - 2026-11-09: Architecture Gate G1 Round 5 Corrections completed on branch `feature/g1-corrections-round5`. Resolved Linux 6.18 vs 6.19 driver timing (established upstream-derived backport status for YT921X); completed 3-way comparative evaluation across Clean DSA, Kuncy7 `stmmac`+NSS, and `zcop` dual-conduit (proved Kuncy7 `tag_8021q` structurally incompatible with Motorcomm `tag_yt921x`); established 256MB RAM engineering profile (ring sizes, coherent pool, min_free_kbytes); authored dedicated Wi-Fi calibration pipeline specification (NAND 0:ART -> 11-ath11k-caldata hotplug -> DRAM staging -> Q6 WCSS, QCN6102 silicon vs qcn6122 dtsi, mandatory HE160); added CR8806 vs CR8818 disambiguation table with fatal cross-flash warning; harmonized TFTP recovery assertions strictly to `REPORTED_UNVERIFIED`. Deliverable: `reports/2026-11-09/G1_REVIEW_ROUND5.md`. Author: Gemini (Implementation Lead).
+- 2026-11-09: Architecture Gate G1 Round 5.1 Corrections completed on branch `feature/g1-corrections-round5.1`. Integrated David Yang's authoritative CR8818 commit (`yangfl/openwrt` b230c2f) as core reference; analyzed SerDes REVSGMII abuse patch 940; re-evaluated Kuncy7 (nuanced tag incompatibility + NSS 12.5 256MB buffer stall risk); demarcated zcop across 3 levels (DSA verified, dual-conduit verified, NSS offload on CR8818 `NSS_NOT_VERIFIED`); corrected Wi-Fi calibration geometry (0x1000/0x26800 offsets, 0x20000 lengths, eliminated MAC patching assertion); corrected project governance (Phase 1 Clean DSA marked as Architecture Proposal under review, strictly pending Product Owner approval; NO-GO on flash reaffirmed). Deliverable: `reports/2026-11-09/G1_REVIEW_ROUND5_1.md`. Author: Gemini (Implementation Lead).

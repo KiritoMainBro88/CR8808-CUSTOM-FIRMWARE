@@ -5,7 +5,7 @@
 - **Target Hardware:** Xiaomi CR8808 Ver.B (Codename `CR8818`, Qualcomm IPQ5018 + QCN6102)
 - **Target Platform:** OpenWrt Clean DSA Baseline (`qualcommax/ipq50xx`, Linux 6.18, AArch64 musl)
 - **Status:** Authoritative RF & Calibration Engineering Blueprint
-- **Revision:** Round 5 Review (Complete 4-Stage Calibration Pipeline & HE160 Mandate)
+- **Revision:** Round 5.1 Review (Reconciled with yangfl's Authoritative 11-ath11k-caldata: 0x1000/0x26800 Offsets, 0x20000 Lengths, and Removal of Erroneous MAC Patching)
 
 ---
 
@@ -39,10 +39,10 @@ sequenceDiagram
     Note over NAND,Hotplug: Stage 1: Factory Non-Volatile Storage
     NAND->>Hotplug: OpenWrt MTD subsystem exposes /dev/mtdX (0:ART partition)
     
-    Note over Hotplug,ath11k: Stage 2: Userspace Extraction & MAC Patching
+    Note over Hotplug,ath11k: Stage 2: Userspace Extraction (caldata_extract)
     ath11k->>Hotplug: Kernel emits firmware uevent (ath11k/IPQ5018/hw1.0/caldata.bin)
-    Hotplug->>Hotplug: caldata.sh extracts raw binary & patches MAC from 0:bdata
-    Hotplug->>ath11k: Returns processed caldata to kernel firmware loader
+    Hotplug->>Hotplug: caldata.sh extracts raw binary slice from 0:art (no MAC patching)
+    Hotplug->>ath11k: Returns raw caldata to kernel firmware loader
 
     Note over ath11k,DRAM: Stage 3: In-Memory DRAM Staging
     ath11k->>DRAM: Stages 2.4 GHz caldata into physical DRAM @ 0x4c400000
@@ -64,19 +64,32 @@ sequenceDiagram
 - **Security & Protection:** DTS marks this partition with `read-only;`. It must never be written to or erased during sysupgrade.
 
 ### Stage 2: OpenWrt Hotplug Extraction (`11-ath11k-caldata`)
-- When the `ath11k_ahb` (for IPQ5018) or `ath11k_pci` (for QCN6102) module probes during boot, it requests calibration data from userspace via the Linux kernel firmware loader (`request_firmware`).
-- OpenWrt's firmware hotplug script `/etc/hotplug.d/firmware/11-ath11k-caldata` intercepts this request:
+- When the `ath11k_ahb` (for IPQ5018 integrated `wifi0`) or `ath11k_pci` (for QCN6102/QCN6122 `wifi1`) module probes during boot, it requests calibration data from userspace via the Linux kernel firmware loader (`request_firmware`).
+- OpenWrt's firmware hotplug script `/etc/hotplug.d/firmware/11-ath11k-caldata` (as authoritatively implemented in `yangfl` commit `b230c2f`) handles `xiaomi,cr8818` as follows:
   ```sh
   case "$FIRMWARE" in
   "ath11k/IPQ5018/hw1.0/caldata.bin")
-      caldata_extract "0:ART" 0x1000 0x10000
+      case "$(board_name)" in
+      xiaomi,ax6000|\
+      xiaomi,cr8818)
+          caldata_extract "0:art" 0x1000 0x20000
+          ;;
+      esac
       ;;
-  "ath11k/qcn6122/hw1.0/caldata.bin" | "ath11k/QCN6102/hw1.0/caldata.bin")
-      caldata_extract "0:ART" 0x20000 0x10000
+  "ath11k/qcn6122/hw1.0/caldata.bin")
+      case "$(board_name)" in
+      xiaomi,cr8818)
+          caldata_extract "0:art" 0x26800 0x20000
+          ;;
+      esac
       ;;
   esac
   ```
-- The helper script `/lib/upgrade/caldata.sh` extracts the raw byte slice from the `/dev/mtd+ART` character device and patches the base MAC address read from partition `0:bdata`.
+- **Critical Corrections from Authoritative yangfl Reference:**
+  1. **2.4 GHz Caldata Geometry:** Stored at offset **`0x1000`** with length **`0x20000`** (128 KiB), NOT `0x10000` (64 KiB).
+  2. **5 GHz Caldata Geometry:** Stored at offset **`0x26800`** with length **`0x20000`** (128 KiB), NOT `0x20000` offset and NOT `0x10000` length.
+  3. **No Userspace MAC Patching:** `caldata_extract` is called directly without running `ath11k_patch_mac` or reading MAC from `0:bdata`. MAC address configuration is handled natively via device tree NVMEM cells (`mac_addr_dp1`, `mac_addr_dp2`).
+  4. **Partition Label:** Partition is referenced as `"0:art"` (lowercase).
 
 ### Stage 3: Kernel DRAM Staging (`bdf_region`)
 - The Linux `ath11k` driver receives the calibration data from userspace and stages the binaries into designated physical DRAM reserved memory regions:
@@ -118,8 +131,13 @@ A frequent point of confusion in Qualcomm documentation is the relationship betw
 | **OpenWrt DTS Include** | `ipq5018-qcn6122.dtsi` | `ipq5018-qcn6122.dtsi` |
 | **ath11k Firmware Family** | `ath11k/qcn6122/hw1.0/` | `ath11k/qcn6122/hw1.0/` |
 
-### Key Engineering Conclusion:
-In the upstream Linux and OpenWrt `qualcommax` source tree, `ipq5018-qcn6122.dtsi` is the shared family include file. Because the QCN6102 and QCN6122 share identical PCIe register maps, baseband architecture, and WMI firmware ABI, referencing `ipq5018-qcn6122.dtsi` in board DTS is standard, expected upstream practice. It does **NOT** indicate a hardware mismatch.
+### Key Engineering Analysis & Evidence Status:
+1. **Physical Silicon vs. Firmware Path:**
+   - On-device audit certifies the physical 5 GHz silicon as **Qualcomm QCN6102** (`DEVICE_READBACK`).
+   - The authoritative `yangfl` DTS (`ipq5018-cr8818.dts`) and hotplug script specify the firmware path as **`ath11k/qcn6122/hw1.0/caldata.bin`** and target package **`ath11k-firmware-qcn6122`**.
+   - While Qualcomm's driver architecture uses `ipq5018-qcn6122.dtsi` as a shared family include (due to identical PCIe registers and baseband core), the exact behavior of the QCN6122 firmware binary on physical QCN6102 silicon under high transmit power is classified as **`UNKNOWN / PENDING_ON_DEVICE_VERIFICATION`**.
+2. **Pre-Build Gate:**
+   - Under no circumstances will calibration extraction or radio firmware parameters be frozen for production installation until this equivalence is empirically confirmed on physical hardware in Phase P5.
 
 ---
 

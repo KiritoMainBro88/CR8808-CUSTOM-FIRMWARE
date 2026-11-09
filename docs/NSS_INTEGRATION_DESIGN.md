@@ -5,7 +5,7 @@
 - **Target Hardware:** Xiaomi CR8808 Ver.B (Codename `CR8818`, Qualcomm IPQ5018 dual-core Cortex-A53 + NPU @ 1.0 GHz + Motorcomm YT9215)
 - **Architecture Lead Decision:** Experimental Optimization Stage (Strictly Post-DSA Baseline Phase 2)
 - **Status:** Architectural Blueprint & 3-Way Comparative Evaluation
-- **Revision:** Round 5 Review (3-Way Architecture Evaluation: Clean DSA vs. Kuncy7 vs. zcop Dual-Conduit)
+- **Revision:** Round 5.1 Review (Objective Categorization of Kuncy7, Re-Evaluation of zcop NSS-DP Evidence, and NSS 12.5 256MB Wi-Fi Buffer Stall Risk)
 
 ---
 
@@ -32,12 +32,12 @@ flowchart TD
         A_MAC --> A_COND --> A_TAG --> A_ROUTE
     end
 
-    subgraph "Arch B: Kuncy7 stmmac + qca-dwmac-nss (Incompatible with YT9215)"
+    subgraph "Arch B: Kuncy7 stmmac + qca-dwmac-nss (tag_8021q Tagger)"
         B_MAC["Upstream stmmac with NSS Hook Patch"]
         B_HOOK["kmod-qca-dwmac-nss (Data-Plane Claim API)"]
         B_TAG["DSA tag_8021q (qca-8021q / rtl8365mb / an8855)"]
         B_NSS["NSS Firmware 12.5 (Parses 802.1Q tags ONLY)"]
-        B_FAIL["CRITICAL FAIL: NSS cannot parse Motorcomm YT921x tags!"]
+        B_FAIL["STATUS: Currently Incompatible (tag_yt921x requires translation layer)"]
         B_MAC --> B_HOOK --> B_TAG --> B_NSS -.-> B_FAIL
     end
 
@@ -59,35 +59,54 @@ flowchart TD
 | **Ethernet MAC Driver** | Upstream `dwmac-ipq5018` / `stmmac` (`CONFIG_DWMAC_IPQ5018=y`). | Upstream `stmmac` patched with data-plane claim API (`kmod-qca-dwmac-nss`). | Qualcomm proprietary `qcom,nss-dp` (`qca-nss-dp.ko`). |
 | **Switch DSA Driver** | Backported upstream `drivers/net/dsa/yt921x.c`. | Standard DSA driver with `tag_8021q` conduit tagging. | Out-of-tree Motorcomm switch driver with dual-conduit support. |
 | **DSA Tag Protocol** | `tag_yt921x.c` (Upstream single-conduit tagger). | `tag_8021q` (`qca-8021q`, `rtl8365mb-8021q`, `an8855-8021q`). | `tag_yt921x_enhanced.c` (Parses `secondary-conduit-user-mask = <0x8>`). |
-| **NSS Tag Parsing Compatibility** | N/A (No NSS used). | **INCOMPATIBLE:** NSS firmware 12.5 only parses 802.1Q tags; drops YT921x frames. | **COMPATIBLE:** Dual-conduit steers WAN to Port 4 and LAN to Port 8, bypassing single-conduit tagger collisions. |
+| **NSS Tag Parsing Compatibility** | N/A (No NSS used). | **CURRENTLY_INCOMPATIBLE:** NSS firmware 12.5 only parses 802.1Q tags; tag_yt921x requires an unwritten translation shim or unverified 802.1Q switch mode. | **THEORETICALLY_COMPATIBLE:** Dual-conduit steers WAN to Port 4 and LAN to Port 8; NSS offload on CR8818 remains **`NSS_NOT_VERIFIED`**. |
 | **CPU Conduits** | **Single Conduit:** GMAC1 / Port 8 (SGMII 1000M). | **Single Conduit:** GMAC1 / Port 8 (Trunk with 802.1Q tags). | **Dual Conduit:** GMAC0 / Port 4 (WAN) + GMAC1 / Port 8 (LAN). |
 | **Flow Acceleration Engine** | Linux In-Kernel Software Flowtable (`nftables flow_offload`). | Qualcomm NSS ECM (`qca-nss-ecm.ko`). | Qualcomm NSS ECM (`qca-nss-ecm.ko`). |
 | **Host CPU Utilization @ 1 Gbps** | 50–65% (`ENGINEERING_ESTIMATE`). | <10% (`ACCEPTANCE_TARGET` on supported hardware). | <10% (`ACCEPTANCE_TARGET`). |
 | **Throughput Acceptance Target** | 940 Mbps IPv4 NAT (`ACCEPTANCE_TARGET`). | 940 Mbps IPv4 NAT. | 940 Mbps IPv4 NAT (`ACCEPTANCE_TARGET`). |
 | **Memory Footprint Impact** | **0 MiB NPU reservation** (~182 MB usable DRAM for Linux). | **8–16 MiB pinned DRAM** (`nss_region`) + `qca-nss-pbuf`. | **8–16 MiB pinned DRAM** (`nss_region`) + `qca-nss-pbuf`. |
 | **Firmware Blob Dependencies** | **None** for Ethernet datapath. | `retail_router0.bin` (Qualcomm NSS 12.5-210). | `retail_router0.bin` (Qualcomm NSS 12.5-210). |
-| **Community Track Record on CR8818** | High confidence (standard Linux DSA model). | **ZERO:** Kuncy7 does not support Motorcomm switches. | High confidence: proven in `zcop/immortalwrt`. |
-| **Recommendation** | **APPROVED: Phase 1 Mandatory Baseline.** | **REJECTED: Structurally incompatible with YT9215.** | **RESERVED: Phase 2 Experimental Optimization.** |
+| **Community Track Record on CR8818** | High confidence (`yangfl/openwrt` commit `b230c2f`). | **ZERO:** Kuncy7 has no CR8818 board support. | Driver & dual-conduit verified in `zcop`; NSS offload is **`NSS_NOT_VERIFIED`**. |
+| **Recommendation** | **PROPOSED: Phase 1 Clean Baseline (Under Architecture Review).** | **NOT VIABLE WITHOUT R&D:** Requires custom tag translation or 802.1Q mode. | **RESERVED FOR PHASE 2:** Pending proof of NSS-DP operation on CR8818. |
 
 ---
 
-## 3. Deep Analysis: Why Kuncy7 Architecture Cannot Support Motorcomm YT9215
+## 3. Objective Re-Evaluation: Kuncy7 and zcop Community Sources
 
-The `kuncy7/openwrt-nss-edma` project provides an elegant architecture for offloading upstream `stmmac` to NSS on routers with Qualcomm QCA8337 (`qca-8021q`), Realtek RTL8367S (`rtl8365mb-8021q`), or Airoha AN8855 (`an8855-8021q`) switches. However, our technical analysis proves it **cannot** be used on Xiaomi CR8808 Ver.B / CR8818:
+### 3.1 Technical Analysis of Kuncy7 Architecture with Motorcomm Switch
+The `kuncy7/openwrt-nss-edma` project provides an elegant architecture for offloading upstream `stmmac` to NSS on routers with Qualcomm QCA8337 (`qca-8021q`), Realtek RTL8367S (`rtl8365mb-8021q`), or Airoha AN8855 (`an8855-8021q`) switches. When evaluating its applicability to the Xiaomi CR8808 Ver.B (CR8818):
 
-1. **Tag Protocol Mismatch:**
-   - Kuncy7's NSS integration relies on the DSA conduit operating under **`tag_8021q`**. In this mode, the switch inserts a standard IEEE 802.1Q VLAN header that carries port identification metadata.
-   - The Qualcomm NSS firmware (`retail_router0.bin`) contains built-in microcode to parse standard 802.1Q VLAN headers and route packets to the appropriate NSS virtual interface.
-   - The Motorcomm YT9215 switch uses a **proprietary 4-byte/8-byte vendor DSA tag** (`tag_yt921x.c`), which is placed as a trailer or custom header.
-2. **Firmware Opacity:**
-   - The NSS firmware is a closed binary blob compiled for the Hexagon NPU.
-   - It has **zero knowledge of the Motorcomm tag format**.
-   - If Kuncy's `kmod-qca-dwmac-nss` intercepts tagged frames from `tag_yt921x`, the NSS NPU cannot parse the Ethernet payload, resulting in packet corruption, dropped frames, or hardware stall.
-3. **Silicon Limitations:**
-   - Neither the Motorcomm YT9215 datasheet nor existing driver code confirms that the YT9215 can operate in pure standard 802.1Q trunk mode for DSA port demultiplexing without its proprietary tagger.
-4. **Architectural Verdict:**
-   - Attempting to force Kuncy's architecture onto CR8818 would require designing a novel tag translation shim layer inside the kernel between `tag_yt921x` and NSS, an unverified research task.
-   - Therefore, for Phase 2 hardware offload, **Architecture C (`zcop` dual-conduit `nss-dp`) is the only viable NSS solution for CR8818**.
+1. **Tag Protocol Divergence:**
+   - Kuncy7's NSS pipeline requires the DSA conduit to operate using **`tag_8021q`**. In this mode, the switch embeds port metadata within standard IEEE 802.1Q VLAN tags.
+   - The closed Qualcomm NSS firmware (`retail_router0.bin`) contains built-in parsers for standard 802.1Q VLAN headers and routes frames accordingly.
+   - The Motorcomm YT9215 switch uses a **proprietary vendor DSA tag** (`tag_yt921x.c`).
+   - The NSS firmware contains **zero parser logic** for Motorcomm tags. Passing `tag_yt921x` frames directly into NSS results in packet drops.
+2. **Integration Feasibility Assessment:**
+   - **Is it "impossible"? NO.** In software engineering, it is not theoretically impossible, but requires substantial unverified R&D:
+     - *Path A (802.1Q Switch Mode):* Reconfigure the YT9215 switch registers to operate in pure 802.1Q VLAN trunking mode instead of DSA tagging. Status: **`EXPERIMENTAL / UNKNOWN`** (silicon capability unverified).
+     - *Path B (Kernel Translation Layer):* Implement a shim between `tag_yt921x` and NSS firmware. Status: **`HIGH_EFFORT_R&D`** (adds CPU overhead and complexity).
+   - **Conclusion:** Kuncy7 is **`CURRENTLY_INCOMPATIBLE`** with CR8818 out-of-the-box, as confirmed by the complete absence of YT9215 support in Kuncy's repository.
+
+### 3.2 Critical NSS 12.5 Stability Bug on 256MB Devices (Kuncy Release 2026.11.09)
+> [!CAUTION]
+> **Severe Reliability Hazard for 24/7 Deployment:**
+> In the official release notes of `kuncy7/openwrt-nss-edma` (dated 09/11/2026), a critical NSS 12.5 defect is documented on **256 MB RAM devices**:
+> - Under high Wi-Fi client packet retransmissions, NSS 12.5 buffer descriptors can be held without timely release.
+> - On 256 MB devices with constrained memory pools, this buffer starvation causes **all wired Ethernet traffic to completely stall / freeze**.
+> - The author explicitly stated that the **256 MB device group was NOT tested** in that release.
+> - For our workstation router, which must operate 24/7 without lockups, this is an unacceptable risk for the baseline firmware.
+
+### 3.3 Re-Evaluation of zcop ImmortalWrt: Demarcating DSA from NSS Evidence
+A detailed audit of `zcop/immortalwrt` and its `README.yt921x.md` establishes a strict separation across three technical levels:
+1. **Level A (YT921x DSA Driver): `VERIFIED`.** The driver initializes the 7-port switch, manages 5 internal PHYs, supports 9K jumbo frames, 802.1Q VLAN, and storm control.
+2. **Level B (Dual-Conduit Architecture): `VERIFIED`.** The enhanced driver (`tag_yt921x_enhanced.c`) successfully implements secondary conduit raw-frame fallback handling.
+3. **Level C (NSS Hardware NAT Acceleration on CR8818): `NSS_NOT_VERIFIED`.**
+   - **Audit Fact:** `README.yt921x.md` focuses exclusively on the DSA switch driver and does **NOT** document or demonstrate NSS offload (`qcom,nss-dp` or `qca-nss-ecm`).
+   - We cannot use evidence of a functioning DSA driver to claim that NSS hardware offload is working on CR8818.
+4. **Documented Driver Limitations (`README.yt921x.md`):**
+   - Active Queue Management (WRED/RED) is **UNSUPPORTED** due to hardware silicon limits.
+   - Buffer Management (tail-drop limit tuning) remains **TODO** pending register mapping.
+   - Complete ETS/SP scheduling remains open: contention tests still **FAIL**.
 
 ---
 
