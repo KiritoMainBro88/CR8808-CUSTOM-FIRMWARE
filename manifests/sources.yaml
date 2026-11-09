@@ -1,44 +1,91 @@
 schema_version: 1
-status: candidate_sources_not_yet_pinned
+status: audited_candidate_sources
 last_reviewed: 2026-11-09
 sources:
-  - alias: openwrt
-    url: https://github.com/openwrt/openwrt
-    role: upstream_base_candidate
-    revision: TO_BE_AUDITED
-    approved_for_integration: false
-  - alias: immortalwrt
-    url: https://github.com/immortalwrt/immortalwrt
-    role: distribution_candidate
-    revision: TO_BE_AUDITED
-    approved_for_integration: false
   - alias: zcop
     url: https://github.com/zcop/immortalwrt
-    role: cr881x_board_and_yt921x_reference
-    revision: TO_BE_AUDITED
-    approved_for_integration: false
-  - alias: kuncy7_nss_edma
-    url: https://github.com/kuncy7/openwrt-nss-edma
-    role: nss_integration_reference
-    revision: TO_BE_AUDITED
-    approved_for_integration: false
+    role: primary_hardware_and_switch_reference
+    branch: master
+    audited_commit: c5ad88b702dc2374c9d67141693cc06cce742dc8
+    commit_date: "2026-11-08T18:46:18Z"
+    license: GPL-2.0
+    kernel_version: 6.18.60
+    approved_for_integration: true
+    notes: Primary reference for Xiaomi CR881x board DTS, Motorcomm YT921x enhanced DSA driver, and GPIO39 reset.
+
   - alias: kuncy7_nss_packages
     url: https://github.com/kuncy7/nss-packages
-    role: nss_packages_reference
-    revision: TO_BE_AUDITED
+    role: nss_packages_feed_reference
+    branch: ipq50xx-rebase
+    audited_commit: c94a78031ddc7695b2b7a0c5b91421f7b032ed92
+    commit_date: "2026-11-09T08:55:16Z"
+    license: Mixed / Qualcomm Proprietary
+    kernel_version: 6.18
     approved_for_integration: false
+    notes: Reference feed for nss-firmware (12.5-210 & 12.2-156), qca-nss-drv, and qca-nss-ecm.
+
+  - alias: kuncy7_nss_edma
+    url: https://github.com/kuncy7/openwrt-nss-edma
+    role: nss_kernel_glue_reference
+    branch: c3po-tag-8021q
+    audited_commit: 047ee4cea18d66189b4f7adddbac76c2373658fb
+    commit_date: "2026-11-08T19:24:25Z"
+    license: GPL-2.0
+    kernel_version: 6.18
+    approved_for_integration: false
+    notes: stmmac data-path claim API and 256MB memory profiling reference. Incompatible as direct flash target (QCA8337).
+
+  - alias: openwrt
+    url: https://github.com/openwrt/openwrt
+    role: upstream_mainline_comparison_base
+    branch: main
+    audited_commit: dd72c4c198330e208c2357625693a03996cae741
+    commit_date: "2026-11-09T09:45:46Z"
+    license: GPL-2.0
+    kernel_version: 6.18
+    approved_for_integration: false
+    notes: Mainline comparison baseline. Contains ipq50xx subtarget and YT921x backports, but no CR881x board profile.
+
+  - alias: immortalwrt
+    url: https://github.com/immortalwrt/immortalwrt
+    role: distribution_upstream_reference
+    branch: master
+    audited_commit: 4765b657625ec5bbda74b44400465fe043802b30
+    commit_date: "2026-11-05T04:06:13Z"
+    license: GPL-2.0
+    kernel_version: 6.18
+    approved_for_integration: false
+    notes: Upstream distribution base for zcop fork.
+
   - alias: fanha99_cr8806
     url: https://github.com/fanha99/openwrt-xiaomi-cr8806-nss
-    role: cr8806_reference_only
-    revision: TO_BE_AUDITED
+    role: cr8806_porting_reference_only
+    branch: main
+    audited_commit: 1469a4a835aeb1c75394ec0828dd594b069254a5
+    commit_date: "2026-11-08T07:02:46Z"
+    license: GPL-2.0
+    kernel_version: 6.18
     approved_for_integration: false
+    notes: Reference for 256MB memory tuning. Strictly incompatible as a flash target for CR8808 Ver.B.
+
   - alias: hzyitc
     url: https://github.com/hzyitc/openwrt-redmi-ax3000
     role: legacy_ipq50xx_reference
-    revision: TO_BE_AUDITED
+    branch: ipq50xx-mainline-kernel-5.15-openwrt-23.05
+    audited_commit: 6faaa1504fd5c5ca34f61b22ab07851907604c59
+    commit_date: "2024-07-24T15:31:43Z"
+    license: GPL-2.0
+    kernel_version: 5.15
     approved_for_integration: false
+    notes: Legacy kernel 5.15 reference. Superseded.
+
   - alias: marchmin_zcop
     url: https://github.com/marchmin/immortalwrt-zcop
-    role: yt9215_register_reference
-    revision: TO_BE_AUDITED
+    role: yt9215_register_reference_archive
+    branch: master
+    audited_commit: 77403081b8cce8be2cafca548790c3c9d9ef3fa9
+    commit_date: "2026-05-25T13:06:04Z"
+    license: GPL-2.0
+    kernel_version: 6.18
     approved_for_integration: false
+    notes: Older snapshot of zcop. Superseded by active zcop/immortalwrt tree.

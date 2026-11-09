@@ -64,13 +64,13 @@ A deep automated and manual security scan was performed across all 51 tracked re
 | **Wi-Fi Pre-Shared Keys** | Regex for `psk=`, `wpa_passphrase` | 0 matches found | **PASS** |
 | **MAC Addresses** | Regex for IEEE 802 MAC format | 0 matches found | **PASS** |
 | **Local Username & User Paths** | Regex for Windows user `Kirito` and `C:\Users\Kirito` | 0 matches found in tracked files | **PASS** |
-| **Network IP Addresses** | Regex for private RFC1918 IPs | Only stock default `192.168.31.1` and test client `192.168.31.106` in baseline doc | **PASS** |
-| **Host Machine Identifiers** | Windows workstation hostname in audit dump | Found `DESKTOP-FH9EA4D` in `raw_host_audit.json`; sanitized to `[REDACTED_BUILD_HOST]` | **PASS (Sanitized)** |
-| **Absolute Local Paths in Docs** | `file:///D:/vibecode/...` links in Markdown | Converted to repository-relative markdown links (`evidence/*.json`) | **PASS (Sanitized)** |
+| **Network IP Addresses** | Regex for private RFC1918 IPs | Redacted to generic placeholders in baseline doc | **PASS** |
+| **Host Machine Identifiers** | Windows workstation hostname in audit dump | Sanitized raw hostname to `[REDACTED_BUILD_HOST]` in JSON | **PASS (Sanitized)** |
+| **Absolute Local Paths in Docs** | Local file URI links in Markdown | Converted to repository-relative markdown links (`evidence/*.json`) | **PASS (Sanitized)** |
 
 ### 4.2 Excluded Files & Sanitization Actions
 1. **`reports/2026-11-09/evidence/raw_host_audit.json`**:
-   - *Sanitized:* Replaced the workstation's local WSL2 kernel hostname `DESKTOP-FH9EA4D` with `[REDACTED_BUILD_HOST]`. All other architectural metrics (Intel Core i7-14650HX 16C/24T, 32GB RAM, WSL2 Ubuntu 22.04.5 LTS, drive capacities) remain preserved.
+   - *Sanitized:* Replaced the workstation's local WSL2 kernel netbios hostname with `[REDACTED_BUILD_HOST]`. All architectural metrics (Intel Core i7-14650HX 16C/24T, 32GB RAM, WSL2 Ubuntu 22.04.5 LTS, drive capacities) remain preserved.
 2. **`reports/2026-11-09/G1_DISCOVERY_REPORT.md`**:
    - *Sanitized:* Converted absolute Windows file URI links (`file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/...`) in Section 14.2 to clean Git-native relative paths `evidence/raw_host_audit.json` and `evidence/raw_upstream_audit.json`.
 3. **`.gitignore` Fortification**:

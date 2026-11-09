@@ -1,17 +1,17 @@
 # 04 — Upstream Source Governance
 
-## Candidate repositories
+## Audited repositories (Status: 2026-11-09)
 
-| Alias | URL | Intended role | Initial disposition |
-|---|---|---|---|
-| openwrt | https://github.com/openwrt/openwrt | Mainline base | Audit |
-| immortalwrt | https://github.com/immortalwrt/immortalwrt | Distribution base | Audit |
-| zcop | https://github.com/zcop/immortalwrt | CR881x/YT921x reference | Priority audit |
-| kuncy7-nss-edma | https://github.com/kuncy7/openwrt-nss-edma | NSS integration | Priority audit |
-| kuncy7-nss-packages | https://github.com/kuncy7/nss-packages | NSS packages/drivers | Priority audit |
-| fanha99-cr8806 | https://github.com/fanha99/openwrt-xiaomi-cr8806-nss | CR8806 reference only | Reference |
-| hzyitc | https://github.com/hzyitc/openwrt-redmi-ax3000 | Legacy IPQ50xx reference | Reference |
-| marchmin-zcop | https://github.com/marchmin/immortalwrt-zcop | YT9215 register reference | Reference |
+| Alias | URL | Audited Commit | Role | Disposition |
+|---|---|---|---|---|
+| zcop | https://github.com/zcop/immortalwrt | `c5ad88b` | CR881x Board DTS & YT9215S DSA Driver | **Primary Hardware Reference** |
+| kuncy7-nss-packages | https://github.com/kuncy7/nss-packages | `c94a780` | NSS Firmware & Drivers Feed | Priority NSS Reference |
+| kuncy7-nss-edma | https://github.com/kuncy7/openwrt-nss-edma | `047ee4c` | stmmac claim API & 256M tuning | Architectural Reference Only |
+| openwrt | https://github.com/openwrt/openwrt | `dd72c4c` | Upstream Mainline Baseline | Upstream Comparison Base |
+| immortalwrt | https://github.com/immortalwrt/immortalwrt | `4765b65` | Distribution Base | Distribution Upstream |
+| fanha99-cr8806 | https://github.com/fanha99/openwrt-xiaomi-cr8806-nss | `1469a4a` | CR8806 reference | Incompatible (QCA8337) |
+| hzyitc | https://github.com/hzyitc/openwrt-redmi-ax3000 | `6faaa15` | Legacy IPQ50xx (Kernel 5.15) | Superseded |
+| marchmin-zcop | https://github.com/marchmin/immortalwrt-zcop | `7740308` | YT9215 register archive | Superseded |
 
 URLs, branch names and repository availability must be verified during P1. Do not invent commit IDs.
 

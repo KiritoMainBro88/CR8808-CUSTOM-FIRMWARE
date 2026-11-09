@@ -19,8 +19,8 @@
 | Firmware | Xiaomi RA82 v1.4.31 | REPORTED_UNVERIFIED |
 | Kernel | Linux 4.4.60 | REPORTED_UNVERIFIED |
 | Wi-Fi | 5 GHz HE160, channel 40 | REPORTED_UNVERIFIED |
-| Router IP | 192.168.31.1 | REPORTED_UNVERIFIED |
-| PC IP | 192.168.31.106 | REPORTED_UNVERIFIED |
+| Router IP | Default gateway (e.g. 192.168.x.1) | REPORTED_UNVERIFIED; redacted in public docs |
+| PC IP | Local test client (e.g. 192.168.x.y) | REPORTED_UNVERIFIED; redacted in public docs |
 
 ## Read-only evidence required later
 Only under a separately approved read-only task:

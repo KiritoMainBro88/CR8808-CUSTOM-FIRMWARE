@@ -20,8 +20,8 @@ This report delivers the empirical findings of Phase P0 (Safe Repository Setup) 
 2. **Workstation Readiness (`MEASURED`):** The Windows 11 host (16 physical cores / 24 logical threads @ Intel Core i7-14650HX, 32 GB RAM, 635.86 GB free storage on build volume `D:`) provides ample compute capacity. WSL2 with Ubuntu 22.04.5 LTS is installed and verified. Basic user utilities are present, but core build toolchains (`build-essential`, `make`, `gcc`, `unzip`) are not yet installed in WSL2 (per strict non-installation rules).
 3. **Upstream Source Identification (`SOURCE_VERIFIED`):**
    - **Mainline OpenWrt & ImmortalWrt (`openwrt/openwrt`, `immortalwrt/immortalwrt`):** Both support the Qualcomm IPQ50xx target (`qualcommax/ipq50xx`) on Linux kernel 6.18 and have merged backport patches for the Motorcomm YT921x DSA switch driver (`target/linux/generic/backport-6.18/967-*.patch`). However, **neither repository contains device profiles, DTS files, or partition definitions for Xiaomi CR881x / CR8808 Ver.B**.
-   - **CR8806 NSS Trees (`kuncy7/openwrt-nss-edma`, `fanha99/openwrt-xiaomi-cr8806-nss`):** These trees demonstrate mature Qualcomm NSS acceleration on Linux 6.18 with upstream `stmmac`. However, their device tree (`ipq5018-cr880x.dtsi`) hardcodes the **Qualcomm QCA8337** switch at MDIO `0x17`. **Flashing these images onto CR8808 Ver.B will cause complete Ethernet link failure (dead WAN and LAN ports) because CR8808 Ver.B employs a Motorcomm YT9215SC switch requiring GPIO 39 reset/power and MDIO 0x1d.**
-   - **CR881x Board & Switch Reference (`zcop/immortalwrt`):** This is the **only audited repository with dedicated support for Xiaomi CR881x** on Linux kernel 6.18.60. It integrates the custom `motorcomm,yt9215-enhanced` DSA driver (`yt921x_driver.ko`), precise DTS pinmuxing (GPIO 39 power/reset, GPIO 36/37 MDIO), and has verified native NSS offload reaching 936 Mbps routed IPv4 TCP with ~98% CPU idle.
+   - **CR8806 NSS Trees (`kuncy7/openwrt-nss-edma`, `fanha99/openwrt-xiaomi-cr8806-nss`):** These trees demonstrate mature Qualcomm NSS acceleration on Linux 6.18 with upstream `stmmac`. However, their device tree (`ipq5018-cr880x.dtsi`) hardcodes the **Qualcomm QCA8337** switch at MDIO `0x17`. **Flashing these images onto CR8808 Ver.B will cause complete Ethernet link failure (dead WAN and LAN ports) because CR8808 Ver.B employs a Motorcomm YT9215S/SC switch (suffix UNKNOWN / REPORTED_UNVERIFIED) requiring GPIO 39 reset (LDO power INFERRED) and MDIO 0x1d.**
+   - **CR881x Board & Switch Reference (`zcop/immortalwrt`):** This is the **only audited repository with dedicated support for Xiaomi CR881x** on Linux kernel 6.18.60. It integrates the custom `motorcomm,yt9215-enhanced` DSA driver (`yt921x_driver.ko`), precise DTS pinmuxing (GPIO 39 reset, GPIO 36/37 MDIO), and has verified native NSS offload reaching 936 Mbps routed IPv4 TCP with ~98% CPU idle.
 4. **256 MB RAM Constraint (`SOURCE_VERIFIED`):** Qualcomm IPQ5018 with ath11k and NSS offload easily encounters out-of-memory crashes on 256 MB RAM devices if configured with 512 MB profile defaults. To guarantee bootability and stability, the build must enforce `ATH11K_MEM_PROFILE_256M`, `NSS_MEM_PROFILE_LOW`, and limit NSS reserved memory to 8–16 MiB.
 5. **Phase Gate Disposition:** The repository is safely initialized on Git branch `develop`. All upstream candidates are audited. **Progression to Phase P2 requires Architecture Lead review and explicit User approval.**
 
@@ -228,8 +228,8 @@ All 8 candidate repositories specified in `manifests/sources.yaml` were audited 
 |---|---|---|---|---|---|
 | **SoC / CPU** | Qualcomm IPQ5018 (Dual-Core Cortex-A53 @ 1.0 GHz) | Supported (`qualcommax/ipq50xx`) | Supported (`qualcommax/ipq50xx`) | Supported (`qualcommax/ipq50xx`) | **Compatible** across modern trees |
 | **Physical RAM** | 256 MB DDR3L (182 MB usable) | Default configs tune for 512M | Documented 256M profile | Configured for 256M profile | **Strict 256M configs required** |
-| **Ethernet Switch** | **Motorcomm YT9215SC** (SGMII, 4x GE user ports) | Driver backported, but no board wiring | **INCOMPATIBLE** (targets QCA8337 @ 0x17) | **COMPATIBLE** (`motorcomm,yt9215-enhanced` @ 0x1d) | **Only zcop supports this switch wiring** |
-| **Switch Reset / Power** | GPIO 39 (LDO / Reset), GPIO 36/37 (MDIO) | Not mapped for CR881x | Not mapped | Fully mapped in `ipq5018-cr881x.dts` | **Critical for cold-boot switch probe** |
+| **Ethernet Switch** | **Motorcomm YT9215S/SC** (suffix UNKNOWN, internal PHY ID 0x004dd0c0, MDIO 0x1d) | Driver backported, but no board wiring | **INCOMPATIBLE** (targets QCA8337 @ 0x17) | **COMPATIBLE** (`motorcomm,yt9215-enhanced` @ 0x1d) | **Only zcop supports this switch wiring** |
+| **Switch Reset / Power** | GPIO 39 (Reset in DTS; LDO power INFERRED), GPIO 36/37 (MDIO) | Not mapped for CR881x | Not mapped | Fully mapped in `ipq5018-cr881x.dts` | **Critical for cold-boot switch probe** |
 | **Wi-Fi 2.4 GHz** | Integrated IPQ5018 (2x2 802.11ax) | Supported in `ath11k` | Supported in `ath11k` | Supported in `ath11k` | **Compatible** |
 | **Wi-Fi 5 GHz** | Qualcomm QCN6102/QCN6122 (2x2 HE160) | Supported in `ath11k` | Supported in `ath11k` | Supported in `ath11k` | **Compatible** (Requires BDF from board) |
 | **Flash / NAND** | Winbond W25N01GWZEIG (128 MB SPI NAND) | Standard SPI-NAND driver | Dual UBI layout for CR8806 | Dual UBI layout for CR881x | **Compatible partition layout** |
@@ -318,7 +318,7 @@ pie title CR8808 Ver.B Physical RAM Allocation (256 MB)
 3. **Userspace Services:** Must omit heavy packages (e.g., Samba, Docker, full Python).
 4. **WireGuard Footprint:**
    - Go WireGuard (`wireguard-go`): `VmSize = 522.7 MB`, physical `VmRSS = 3.7 MB`, 10 OS threads.
-   - BoringTun Rust: `VmSize = 9.6 MB`, physical `VmRSS = 3.7 MB`, 3 OS threads (proven on device in lab tests). BoringTun is significantly safer against Linux OOM killer invocation.
+   - BoringTun Rust: `VmSize = 9.6 MB`, physical `VmRSS = 3.7 MB`, 3 OS threads (proven on device in lab tests). While BoringTun dramatically reduces virtual address allocation (VmSize 9.6 MB vs 522.7 MB), physical resident memory (VmRSS) was identical at ~3.7 MB in baseline tests; true memory safety under load requires measuring peak RSS, buffer churn, and soak testing.
 
 ---
 
@@ -350,7 +350,7 @@ pie title CR8808 Ver.B Physical RAM Allocation (256 MB)
 ### 11.3 Blocked Items
 - **P1-005 (ChatGPT Architecture Review):** Blocked pending delivery and review of this report.
 - **P2-001 (Router Baseline Readback):** Blocked until Architecture Lead approves the exact read-only command list.
-- **Flashing / NAND Writes:** **PERMANENTLY BLOCKED (`NO-GO`).**
+- **Flashing / NAND Writes:** **NO-GO pending independent recovery validation.**
 
 ---
 
@@ -362,7 +362,7 @@ Adopt **`zcop/immortalwrt` as the primary integration reference** for the CR881x
 ### Alternatives Considered:
 - **Alternative A (Pure OpenWrt Mainline without NSS):** Fork `openwrt/openwrt` main, import only the CR881x DTS and YT9215x DSA driver from `zcop`. Run standard Linux kernel forwarding (no NSS offload).
   - *Pros:* Cleanest code provenance, lowest RAM usage, standard upstream maintenance.
-  - *Cons:* CPU load reaches 70–90% under full Gigabit NAT; cannot achieve the ~98% idle performance offered by NSS.
+  - *Cons:* CPU load estimated around 70–90% under full Gigabit NAT (INFERRED / THEORETICAL ESTIMATE); cannot achieve the ~98% idle performance offered by NSS.
 - **Alternative B (Direct Flash of CR8806 Firmware):**
   - *Verdict:* **STRICTLY REJECTED.** Guaranteed loss of all Ethernet connectivity due to hardware switch mismatch.
 
