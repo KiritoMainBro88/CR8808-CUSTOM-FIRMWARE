@@ -6,7 +6,7 @@
 - **Primary Operational Constraint:** **Operator has NO UART serial console and NO external hardware programmer.**
 - **Architecture Lead Decision:** **`NO-GO on flashing pending independent recovery validation`**
 - **Status:** Authoritative Pre-P2 Reference Specification
-- **Revision:** Round 4 Review (Strict Demarcation of Unverified Bootloader Behavior & No-Flash Policy)
+- **Revision:** Round 5 Review (Evidence Status Harmonization for TFTP Flash Behavior & Reaffirmation of Strict No-Flash Policy)
 
 ---
 
@@ -17,7 +17,7 @@ The project owner depends on this physical router for daily workstation Internet
 > [!CAUTION]
 > In firmware engineering, **dual-boot A/B layout is NOT an automatic anti-brick guarantee**. If an untested firmware image initializes the bootloader environment incorrectly, fails to deassert switch reset (GPIO 39), encounters an early kernel panic before the watchdog timer starts, or corrupts boot flags, the device becomes inaccessible over Ethernet/Wi-Fi and is bricked.
 >
-> Furthermore, **stock Xiaomi U-Boot's TFTP recovery mode flashes received images directly into physical NAND**; it does not provide an interactive RAM-only netboot without a soldered UART console.
+> Furthermore, based on community reports across Xiaomi IPQ50xx devices, **stock Xiaomi U-Boot's TFTP recovery mode flashes received images directly into physical NAND** (`REPORTED_UNVERIFIED` pending packet capture); it does not provide an interactive RAM-only netboot without a soldered UART console.
 >
 > Therefore, **an absolute `NO-GO` on firmware flashing is in effect until a verifiable, non-UART recovery path is independently validated.**
 
@@ -73,8 +73,8 @@ Stock Xiaomi U-Boot does **NOT** use generic upstream U-Boot variables like `boo
 Stock Xiaomi routers include a TFTP client in U-Boot triggered by holding the reset button during power-on:
 1. U-Boot assigns the router a static IP (typically `192.168.31.1`).
 2. U-Boot sends TFTP requests to a host at `192.168.31.100` (or `192.168.31.2`) requesting a specific recovery filename (e.g. `test.bin` or `firmware.bin`).
-3. **CRITICAL REALITY:** Once the file is fetched into RAM, **stock U-Boot automatically writes the image into physical NAND flash**.
-4. Stock U-Boot does **NOT** execute a non-persistent RAM-only boot from this recovery mechanism.
+3. **CRITICAL REPORTED REALITY (`REPORTED_UNVERIFIED`):** Once the file is fetched into RAM, community reports across IPQ50xx devices indicate **stock U-Boot automatically writes the image into physical NAND flash** rather than staging a non-persistent RAM-only boot.
+4. This behavior is classified strictly as `REPORTED_UNVERIFIED` until on-device packet capture or UART capture is executed on this specific unit.
 
 ### 3.2 Non-UART Risk Analysis
 Without a soldered UART console:

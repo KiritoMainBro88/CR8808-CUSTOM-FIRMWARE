@@ -6,20 +6,20 @@
 - **Target Platform:** OpenWrt Clean DSA Baseline (Linux 6.18, `qualcommax/ipq50xx`, AArch64 userspace)
 - **Architecture Lead Decision:** Phase 1 Baseline — Pure Upstream stmmac DSA without NSS
 - **Status:** Approved Baseline Architecture Specification
-- **Revision:** Round 4 Review (Separation of stmmac from NSS Datapath, Single-Conduit Architecture, and Issue #5 Critical Analysis)
+- **Revision:** Round 5 Review (Linux 6.18 Backported Upstream DSA Driver Paths, Logical GMAC Naming, and DT Aliases)
 
 ---
 
 ## 1. Architectural Motivation & Strict Scope Separation
 
-In accordance with the **Architecture Gate G1 Final Review & Round 4 Consistency Audit**, the initial custom firmware baseline (Phase 1) is strictly defined as a **pure upstream Linux Distributed Switch Architecture (DSA) operating on modern Linux 6.18 with Synopsys DesignWare MAC (`stmmac`), completely free of Qualcomm NSS Datapath (`qcom,nss-dp`) and NSS firmware**.
+In accordance with the **Architecture Gate G1 Final Review & Round 5 Consistency Audit**, the initial custom firmware baseline (Phase 1) is strictly defined as a **Linux Distributed Switch Architecture (DSA) operating on Linux 6.18 with Synopsys DesignWare MAC (`stmmac`), using an upstream-derived backport of the Linux 6.19 Motorcomm driver (`drivers/net/dsa/yt921x.c` and `net/dsa/tag_yt921x.c`), completely free of Qualcomm NSS Datapath (`qcom,nss-dp`) and NSS firmware**.
 
 ```mermaid
 flowchart TD
     subgraph "Phase 1: Clean DSA Baseline (CURRENT GOAL)"
         P1_MAC["Synopsys DesignWare MAC (stmmac / dwmac-ipq5018)"]
-        P1_CONDUIT["Single CPU Conduit: GMAC1 (eth1) over SGMII 1000M to Port 8"]
-        P1_DSA["Upstream Linux DSA Core (net/dsa/) + Motorcomm yt9215.c"]
+        P1_CONDUIT["Single CPU Conduit: GMAC1 (conduit netdev) over SGMII 1000M to Port 8"]
+        P1_DSA["DSA Core (net/dsa/) + Motorcomm yt921x.c (backported from 6.19)"]
         P1_PORTS["DSA Slave Netdevs: lan1 (P0), lan2 (P1), lan3 (P2), wan (P3)"]
         P1_OFFLOAD["Linux In-Kernel Software Flowtable (nftables flow_offload)"]
         P1_MEM["Zero NSS Reservation (~182 MB usable RAM for Linux)"]
@@ -28,7 +28,7 @@ flowchart TD
 
     subgraph "Phase 2: Qualcomm NSS Datapath (EXPERIMENTAL POST-BASELINE)"
         P2_DP["Qualcomm NSS Datapath (qcom,nss-dp / qca-nss-dp.ko)"]
-        P2_CONDUIT["Dual CPU Conduit: dp2 (Port 8 SGMII) + dp1 (Port 4 Internal GE PHY)"]
+        P2_CONDUIT["Dual CPU Conduit: dp2 (GMAC1 Port 8 SGMII) + dp1 (GMAC0 Port 4 Internal GE PHY)"]
         P2_TAG["Out-of-Tree Enhanced DSA Tagger (tag_yt921x_enhanced.c)"]
         P2_NSS["Qualcomm NSS NPU Firmware (retail_router0.bin @ 1 GHz)"]
         P2_ECM["Enhanced Connection Manager (qca-nss-ecm.ko)"]
@@ -39,7 +39,7 @@ flowchart TD
 
 ### Key Architectural Rules:
 1. **Zero NSS Datapath in Phase 1:** Phase 1 does NOT use `qcom,nss-dp`, does NOT declare `dp1` or `dp2`, does NOT load `qca-nss-drv.ko` or `qca-nss-ecm.ko`, and does NOT allocate the NSS DRAM memory region (`cr881x_nss_region`).
-2. **Upstream MAC Ownership:** Hardware GMAC1 is owned strictly by the Synopsys DesignWare MAC driver (`dwmac-ipq5018` / `stmmac`), registering standard Linux netdev `eth1`.
+2. **Upstream MAC Ownership & Logical Hardware Naming:** Hardware GMAC1 is owned strictly by the Synopsys DesignWare MAC driver (`dwmac-ipq5018` / `stmmac`). Netdev naming depends on the Device Tree `aliases` node (e.g. `ethernet1 = &gmac1;` yields `eth1`). Architectural specifications reference hardware controllers logically as **GMAC0** and **GMAC1**, and switch interfaces as **Port 4** and **Port 8** to avoid hardcoded interface assumptions.
 3. **Isolation of Confounding Variables:** By validating the switch, PHY, wireless subsystem, and userspace software on upstream `stmmac` first, any hardware issues (such as switch reset timing or SerDes negotiation) can be debugged without interference from NSS firmware IPC or NPU ring buffer panics.
 
 ---
@@ -50,7 +50,7 @@ flowchart TD
 graph TD
     subgraph "Qualcomm IPQ5018 SoC (AArch64 musl)"
         CPU["Dual-Core Cortex-A53 @ 1.0 GHz"]
-        GMAC1["GMAC1 (dwmac-ipq5018 / stmmac -> netdev eth1)"]
+        GMAC1["GMAC1 (dwmac-ipq5018 / stmmac -> netdev conduit, e.g. eth1)"]
         GMAC0["GMAC0 (Disabled / Unbound in Phase 1 Single-Conduit)"]
         TLMM["TLMM GPIO Controller (GPIO 36/37 MDIO, GPIO 39 Reset)"]
         WIFI0["AHB wifi0 (IPQ5018 Integrated 2.4 GHz 11ax)"]
@@ -109,7 +109,7 @@ In pure upstream DSA without secondary conduits:
    - The Linux network stack ensures 100% layer-2 and layer-3 isolation between WAN and LAN.
 
 #### Driver Parser & Property Reality:
-- In upstream Linux 6.19+ DSA (`drivers/net/dsa/motorcomm/yt9215.c`), standard DSA tag operations apply.
+- In upstream Linux 6.19+ DSA (and our Linux 6.18 backport: `drivers/net/dsa/yt921x.c` and `net/dsa/tag_yt921x.c`), standard DSA tag operations apply.
 - The custom property `motorcomm,secondary-conduit-user-mask = <0x8>` is parsed **ONLY** by `zcop`'s out-of-tree enhanced driver (`tag_yt921x_enhanced.c`). Upstream Linux DSA ignores or rejects this property. Phase 1 relies strictly on standard upstream single-conduit tagging.
 
 ---

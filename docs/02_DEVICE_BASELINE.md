@@ -4,7 +4,7 @@
 - **Project:** `CR8808-CUSTOM-FIRMWARE` (v0.1.0-dev.2)
 - **Target Hardware:** Xiaomi CR8808 Ver.B (Codename `CR8818`, Qualcomm IPQ5018 dual-core Cortex-A53 + Motorcomm YT9215S/SC)
 - **Status:** Authoritative Hardware Evidence Register
-- **Revision:** Round 4 Review (Hardware Identity Readback & Performance Metric Categorization)
+- **Revision:** Round 5 Review (Hardware Disambiguation Matrix: CR8806 vs. CR8818 and Wi-Fi Silicon Demarcation)
 
 ---
 
@@ -16,6 +16,23 @@
 - **Important Hardware Distinction:**
   - Do NOT conflate the commercial product name (CR8808 Ver.B) with the CR8806 (which uses Qualcomm QCA8337 switch at MDIO `0x17`).
   - Do NOT assume all CR881x variants share identical board revisions; the switch on this device is Motorcomm YT9215 at MDIO address `0x1d`.
+
+### 1.1 Strict Hardware Disambiguation: Xiaomi CR8806 vs. Xiaomi CR8808 Ver.B (CR8818)
+
+| Hardware Dimension | Xiaomi CR8806 (Codename M79) | Xiaomi CR8808 Ver.B (Codename `CR8818`) |
+|---|---|---|
+| **Commercial Target** | Xiaomi CR8806 / China Unicom M79 | Xiaomi CR8808 Ver.B / China Mobile |
+| **Internal Model ID** | `CR8806` | **`CR8818`** (`DEVICE_READBACK`) |
+| **Board Profile String** | `ap-mp03.1` (or vendor M79) | **`ap-mp03.3`** (`DEVICE_READBACK`) |
+| **SoC** | Qualcomm IPQ5018 (Dual-core A53 @ 1.0 GHz) | Qualcomm IPQ5018 (Dual-core A53 @ 1.0 GHz) |
+| **Physical RAM / Flash** | 256 MB DDR3L / 128 MB SPI NAND | 256 MB DDR3L / 128 MB SPI NAND |
+| **Ethernet Switch IC** | **Qualcomm QCA8337** | **Motorcomm YT9215S / YT9215SC** |
+| **Switch Driver** | Upstream `drivers/net/dsa/qca/qca8k.c` | Backported `drivers/net/dsa/yt921x.c` |
+| **Switch MDIO Address** | **`0x17`** | **`0x1d`** |
+| **5 GHz Wi-Fi Radio** | Qualcomm QCN6102 (HE160) | Qualcomm QCN6102 (HE160) |
+| **Community Reference** | `fanha99/openwrt-xiaomi-cr8806-nss` | `zcop/immortalwrt` (CR881x DTS) |
+| **Cross-Flash Consequence** | N/A | **FATAL ETHERNET FAILURE:** Device will boot with no working Ethernet ports because the kernel seeks QCA8337 at MDIO `0x17` rather than YT9215 at MDIO `0x1d`. |
+| **Engineering Mandate** | Reference for IPQ5018 SoC only | **NEVER flash CR8806 firmware to CR8818 hardware!** |
 
 ---
 
