@@ -2,21 +2,26 @@
 
 - Version: `0.1.0-dev.2`
 - Date: 2026-11-09
-- Phase: P0 / P1 Discovery
-- Overall status: `IN_PROGRESS`
+- Phase: P0 / P1 Discovery (Completed, awaiting Gate G1 Review)
+- Overall status: `GATE_G1_REVIEW_PENDING`
 - Flash authorization: `NO-GO`
-- Final base platform: `NOT_SELECTED`
-- Upstream revisions: `NOT_PINNED`
+- Final base platform: `NOT_SELECTED` (Recommendation: `zcop/immortalwrt` reference)
+- Upstream revisions: `AUDITED` (See `reports/2026-11-09/G1_DISCOVERY_REPORT.md`)
 - Firmware build: `NOT_STARTED`
 - Hardware validation: `NOT_STARTED`
 
 ## Confirmed
-- Owner identifies the physical device as Xiaomi CR8808 Ver.B.
-- Owner wants to preserve the current LAN/Internet connection during development.
-- Owner does not have UART and cannot independently recover a bricked router.
-- Existing lab workspace `D:\vibecode\test_wifi` must be preserved.
+- Owner identifies the physical device as Xiaomi CR8808 Ver.B — `OWNER_CONFIRMED`.
+- Owner wants to preserve the current LAN/Internet connection during development — `OWNER_CONFIRMED`.
+- Owner does not have UART and cannot independently recover a bricked router — `OWNER_CONFIRMED`.
+- Existing lab workspace `D:\vibecode\test_wifi` preserved and untouched — `MEASURED`.
+- Project workspace safely initialized at `D:\vibecode\CR8808-CUSTOM-FIRMWARE` on Git branch `develop` (initial commit `f0b1b09`) — `MEASURED`.
+- Workstation audited: Windows 11 Pro 10.0.26300, 16C/24T i7-14650HX, 32GB RAM, 635GB free on D:, WSL2 Ubuntu 22.04.5 LTS — `MEASURED`.
+- Upstream sources audited: 8 candidate repositories verified via `git ls-remote` and GitHub API — `SOURCE_VERIFIED`.
+- CR8806 firmware incompatibility verified: hardcodes QCA8337 switch at MDIO 0x17, incompatible with CR8808 Ver.B's Motorcomm YT9215SC switch — `SOURCE_VERIFIED`.
+- CR881x board and YT9215S enhanced switch DSA driver found active in `zcop/immortalwrt` on kernel 6.18.60 — `SOURCE_VERIFIED`.
 
-## Reported but not re-verified
+## Reported but not re-verified on-device
 - Internal model string `CR8818`.
 - Board string `ap-mp03.3`.
 - Qualcomm IPQ5018.
@@ -27,11 +32,9 @@
 - Xiaomi RA82 v1.4.31 and Linux 4.4.60.
 
 ## Current blockers
-1. No verified recovery path independent of UART.
-2. Exact board/switch/radio identification must be revalidated.
-3. No source compatibility audit completed.
-4. No base platform selected.
-5. No feature-parity inventory completed.
+1. No verified recovery path independent of UART (Permanent constraint).
+2. Base platform selection and pinning pending ChatGPT Architecture Review (Gate G1 / P1-005).
+3. Read-only router baseline verification pending explicit Class R0 authorization (P2-001).
 
-## Update rule
-Only update this file when a task has evidence. Add date, evidence reference and author to every status transition.
+## Status Transition Log
+- 2026-11-09: Phase P0 (P0-001, P0-002) and P1 (P1-001 through P1-004) completed. Deliverable `reports/2026-11-09/G1_DISCOVERY_REPORT.md` and raw evidence saved under `reports/2026-11-09/evidence/`. Author: Gemini (Implementation Lead).

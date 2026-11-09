@@ -1,0 +1,27 @@
+{
+  "windows_os": {
+    "Caption": "Microsoft Windows 11 Pro",
+    "Version": "10.0.26300",
+    "BuildNumber": "26300",
+    "FreePhysicalMemory": 11535200,
+    "TotalVisibleMemorySize": 33324920
+  },
+  "cpu": {
+    "Name": "Intel(R) Core(TM) i7-14650HX",
+    "NumberOfCores": 16,
+    "NumberOfLogicalProcessors": 24
+  },
+  "disks": [
+    {
+      "Name": "D",
+      "Free": 682745282560,
+      "Used": 1317652508672
+    },
+    {
+      "Name": "C",
+      "Free": 43978584064,
+      "Used": 464590209024
+    }
+  ],
+  "wsl_kernel": "Linux DESKTOP-FH9EA4D 6.6.87.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux"
+}
