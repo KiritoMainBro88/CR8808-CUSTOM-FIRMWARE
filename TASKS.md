@@ -10,7 +10,8 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P1-002 | Audit upstream repositories, licenses, branches and commits | P1 | DONE | Gemini | P0-002 |
 | P1-003 | Inspect CR881x/CR8808 target, DTS, switch and NSS source support | P1 | DONE | Gemini | P1-002 |
 | P1-004 | Produce source/hardware compatibility report | P1 | DONE | Gemini | P1-001..003 |
-| P1-005 | ChatGPT architecture review and base-platform decision | P1/P2 | BLOCKED | ChatGPT + User | P1-004 |
+| P1-GH | GitHub repository integration, security audit and remote push | P1 | DONE | Gemini | P1-004 |
+| P1-005 | ChatGPT architecture review and base-platform decision | P1/P2 | BLOCKED | ChatGPT + User | P1-004, P1-GH |
 | P2-001 | Re-audit router baseline using approved read-only commands | P2 | BLOCKED | Gemini | P1-005 + explicit approval |
 | P2-002 | Create feature parity inventory against RA82 | P2 | NOT_STARTED | Gemini | Router evidence |
 | P2-003 | Select base and integration strategy | P2 | BLOCKED | ChatGPT + User | P1-004, P2-001 |
@@ -21,4 +22,4 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P6-001 | Release candidate and deployment decision | P6 | BLOCKED | User | All gates |
 
 ## Current instruction
-Phase P0 and P1 tasks (P0-001 through P1-004) are complete. Deliverable produced at `reports/2026-11-09/G1_DISCOVERY_REPORT.md`. P1-005 is BLOCKED awaiting ChatGPT Architecture Lead review. Gemini execution stopped.
+Phase P0, P1, and GitHub Integration tasks are complete. Deliverables produced at `reports/2026-11-09/G1_DISCOVERY_REPORT.md` and `reports/2026-11-09/GITHUB_INTEGRATION_REPORT.md`. Both `main` and `develop` branches are verified live on GitHub remote `KiritoMainBro88/CR8808-CUSTOM-FIRMWARE`. P1-005 is BLOCKED awaiting ChatGPT Architecture Lead review. Gemini execution stopped.

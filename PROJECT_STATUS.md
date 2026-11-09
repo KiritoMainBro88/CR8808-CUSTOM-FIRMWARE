@@ -2,8 +2,9 @@
 
 - Version: `0.1.0-dev.2`
 - Date: 2026-11-09
-- Phase: P0 / P1 Discovery (Completed, awaiting Gate G1 Review)
+- Phase: P0 / P1 Discovery & GitHub Integration (Completed, awaiting Gate G1 Review)
 - Overall status: `GATE_G1_REVIEW_PENDING`
+- GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active: `main`, `develop`)
 - Flash authorization: `NO-GO`
 - Final base platform: `NOT_SELECTED` (Recommendation: `zcop/immortalwrt` reference)
 - Upstream revisions: `AUDITED` (See `reports/2026-11-09/G1_DISCOVERY_REPORT.md`)
@@ -15,7 +16,8 @@
 - Owner wants to preserve the current LAN/Internet connection during development — `OWNER_CONFIRMED`.
 - Owner does not have UART and cannot independently recover a bricked router — `OWNER_CONFIRMED`.
 - Existing lab workspace `D:\vibecode\test_wifi` preserved and untouched — `MEASURED`.
-- Project workspace safely initialized at `D:\vibecode\CR8808-CUSTOM-FIRMWARE` on Git branch `develop` (initial commit `f0b1b09`) — `MEASURED`.
+- Project workspace safely initialized at `D:\vibecode\CR8808-CUSTOM-FIRMWARE` on Git branches `main` and `develop` — `MEASURED`.
+- GitHub repository synchronized: `main` and `develop` branches published and verified on remote — `SOURCE_VERIFIED`.
 - Workstation audited: Windows 11 Pro 10.0.26300, 16C/24T i7-14650HX, 32GB RAM, 635GB free on D:, WSL2 Ubuntu 22.04.5 LTS — `MEASURED`.
 - Upstream sources audited: 8 candidate repositories verified via `git ls-remote` and GitHub API — `SOURCE_VERIFIED`.
 - CR8806 firmware incompatibility verified: hardcodes QCA8337 switch at MDIO 0x17, incompatible with CR8808 Ver.B's Motorcomm YT9215SC switch — `SOURCE_VERIFIED`.
@@ -38,3 +40,4 @@
 
 ## Status Transition Log
 - 2026-11-09: Phase P0 (P0-001, P0-002) and P1 (P1-001 through P1-004) completed. Deliverable `reports/2026-11-09/G1_DISCOVERY_REPORT.md` and raw evidence saved under `reports/2026-11-09/evidence/`. Author: Gemini (Implementation Lead).
+- 2026-11-09: GitHub integration task completed. Public security scan executed and passed. `origin` configured to `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE.git`. Pushed `main` and `develop`. Report generated at `reports/2026-11-09/GITHUB_INTEGRATION_REPORT.md`. Author: Gemini (Implementation Lead).
