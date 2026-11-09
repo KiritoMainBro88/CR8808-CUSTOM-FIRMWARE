@@ -23,5 +23,5 @@
       "Used": 464590209024
     }
   ],
-  "wsl_kernel": "Linux DESKTOP-FH9EA4D 6.6.87.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux"
+  "wsl_kernel": "Linux [REDACTED_BUILD_HOST] 6.6.87.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux"
 }

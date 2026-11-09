@@ -26,3 +26,11 @@ id_ed25519
 Thumbs.db
 *.swp
 *.swo
+*.log
+*.pcap
+*credentials*
+*token*
+*.crt
+*.ovpn
+*.conf.bak
+scratch/

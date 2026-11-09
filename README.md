@@ -79,7 +79,18 @@ CR8808-CUSTOM-FIRMWARE/
 └── upstream/
 ```
 
-## 5. Current project truth
+## 5. Mô hình phân nhánh & Quản trị Git
+
+Dự án duy trì kho mã nguồn chính thức tại:
+`https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE`
+
+- **`main`**: Nhánh phiên bản ổn định, đã qua kiểm định nghiêm ngặt và nghiệm thu. Không commit trực tiếp vào `main`.
+- **`develop`**: Nhánh tích hợp chính. Mọi tài liệu discovery, patch phần cứng và tính năng mới được tích hợp tại đây trước khi phát hành.
+- **`feature/<tên>`**: Nhánh phát triển tính năng độc lập.
+- **`research/<tên>`**: Nhánh nghiên cứu upstream và benchmark.
+- **Nguyên tắc tích hợp Upstream**: Khi các nguồn upstream (`kuncy7`, `zcop`, `openwrt`) có cập nhật mới, không merge đè toàn bộ source. Đánh giá commit, cherry-pick có kiểm soát, chạy regression test và ghi nhận xuất xứ rõ ràng trong `manifests/sources.lock.yaml`.
+
+## 6. Current project truth
 
 - Physical product name `Xiaomi CR8808 Ver.B`: owner-confirmed.
 - `CR8818`, `ap-mp03.3`, IPQ5018, YT9215S/SC, QCN6102, NAND model, kernel and RA82 build details are prior audit claims until re-read from the device or verified against authoritative source.

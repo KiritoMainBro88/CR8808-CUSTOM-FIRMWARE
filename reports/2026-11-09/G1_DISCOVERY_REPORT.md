@@ -391,7 +391,7 @@ Adopt **`zcop/immortalwrt` as the primary integration reference** for the CR881x
 | `marchmin_zcop` | `https://github.com/marchmin/immortalwrt-zcop` | `master` | `77403081b8cce8be2cafca548790c3c9d9ef3fa9` |
 
 ### 14.2 Raw Evidence Artifacts
-- **Host Audit JSON:** [reports/2026-11-09/evidence/raw_host_audit.json](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/2026-11-09/evidence/raw_host_audit.json)
-- **Upstream Repositories JSON:** [reports/2026-11-09/evidence/raw_upstream_audit.json](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/2026-11-09/evidence/raw_upstream_audit.json)
+- **Host Audit JSON:** [evidence/raw_host_audit.json](evidence/raw_host_audit.json)
+- **Upstream Repositories JSON:** [evidence/raw_upstream_audit.json](evidence/raw_upstream_audit.json)
 - **Zcop CR881x DTS Reference:** `target/linux/qualcommax/dts/ipq5018-cr881x.dts` in `zcop/immortalwrt@c5ad88b`
 - **Kuncy7 CR8806 Switch Incompatibility Evidence:** `target/linux/qualcommax/dts/ipq5018-cr880x.dtsi` in `kuncy7/openwrt-nss-edma@047ee4c`
