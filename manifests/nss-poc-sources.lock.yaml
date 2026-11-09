@@ -1,66 +1,78 @@
 schema_version: 1
-lock_status: LOCKED_FOR_PC_PROTOTYPE
+lock_status: SOURCE_LOCK_VERIFIED_M3
 target_device: xiaomi_cr8808_verb
 internal_model: CR8818
 board_profile: ap-mp03.3
-kernel_target: "6.18"
+kernel_target: "6.18.60"
 architecture_target: aarch64_cortex-a53
-created_at: "2026-11-09T23:59:00Z"
+created_at: "2026-11-10T00:45:00Z"
 author: "Gemini (Implementer / System Operator)"
 reviewer: "ChatGPT (Architecture Lead)"
+approval_status: "M3_SOURCE_AUDIT_VERIFIED"
 
 sources:
   yangfl_openwrt:
     url: "https://github.com/yangfl/openwrt"
-    branch: "master"
-    pinned_commit: "b230c2fbb5548200772a20546bdef17bb50a7d5f"
-    role: "authoritative_cr8818_dts_and_patches"
+    branch: "cr8818"
+    pinned_commit: "6729bbe9f082dc15449f17908832447caeec5065"
+    commit_date: "2025-09-14T02:19:28+08:00"
+    role: "authoritative_cr8818_dts_and_upstream_yt921x_patches"
+    verification_method: "git cat-file -e 6729bbe9f082dc15449f17908832447caeec5065^{commit}"
+    verification_status: "VERIFIED_EXISTS_ON_REMOTE"
+    audit_notes: "Reconciled from M1 (which incorrectly pointed to master/b230c2f). The authoritative CR8818 support resides on branch cr8818."
     components:
-      - "target/linux/qualcommax/files/arch/arm64/boot/dts/qcom/ipq5018-cr8818.dts"
-      - "target/linux/qualcommax/patches-6.18/940-net-dsa-yt921x-Abuse-SGMII-for-REVSGMII.patch"
-      - "net/dsa/tag_yt921x.c"
+      - "target/linux/qualcommax/dts/ipq5018-cr8818.dts"
+      - "target/linux/generic/backport-6.18/967-02-v6.19-net-dsa-tag-yt921x-add-support-for-Motorcomm-YT921x.patch"
+      - "target/linux/generic/backport-6.18/967-03-v6.19-net-dsa-yt921x-Add-support-for-Motorcomm-YT921x.patch"
     license: "GPL-2.0"
 
   kuncy7_nss_packages:
     url: "https://github.com/kuncy7/nss-packages"
     branch: "ipq50xx-rebase"
     pinned_commit: "c94a78031ddc7695b2b7a0c5b91421f7b032ed92"
+    commit_date: "2026-11-09T08:55:16Z"
     role: "nss_driver_feed_and_firmware"
+    verification_method: "git cat-file -e c94a78031ddc7695b2b7a0c5b91421f7b032ed92^{commit}"
+    verification_status: "VERIFIED_EXISTS_ON_REMOTE"
     components:
-      - "qca-dwmac-nss (stmmac shim driver)"
+      - "qca-nss-clients (stmmac shim driver & PPPoE offload)"
       - "qca-nss-drv (NPU communication driver)"
       - "qca-nss-ecm (Enhanced Connection Manager flow offload)"
-      - "qca-dsa-nss (NSS DSA integration module)"
-      - "qca-nss-fw-ipq50xx (firmware retail_router0.bin, NSS 12.5-210)"
+      - "nss-firmware (firmware retail_router0.bin, NSS 12.5-210)"
     license: "Mixed / Qualcomm Proprietary"
 
   kuncy7_openwrt_nss_edma:
     url: "https://github.com/kuncy7/openwrt-nss-edma"
     branch: "c3po-tag-8021q"
     pinned_commit: "047ee4cea18d66189b4f7adddbac76c2373658fb"
+    commit_date: "2026-11-08T19:24:25Z"
     role: "kernel_glue_and_low_memory_profile"
+    verification_method: "git cat-file -e 047ee4cea18d66189b4f7adddbac76c2373658fb^{commit}"
+    verification_status: "VERIFIED_EXISTS_ON_REMOTE"
     components:
-      - "0828-arm64-dts-ipq5018-adjust-coherent-pool.patch"
+      - "0828-arm64-dts-ipq5018-adjust-coherent-pool.patch (coherent_pool=512k)"
       - "NSS_MEM_PROFILE_LOW / MP_256 profile"
       - "ATH11K_MEM_PROFILE_256M=y"
-      - "dsa_tag_8021q_bridge_support"
     license: "GPL-2.0"
 
   zcop_immortalwrt:
     url: "https://github.com/zcop/immortalwrt"
     branch: "master"
     pinned_commit: "c5ad88b702dc2374c9d67141693cc06cce742dc8"
+    commit_date: "2026-11-08T18:46:18Z"
     role: "yt9215_switch_register_reference_and_dts"
+    verification_method: "git cat-file -e c5ad88b702dc2374c9d67141693cc06cce742dc8^{commit}"
+    verification_status: "VERIFIED_EXISTS_ON_REMOTE"
     components:
-      - "drivers/net/dsa/yt921x.c (Enhanced register definitions)"
-      - "net/dsa/tag_yt921x_enhanced.c"
-      - "Dual-conduit topology (Port 4 cpu2 eth0, Port 8 cpu1 eth1)"
-      - "GPIO 39 active-low switch reset sequence"
+      - "target/linux/generic/files/drivers/net/dsa/yt921x_8021q.c (4K VLAN register map)"
+      - "target/linux/generic/files/net/dsa/tag_yt921x_8021q.c (Linux 6.x tag_8021q tagger)"
+      - "target/linux/qualcommax/dts/ipq5018-cr881x-nss.dts (Dual-conduit qcom,nss-dp DTS)"
+      - "docs/yt921x/live/yt_regmap_live_cr881x_*.txt (Physical hardware register readbacks)"
     license: "GPL-2.0"
 
 toolchain:
   host_compiler: "gcc (MSYS2 / UCRT64 14.2.0)"
-  host_make: "GNU Make 4.4.1"
-  rust_compiler: "rustc 1.84+ (cargo)"
+  host_linux_compiler: "gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3)"
+  target_toolchain: "aarch64-linux-gnu-gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3)"
+  dtc_version: "DTC 1.6.1"
   wsl2_distro: "Ubuntu-22.04"
-  target_toolchain: "aarch64-linux-gnu-gcc (musl / glibc cross)"
