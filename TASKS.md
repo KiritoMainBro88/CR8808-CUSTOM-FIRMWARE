@@ -19,6 +19,7 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P1-REV5 | Gate G1 Round 5 corrections (Upstream 6.18 vs 6.19, 3-way NSS, Calibration, CR8806) | P1 | DONE | Gemini | P1-REV4 |
 | P1-REV5.1 | Gate G1 Round 5.1 corrections (yangfl audit, SerDes patch 940, caldata fix, governance) | P1 | DONE | Gemini | P1-REV5 |
 | P1-REV5.2 | Gate G1 Round 5.2 corrections (Exact cal paths, AHB bus, PCIe audit, Kuncy/zcop, NAND) | P1 | DONE | Gemini | P1-REV5.1 |
+| P2-NSS-RES | Qualcomm NSS Hardware Offload Porting Research (Phase A Source Audit & Phase B Feasibility) | P2 | DONE | Gemini | P1-REV5.2 |
 | P1-CLN | Git history cleanup application (Option 1 force-push) | P1 | BLOCKED | Product Owner | P1-REV5.2 dry-run approval |
 | P2-001 | Re-audit router baseline using approved Class R0 read-only commands | P2 | BLOCKED | Gemini | R0 Manifest approval |
 | P2-002 | Finalize feature parity inventory against on-device baseline | P2 | NOT_STARTED | Gemini | P2-001 |
@@ -30,14 +31,11 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P6-001 | Release candidate and deployment decision | P6 | BLOCKED | User | All gates |
 
 ## Current instruction
-Gate G1 Round 5.2 Architecture Corrections completed (`P1-REV5.2`). Branch `feature/g1-corrections-round5.2` created and synchronized. Deliverables updated & authored:
-- `reports/2026-11-09/G1_REVIEW_ROUND5_2.md` (Authoritative Round 5.2 deliverable)
-- `docs/CR8818_REFERENCE_IMPLEMENTATIONS.md` (Updated: 3-tier evidence classification, Kuncy CR8806 branding disambiguation vs CR8818, Kuncy NSS 12.5 buffer issue clarification, coherent_pool=512k profile)
-- `docs/CR8818_NETWORK_TOPOLOGY_COMPARISON.md` (Updated: Exact firmware request paths, companion radio AHB bus attachment, PCIe ID UNKNOWN, GPIO39 reconciliation, Section 5 NAND hardware discrepancy audit)
-- `docs/NSS_INTEGRATION_DESIGN.md` (Updated: Proposal under review status in diagram, Wi-Fi blob realities, coherent_pool=512k, vm.min_free_kbytes=8192 mitigation, RAM breakdown as illustrative theoretical estimate, zcop 3-tier evidence)
-- `docs/WIFI_CALIBRATION_DESIGN.md` (Updated: Exact request paths cal-ahb-c000000.wifi.bin and cal-ahb-b00a040.wifi1.bin/.wifi.bin, AHB platform driver ath11k_ahb via Q6 WPSS, PCIe ID audit)
-- `docs/02_DEVICE_BASELINE.md` (Updated: NAND Winbond vs GigaDevice/ESMT audit, GPIO39 DTS reset status, QCN6102 AHB bus attachment, PCIe ID UNKNOWN)
-- `docs/FEATURE_PARITY_MATRIX.md` (Updated: Exact firmware request names, AHB platform driver, Wi-Fi binary blob clarification, zcop 3-tier evidence levels)
-- `PROJECT_STATUS.md` & `TASKS.md` (Updated tracking to P1-REV5.2, maintained proposal status for Phase 1 Clean DSA, reaffirmed strict NO-GO on flash)
+NSS Hardware Offload Porting Research completed (`P2-NSS-RES`). Branch `feature/nss-cr8818-research` created. Deliverables authored:
+- `reports/NSS_PORTING_RESEARCH_REPORT.md` (Executive Research Report answering all 3 mandatory evaluation criteria)
+- `docs/NSS_CR8818_FEASIBILITY.md` (Feasibility analysis, classification matrix, switch tagging collision, Go/No-Go conditions)
+- `docs/NSS_DATAPATH_ARCHITECTURE.md` (Comprehensive physical & logical datapath diagrams, DWMAC analysis, packet lifecycles, BoringTun Rust hybrid model)
+- `docs/NSS_COMPONENT_COMPATIBILITY.md` (Component-by-component audit across kernels 4.4, 5.15, and 6.18, API breaking changes, patch references)
+- `PROJECT_STATUS.md` & `TASKS.md` (Updated tracking to P2-NSS-RES, recorded transition log)
 
 Tasks `P1-CLN` (applying Git history rewrite to GitHub remote) and `P2-001` (running Class R0 router audit) remain BLOCKED awaiting Product Owner and Architecture Lead approvals. Gemini execution stopped.
