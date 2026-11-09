@@ -19,9 +19,11 @@ Understanding the exact Ethernet datapath of the Qualcomm IPQ5018 on the Xiaomi 
 2. **The NSS Data-Plane Bridge:**
    - Because IPQ5018 uses standard Synopsys DWMAC, Qualcomm's legacy out-of-tree `qca-nss-dp` driver cannot directly talk to upstream `stmmac`.
    - The modern OpenWrt solution pioneered by community developers (Julius Bairaktaris, kuncy7) is **`qca-dwmac-nss`**. This kernel module claims the DWMAC rings, disables host CPU NAPI polling, and routes DMA ring descriptors directly into the NSS NPU core.
-3. **Physical Interconnects:**
-   - **GMAC0 (`dp1`):** Connected via Qualcomm internal GE PHY (`88000.mdio:07`) to Motorcomm YT9215 Switch **Port 4**.
-   - **GMAC1 (`dp2`):** Connected via Qualcomm Uniphy SerDes (operating in SGMII 1000M mode) to Motorcomm YT9215 Switch **Port 8**.
+3. **Physical Interconnects & Conduit Topology:**
+   - **GMAC0 (`dp1` / `eth0`):** Connected via Qualcomm internal GE PHY (`88000.mdio:07`) to Motorcomm YT9215 Switch **Port 4** (`cpu2` / secondary conduit).
+   - **GMAC1 (`dp2` / `eth1`):** Connected via Qualcomm Uniphy SerDes (operating in SGMII 1000M mode) to Motorcomm YT9215 Switch **Port 8** (`cpu1` / primary conduit).
+   - **Port 3:** Connected via internal PHY 3 to the physical **WAN RJ45 port**.
+   - **Ports 0, 1, 2:** Connected via internal PHYs 0, 1, 2 to the physical **LAN 1, LAN 2, LAN 3 RJ45 ports**.
 
 ---
 
@@ -265,4 +267,4 @@ sequenceDiagram
 3. **Net Engineering Benefit:**
    - The host CPU is completely freed from Ethernet routing, NAT, PPPoE encapsulation, and PHY interrupts for VPN traffic.
    - 100% of the host CPU's capacity can be dedicated to running BoringTun's ChaCha20-Poly1305 NEON encryption routines.
-   - This hybrid datapath allows the CR8818 to achieve peak WireGuard throughput (~250–350 Mbps) with minimal latency jitter.
+   - WireGuard throughput is designated as an **`ACCEPTANCE_TARGET`** pending live physical benchmarking. (See [`docs/NSS_WIREGUARD_DATAPATH.md`](NSS_WIREGUARD_DATAPATH.md) for the detailed 8-metric benchmark protocol).

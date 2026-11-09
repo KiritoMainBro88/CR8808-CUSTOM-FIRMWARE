@@ -29,8 +29,8 @@ Our research solves this gap by analyzing the exact datapath collision, identify
 | Evaluation Question | Mandatory Standard | Research Finding & Empirical Verdict |
 |---|---|---|
 | **1. Does IPQ5018 have NSS working on Linux Kernel 6.18?** | Source and build evidence | **CONFIRMED (`SOURCE_VERIFIED` & `BUILD_VERIFIED`).** <br> Demonstrated in `kuncy7/openwrt-nss-edma` and OpenWrt Forum thread #253014. Upstream `stmmac` is successfully claimed by `qca-dwmac-nss`, achieving >900 Mbps IPv4 NAT offload with host CPU >90% idle. |
-| **2. Can NSS run together with the Motorcomm YT9215SC DSA Switch?** | Architectural proof of compatibility | **ARCHITECTURALLY PROVEN, BUT REQUIRES ADAPTER (`INCOMPATIBLE_WITHOUT_ADAPTER`).** <br> NSS firmware rejects proprietary `tag_yt921x` headers. Compatibility is achieved by implementing `tag_8021q` operations in `yt921x.c` (Strategy 1) or via physical dual-conduit WAN/LAN isolation (Strategy 2). |
-| **3. Can performance and RAM stability be maintained on 256 MB?** | Benchmark and empirical evidence | **CONFIRMED FEASIBLE WITH LOW-MEMORY CONSTRAINTS (`FEASIBLE_WITH_CONSTRAINTS`).** <br> Applying Kuncy's 256MB profile (`coherent_pool=512k`, `ATH11K_MEM_PROFILE_256M`, `NSS_MEM_PROFILE_LOW`, `min_free_kbytes=8192`) and BoringTun Rust (peak RSS < 15 MB) maintains resident memory at ~140–150 MB out of ~182 MB usable RAM. |
+| **2. Can NSS run together with the Motorcomm YT9215SC DSA Switch?** | Architectural proof of compatibility | **ARCHITECTURALLY PROVEN, BUT REQUIRES ADAPTER (`INCOMPATIBLE_WITHOUT_ADAPTER`).** <br> NSS firmware rejects proprietary `tag_yt921x` headers (TPID `0x9988`). Compatibility requires implementing `tag_8021q` operations in `yt921x.c` (Strategy 1, see [`docs/NSS_YT9215_ADAPTER_DESIGN.md`](NSS_YT9215_ADAPTER_DESIGN.md)) or configuring physical dual-conduit WAN/LAN isolation (Strategy 2). |
+| **3. Can performance and RAM stability be maintained on 256 MB?** | Benchmark and empirical evidence | **CONFIRMED FEASIBLE WITH LOW-MEMORY CONSTRAINTS (`FEASIBLE_WITH_CONSTRAINTS`).** <br> Applying Kuncy's 256MB profile (`nss_region` 8 MiB, `coherent_pool=512k` with patch 0828, `ATH11K_MEM_PROFILE_256M`, `NSS_MEM_PROFILE_LOW` MP_256) and BoringTun Rust (peak `VmRSS < 15 MB`) maintains resident memory at ~140–150 MB out of ~182 MB usable RAM (see [`docs/NSS_256MB_MEMORY_VALIDATION.md`](NSS_256MB_MEMORY_VALIDATION.md)). |
 
 ---
 
@@ -41,14 +41,19 @@ Our research solves this gap by analyzing the exact datapath collision, identify
    - IPQ5018 does **NOT** contain Qualcomm's proprietary EDMA engine found on IPQ807x/IPQ6018.
    - It contains two standard **Synopsys DesignWare Ethernet MACs (DWMAC)**.
    - In upstream Linux, these are driven by `stmmac` (`dwmac-ipq5018.c`).
-2. **The Switch Tagging Collision:**
-   - The Motorcomm DSA driver (`drivers/net/dsa/yt921x.c`) injects an 8-byte proprietary tag (`tag_yt921x.c`, EtherType `0x88f7`).
-   - The closed Qualcomm NSS firmware (`retail_router0.bin`) parses L2/L3 headers in hardware. It understands Ethernet II, IEEE 802.1Q (`0x8100`), QinQ (`0x88a8`), PPPoE (`0x8864`), IPv4, and IPv6.
-   - **NSS firmware has zero capability to parse `tag_yt921x`.** Frames injected with this tag fail hardware classification, causing packet drops or forcing slow-path CPU handling.
-3. **The Solution: Adapting YT9215 to DSA `tag_8021q`:**
-   - In `kuncy7/openwrt-nss-edma`, switches like QCA8337 and RTL8367 do not use their proprietary taggers. They use DSA's **`tag_8021q`**, which encodes switch ports into standard 802.1Q VLAN IDs.
-   - Because NSS understands 802.1Q VLAN tags natively, `tag_8021q` packets are processed at full hardware wire speed without modification to the NSS closed firmware.
-   - **Engineering Task:** Implement `dsa_switch_ops.tag_8021q_vlan_add` and `dsa_switch_ops.tag_8021q_vlan_del` in `drivers/net/dsa/yt921x.c` using the switch's internal 4K VLAN table.
+2. **The Switch Tagging Collision & 8-Byte Tag Anatomy:**
+   - The Motorcomm DSA driver (`drivers/net/dsa/yt921x.c`) injects an 8-byte proprietary CPU tag with hardware default EtherType **`0x9988`** (`ETH_P_YT921X` / `YT921X_CPU_TAG_TPID_TPID_DEFAULT`).
+   - Tag layout: 2B Tag TPID (`0x9988`), 2B VLAN Tag, 2B Rx Port & Forwarding Command, 2B Tx Port Mask.
+   - The closed Qualcomm NSS firmware (`retail_router0.bin`) parses L2/L3 headers in hardware. It strictly understands Ethernet II, IEEE 802.1Q (`0x8100`), QinQ (`0x88a8`), PPPoE (`0x8864`), IPv4, and IPv6.
+   - **NSS firmware has zero capability to parse `0x9988`.** Frames injected with this tag fail hardware classification, causing packet drops or forcing slow-path CPU handling.
+3. **Conduit Topology Disambiguation:**
+   - `port@8`: CPU1 primary conduit (`eth1` / `dp2` via Uniphy SerDes SGMII 1000M).
+   - `port@4`: CPU2 secondary conduit (`eth0` / `dp1` via Qualcomm Internal GE PHY `0x004dd0c0`).
+   - `port@3`: Physical external WAN RJ45 port.
+   - Ports 0, 1, 2: Physical external LAN1, LAN2, LAN3 RJ45 ports.
+4. **The Solution: Adapting YT9215 to DSA `tag_8021q` or Dual-Conduit Demux:**
+   - Detailed analysis in [`docs/NSS_YT9215_ADAPTER_DESIGN.md`](NSS_YT9215_ADAPTER_DESIGN.md): Adapting to `tag_8021q` requires managing the switch's 4K VLAN table, PVID cross-tagging, and FDB learning.
+   - Alternative: Physical Dual-Conduit Demux using `zcop`'s topology (`eth0` on Port 4 for untagged WAN, `eth1` on Port 8 for LAN).
 
 ### P1: Porting NSS to Linux Kernel 6.18
 1. **DWMAC-to-NSS Glue (`qca-dwmac-nss`):**
@@ -60,29 +65,25 @@ Our research solves this gap by analyzing the exact datapath collision, identify
    - **Patch 940 (REVSGMII Abuse):** David Yang's patch `940-net-dsa-yt921x-Abuse-SGMII-for-REVSGMII.patch` remains mandatory to resolve the SerDes role collision on Switch Port 8.
 
 ### P2: 256 MB RAM Optimization & Stability Blueprint
-Physical RAM on CR8818 is 256 MB DDR3L, with ~182 MB usable by Linux (`MemTotal`). To prevent OOM panics under heavy traffic:
-1. **`ATH11K_MEM_PROFILE_256M=y`:** Shrinks Wi-Fi DMA rings from 1024 descriptors to 256/512 descriptors, saving ~18 MiB of DMA slab.
-2. **`NSS_MEM_PROFILE_LOW=y`:** Constrains `qca-nss-pbuf` pre-allocated packet buffers to ~12 MiB instead of the standard 24–32 MiB.
-3. **`coherent_pool=512k`:** Aligned with Kuncy patch 0828 to prevent excessive coherent DMA slab reservation on 256MB boards.
-4. **`vm.min_free_kbytes=8192`:** Enforces an 8 MiB atomic memory reserve in sysctl to protect NAPI allocation handlers from dropping packets during sudden traffic bursts.
-5. **Memory Budgeting:**
-   - Linux Kernel Slab & Core: ~90 MB
-   - ath11k Wi-Fi Buffers (256M profile): ~20 MB
-   - NSS Firmware Pinned Reservation (`nss_region`): 12 MB
-   - `qca-nss-pbuf` Buffer Pool: 12 MB
-   - BoringTun Rust: <15 MB
-   - Userspace Daemons & LuCI: ~25 MB
-   - **Total Active Footprint: ~140–150 MB (Leaving ~32–42 MB safety buffer).**
+Physical RAM on CR8818 is 256 MB DDR3L, with ~182 MB usable by Linux (`MemTotal`). Grounded in Kuncy's 256MB profile ([`docs/NSS_256MB_MEMORY_VALIDATION.md`](NSS_256MB_MEMORY_VALIDATION.md)):
+1. **`nss_region` Carve-Out:** Exactly **8 MiB** (`0x800000` at physical address `0x40000000`), NOT 12 MiB or 16 MiB.
+2. **`coherent_pool=512k`:** Aligned with Kuncy patch 0828 (`0828-arm64-dts-ipq5018-adjust-coherent-pool.patch`) to prevent excessive DMA slab reservation.
+3. **`ATH11K_MEM_PROFILE_256M=y`:** Shrinks Wi-Fi DMA rings from 1024 descriptors to 256/512 descriptors, saving ~18 MiB of DMA slab.
+4. **`NSS_MEM_PROFILE_LOW=y` / `MP_256`:** Constrains `qca-nss-pbuf` pre-allocated packet buffers to ~8–12 MiB.
+5. **Memory Telemetry Rigor:**
+   - `VmSize` (e.g. 522 MB in Go) reflects virtual address space, while `VmRSS` (~3.7 MB in Go, <15 MB in BoringTun Rust) reflects actual physical DRAM footprint.
+   - Memory pressure must be diagnosed via `/proc/vmstat` indicators (`allocstall`, `pgscan`, `pgsteal`, `oom_killer`), not raw `buddyinfo` high-order pages alone.
+6. **Memory Budgeting:** Total committed RAM is ~156 MB, leaving ~26 MB (14.3%) free safety headroom.
 
 ### P3: NSS and BoringTun Rust (WireGuard) Coexistence
 1. **Cryptographic Reality:**
    - Qualcomm IPQ5018 contains hardware acceleration for IPsec (AES-CBC, AES-GCM, SHA1/256), but **lacks hardware acceleration for ChaCha20-Poly1305** (WireGuard's cipher).
    - NSS cannot perform hardware cryptographic offload of WireGuard packets on IPQ5018.
-2. **The Two-Tier Acceleration Model:**
+2. **The Two-Tier Acceleration Model (Detailed in [`docs/NSS_WIREGUARD_DATAPATH.md`](NSS_WIREGUARD_DATAPATH.md)):**
    - **Inner Plaintext Packet:** Processed on `tun0` by the **BoringTun Rust** userspace daemon, utilizing **ARMv8 NEON SIMD** vector instructions on the Cortex-A53 CPU cores.
-   - **Outer Encrypted UDP Packet:** Once encrypted, BoringTun emits standard UDP packets (port 51820) to the WAN gateway.
+   - **Outer Encrypted UDP Packet:** Once encrypted, BoringTun emits standard UDP packets (port 51821) to the WAN gateway.
    - **NSS Hardware Offload:** Qualcomm ECM detects the high-throughput outer UDP stream and installs a hardware flow rule. **NSS accelerates the outer UDP encapsulation, routing, NAT translation, and GMAC transmission at wire speed.**
-   - **Benefit:** 100% of host CPU power is reserved for WireGuard cryptographic operations, enabling peak VPN throughput (~250–350 Mbps) with low jitter.
+   - **Performance Standard:** Throughput is classified strictly as an **`ACCEPTANCE_TARGET`** pending live physical benchmarking; unmeasured speculative throughput claims are prohibited.
 
 ---
 
@@ -92,7 +93,7 @@ Physical RAM on CR8818 is 256 MB DDR3L, with ~182 MB usable by Linux (`MemTotal`
 |---|---|---|
 | **Phase 1: Clean DSA Baseline** | **PROCEED (Under Review)** | Complete G1 Gate review. Maintain Clean DSA without NSS as the stable production foundation. |
 | **Phase 2: NSS Porting R&D** | **GO (Approved for Research)** | Initiate prototype development on isolated branch `feature/nss-cr8818-port`. |
-| **Motorcomm `yt921x_8021q` Tagger** | **GO (Author Implementation)** | Write ~300 lines of C implementing `tag_8021q` ops in `drivers/net/dsa/yt921x.c`. |
+| **Motorcomm `yt921x_8021q` Tagger** | **GO (Author Implementation)** | Design and prototype `tag_8021q` ops in `drivers/net/dsa/yt921x.c` (see [`docs/NSS_YT9215_ADAPTER_DESIGN.md`](NSS_YT9215_ADAPTER_DESIGN.md)). |
 | **`qca-dwmac-nss` Integration** | **GO (Direct Ingestion)** | Ingest package from `kuncy7/nss-packages` feed (branch `ipq50xx-rebase`). |
 | **BoringTun Rust Integration** | **GO (Direct Integration)** | Ingest custom AArch64 package with `procd` service script. |
 | **Physical Router Flashing** | **STRICT NO-GO** | Maintain 100% ban on flashing pending independent non-UART recovery validation. |
@@ -117,8 +118,11 @@ During the execution of this research task, all 10 project safety principles wer
 
 ## 6. Document Cross-Reference & Deliverable Register
 
-The complete research suite comprises the following 4 new authoritative documents:
+The complete research suite comprises the following 7 authoritative documents:
 1. [`reports/NSS_PORTING_RESEARCH_REPORT.md`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/NSS_PORTING_RESEARCH_REPORT.md) — *This Executive Research Report.*
 2. [`docs/NSS_CR8818_FEASIBILITY.md`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/docs/NSS_CR8818_FEASIBILITY.md) — *Detailed Feasibility Analysis, Taxonomy Classifications, and Go/No-Go Conditions.*
 3. [`docs/NSS_DATAPATH_ARCHITECTURE.md`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/docs/NSS_DATAPATH_ARCHITECTURE.md) — *Comprehensive Physical & Logical Datapath Diagrams, DWMAC Analysis, and WireGuard Hybrid Acceleration.*
 4. [`docs/NSS_COMPONENT_COMPATIBILITY.md`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/docs/NSS_COMPONENT_COMPATIBILITY.md) — *Component Compatibility Matrix across Kernels 4.4, 5.15, and 6.18, API Breaking Changes, and Patch Register.*
+5. [`docs/NSS_YT9215_ADAPTER_DESIGN.md`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/docs/NSS_YT9215_ADAPTER_DESIGN.md) — *Exhaustive Anatomy of the 8-Byte CPU Tag (TPID 0x9988), CPU Conduit Topology, and DSA tag_8021q Feasibility.*
+6. [`docs/NSS_256MB_MEMORY_VALIDATION.md`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/docs/NSS_256MB_MEMORY_VALIDATION.md) — *Grounded Kuncy 256MB Profile Audit (nss_region 8M, coherent_pool=512k, patch 0828), VmSize vs VmRSS, and Buddyinfo.*
+7. [`docs/NSS_WIREGUARD_DATAPATH.md`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/docs/NSS_WIREGUARD_DATAPATH.md) — *Two-Tier Hybrid Acceleration Model, ARM NEON Optimization, and Parallel wg1 Test Isolation Protocol.*

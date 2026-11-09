@@ -31,7 +31,7 @@ This document audits every individual software component, tracks breaking kernel
 | **Connection Manager (`qca-nss-ecm`)** | QSDK ECM for `iptables` | ECM patched for Linux 5.15 | ECM modernized for `nftables` / 6.18 | `BUILD_VERIFIED` | `kuncy7/nss-packages/qca-nss-ecm` |
 | **NSS Clients (`qca-nss-clients`)** | PPPoE, VLAN, Bridge, IPsec, Wi-Fi | Partial backports | Modules ported to 6.18 netdev APIs | `BUILD_VERIFIED` | `kuncy7/nss-packages/qca-nss-clients` |
 | **Motorcomm Switch Driver (`yt921x.c`)** | Proprietary `yt_switch.ko` | Out-of-tree backports | Mainline kernel 6.19 / backported to 6.18 | `SOURCE_VERIFIED` | Mainline Linux `drivers/net/dsa/yt921x.c` / `yangfl` commit `b230c2f` |
-| **Motorcomm Switch Tagger (`tag_yt921x.c`)** | N/A (Driver-internal tagging) | Out-of-tree DSA tagger | Mainline kernel 6.19 / backported to 6.18 | `INCOMPATIBLE_WITH_NSS` (Proprietary tag rejected by NSS) | Mainline Linux `net/dsa/tag_yt921x.c` |
+| **Motorcomm Switch Tagger (`tag_yt921x.c`)** | N/A (Driver-internal tagging) | Out-of-tree DSA tagger | Mainline kernel 6.19 / backported to 6.18 | `INCOMPATIBLE_WITH_NSS` (Proprietary tag with TPID 0x9988 rejected by NSS parser) | Mainline Linux `net/dsa/tag_yt921x.c` |
 | **DSA 802.1Q Tagger (`tag_8021q.c`)** | Not available in 4.4 | Available in 5.15 | Fully supported in 6.18 core | **`TARGET_INTEGRATION`** (Compatible with NSS parser) | Linux core `net/dsa/tag_8021q.c` |
 | **Wi-Fi Driver (`ath11k` / `ath11k_ahb`)** | Vendor `qca-wifi` QSDK driver | Upstream `ath11k` (early) | Upstream `ath11k_ahb` with NSS Wi-Fi offload hooks | `BUILD_VERIFIED` | Linux kernel `drivers/net/wireless/ath/ath11k/` |
 | **Wi-Fi Firmware (`qcn6122`)** | Proprietary QSDK binaries | Upstream firmware blobs | `ath11k-firmware-qcn6122` + Q6 WPSS blobs | `SOURCE_VERIFIED` | OpenWrt `package/firmware/ipq-wifi` & Qualcomm |
@@ -82,12 +82,12 @@ A successful port of NSS to kernel 6.18 requires addressing key Linux kernel API
 1. **DMA Coherent Memory Allocations (`dma_alloc_coherent`):**
    - *Kernel 4.4:* Permitted large multi-megabyte contiguous memory requests from standard slab.
    - *Kernel 6.18:* Enforces DMA pools (`dma_alloc_coherent`) constrained by device tree reserved-memory nodes and kernel boot parameters.
-   - *Fix for 256 MB RAM:*
-     - Kernel boot argument: `coherent_pool=512k` (from Kuncy patch 0828).
-     - DTS reservation: Restrict `nss_region` to 12 MiB:
+   - *Fix for 256 MB RAM (Detailed in [`docs/NSS_256MB_MEMORY_VALIDATION.md`](NSS_256MB_MEMORY_VALIDATION.md)):*
+     - Kernel boot argument: `coherent_pool=512k` (strictly requires Kuncy patch 0828).
+     - DTS reservation: Restrict `nss_region` to exactly **8 MiB**:
        ```dts
        nss_region: nss@40000000 {
-           reg = <0x0 0x40000000 0x0 0xc00000>;
+           reg = <0x0 0x40000000 0x0 0x800000>; /* Exactly 8 MiB */
            no-map;
        };
        ```
@@ -130,5 +130,5 @@ A successful port of NSS to kernel 6.18 requires addressing key Linux kernel API
 | **Board DTS (`ipq5018-cr8818.dts`)** | **Adapt** | Extend `yangfl` DTS with NSS reservation node (`nss_region`) and NSS clocks. |
 | **SerDes SGMII Patch (Patch 940)** | **Reuse** | Apply `940-net-dsa-yt921x-Abuse-SGMII-for-REVSGMII.patch`. |
 | **Wi-Fi Calibration Script (`11-ath11k-caldata`)** | **Reuse** | Use `yangfl` extraction offsets (`0x1000` / `0x26800`). |
-| **Motorcomm Switch Driver (`yt921x.c`)** | **Extend (New Code)** | Implement `tag_8021q` operations (`tag_8021q_vlan_add/del`) in `yt921x.c` (~300 lines of C). |
+| **Motorcomm Switch Driver (`yt921x.c`)** | **Extend (New Code)** | Implement `tag_8021q` operations (`tag_8021q_vlan_add/del`) in `yt921x.c` (see [`docs/NSS_YT9215_ADAPTER_DESIGN.md`](NSS_YT9215_ADAPTER_DESIGN.md)). |
 | **WireGuard Daemon (`boringtun-cli`)** | **Integrate** | Ingest custom BoringTun Rust AArch64 package with `procd` service script. |

@@ -31,11 +31,16 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P6-001 | Release candidate and deployment decision | P6 | BLOCKED | User | All gates |
 
 ## Current instruction
-NSS Hardware Offload Porting Research completed (`P2-NSS-RES`). Branch `feature/nss-cr8818-research` created. Deliverables authored:
+NSS Hardware Offload Porting Research completed (`P2-NSS-RES`). Branch `feature/nss-cr8818-research` created. Deliverables authored & updated (7 files):
 - `reports/NSS_PORTING_RESEARCH_REPORT.md` (Executive Research Report answering all 3 mandatory evaluation criteria)
 - `docs/NSS_CR8818_FEASIBILITY.md` (Feasibility analysis, classification matrix, switch tagging collision, Go/No-Go conditions)
 - `docs/NSS_DATAPATH_ARCHITECTURE.md` (Comprehensive physical & logical datapath diagrams, DWMAC analysis, packet lifecycles, BoringTun Rust hybrid model)
 - `docs/NSS_COMPONENT_COMPATIBILITY.md` (Component-by-component audit across kernels 4.4, 5.15, and 6.18, API breaking changes, patch references)
+- `docs/NSS_YT9215_ADAPTER_DESIGN.md` (NEW: Anatomy of 8-byte CPU tag with TPID 0x9988, CPU conduit topology, tag_8021q feasibility, and dual-conduit demux)
+- `docs/NSS_256MB_MEMORY_VALIDATION.md` (NEW: Grounded Kuncy 256MB profile audit with nss_region 8M, coherent_pool=512k, patch 0828, VmSize vs VmRSS, and buddyinfo)
+- `docs/NSS_WIREGUARD_DATAPATH.md` (NEW: Two-tier hybrid acceleration datapath, ARM NEON optimization, and parallel wg1 test isolation protocol)
 - `PROJECT_STATUS.md` & `TASKS.md` (Updated tracking to P2-NSS-RES, recorded transition log)
+
+Tasks `P1-CLN` (applying Git history rewrite to GitHub remote) and `P2-001` (running Class R0 router audit) remain BLOCKED awaiting Product Owner and Architecture Lead approvals. Gemini execution stopped.
 
 Tasks `P1-CLN` (applying Git history rewrite to GitHub remote) and `P2-001` (running Class R0 router audit) remain BLOCKED awaiting Product Owner and Architecture Lead approvals. Gemini execution stopped.

@@ -40,24 +40,23 @@ This document performs an exhaustive, component-level feasibility analysis to an
 - **Verdict:** **CONDITIONALLY YES — But STRICTLY INCOMPATIBLE Out-of-the-Box (`INCOMPATIBLE_WITHOUT_ADAPTER`).**
 - **Root Cause of Incompatibility:**
   - The closed-source Qualcomm NSS firmware binary (`retail_router0.bin`) parses L2/L3 headers in hardware. It understands standard Ethernet II, IEEE 802.1Q VLAN (`0x8100`), IEEE 802.1ad QinQ (`0x88a8`), PPPoE (`0x8864`), IPv4, and IPv6.
-  - The NSS firmware contains **zero parser logic** for Motorcomm's proprietary 8-byte DSA tag (`tag_yt921x.c` / `tag_yt921x_enhanced.c`).
-  - Passing frames with `tag_yt921x` headers directly to NSS causes hardware packet classification failures (packet drops or fallbacks to CPU).
+  - The NSS firmware contains **zero parser logic** for Motorcomm's proprietary 8-byte CPU tag (`tag_yt921x.c` / `tag_yt921x_enhanced.c`), whose hardware default EtherType is **`0x9988`** (`ETH_P_YT921X`).
+  - Passing frames with `0x9988` tags directly to NSS causes hardware packet classification failures (packet drops or fallbacks to CPU).
 - **Engineering Solutions Required:**
-  - **Solution A (`tag_8021q` Porting):** Implement `tag_8021q` operations in `drivers/net/dsa/yt921x.c` so the switch uses standard 802.1Q VLAN IDs to represent CPU switch ports instead of proprietary tags.
-  - **Solution B (Physical Dual-Conduit Demux):** Exploit the fact that CR8818 has two independent MACs: configure MAC0 (Internal GE PHY -> Port 4) as an untagged, dedicated WAN conduit, and MAC1 (SGMII -> Port 8) for LAN. NSS can offload WAN-to-LAN NAT without proprietary tags on the WAN interface.
+  - **Solution A (`tag_8021q` Adapter):** Implement `tag_8021q` operations in `drivers/net/dsa/yt921x.c` so the switch uses standard 802.1Q VLAN IDs to represent CPU switch ports instead of proprietary tags. (Note: This is a complex R&D task involving 4K VLAN table management, PVID cross-tagging, and FDB learning; see [`docs/NSS_YT9215_ADAPTER_DESIGN.md`](NSS_YT9215_ADAPTER_DESIGN.md)).
+  - **Solution B (Physical Dual-Conduit Demux):** Exploit the dual-conduit topology of CR8818 (`port@4` = `cpu2` / `eth0`, `port@8` = `cpu1` / `eth1`): configure `cpu2` (Port 4) as an untagged, dedicated WAN conduit linked in hardware to Port 3 (physical WAN), and `cpu1` (Port 8) for LAN. NSS can offload WAN-to-LAN NAT without proprietary tags on the WAN interface.
 
 ### Question 3: Can performance and RAM stability be maintained on a 256 MB device?
 - **Verdict:** **YES, with Strict Low-Memory Engineering (`FEASIBLE_WITH_CONSTRAINTS`).**
-- **Evidence & Parameters:**
+- **Evidence & Parameters (Grounded in Kuncy 256MB Profile):**
   - Usable physical RAM on CR8818 is ~182 MB (due to U-Boot and TrustZone reservations).
-  - Standard NSS profiles allocate 24–32 MiB for packet buffers and large 1024-descriptor ring buffers for Wi-Fi, triggering Out-Of-Memory (OOM) under burst traffic on 256 MB devices.
-  - Applying Kuncy's proven 256 MB profile:
+  - Applying Kuncy's verified 256 MB profile (detailed in [`docs/NSS_256MB_MEMORY_VALIDATION.md`](NSS_256MB_MEMORY_VALIDATION.md)):
+    - `nss_region`: Exactly **8 MiB** (at `0x40000000`, size `0x800000`).
+    - `NSS_MEM_PROFILE_LOW=y` / `MP_256` (restricts `qca-nss-pbuf` to ~8–12 MiB).
     - `ATH11K_MEM_PROFILE_256M=y` (reduces Wi-Fi DMA rings from 1024 to 256/512 descriptors, saving ~18 MiB).
-    - `NSS_MEM_PROFILE_LOW=y` (restricts `qca-nss-pbuf` to ~12 MiB).
-    - `coherent_pool=512k` (prevents low-memory exhaustion).
-    - `vm.min_free_kbytes=8192` (reserves 8 MiB atomic memory for network NAPI handlers).
-    - Replacing `wireguard-go` with **BoringTun Rust** (peak RSS < 15 MB).
-  - Total resident RAM with all services active is estimated at ~140–150 MiB, leaving 32–42 MiB free buffer headroom.
+    - `coherent_pool=512k` (strictly requires patch 0828 to prevent coherent DMA allocation failures).
+    - Replacing `wireguard-go` with **BoringTun Rust** (peak `VmRSS < 15 MB`).
+  - Total resident RAM with all services active is estimated at ~140–150 MB, leaving 32–42 MB free buffer headroom. Memory pressure must be judged by `allocstall`, `pgscan`, and `pgsteal`, not virtual address `VmSize`.
 
 ---
 
@@ -90,16 +89,16 @@ When a frame traverses a standard DSA switch:
 Standard Untagged Ethernet Frame:
 [ DMAC (6B) | SMAC (6B) | EtherType (2B) | Payload (46-1500B) | FCS (4B) ]
 
-Frame with Motorcomm Proprietary DSA Tag (tag_yt921x.c):
-[ DMAC (6B) | SMAC (6B) | Tag EtherType (0x88f7, 2B) | Tag Header (6B) | Orig EtherType (2B) | Payload ... ]
+Frame with Motorcomm Proprietary CPU Tag (tag_yt921x.c):
+[ DMAC (6B) | SMAC (6B) | Tag TPID (0x9988, 2B) | Tag Body (6B) | Orig EtherType (2B) | Payload ... ]
 ```
 When this packet arrives at the IPQ5018 Synopsys DWMAC receiver:
 1. `stmmac` receives the packet from the DMA descriptor ring.
 2. If `qca-dwmac-nss` is hooked, the packet is forwarded directly to the NSS firmware input ring.
 3. The NSS firmware hardware parser inspects bytes 12–13:
    - Expected: `0x0800` (IPv4) or `0x86dd` (IPv6) or `0x8100` (802.1Q VLAN).
-   - Actual: `0x88f7` (Motorcomm Tag).
-4. Because `0x88f7` is an unrecognized protocol, the NSS hardware classifier:
+   - Actual: `0x9988` (Motorcomm Tag EtherType, `ETH_P_YT921X`).
+4. Because `0x9988` is an unrecognized protocol to the closed NSS firmware:
    - **Does NOT create an ECM acceleration entry.**
    - Either drops the frame or punts it to the host CPU via an exception path.
    - Result: 0% hardware acceleration, high packet drop rates, and kernel log spam.
@@ -124,32 +123,34 @@ Frame with DSA tag_8021q:
 ## 5. Architectural Solutions for CR8818 NSS Integration
 
 ### Strategy 1: The Upstream Mainline Solution (`tag_8021q` Driver Extension)
-To make Motorcomm YT9215 compatible with NSS in the same elegant way Kuncy7 supports QCA8337, RTL8367, and AN8855, we must implement `tag_8021q` support in the Motorcomm DSA driver:
+To make Motorcomm YT9215 compatible with NSS in the same manner Kuncy7 supports QCA8337, RTL8367, and AN8855, an adapter must be implemented in the Motorcomm DSA driver:
 1. **Target File:** `drivers/net/dsa/yt921x.c`.
-2. **Required Implementation:**
+2. **Required Implementation (Detailed in [`docs/NSS_YT9215_ADAPTER_DESIGN.md`](NSS_YT9215_ADAPTER_DESIGN.md)):**
    - Implement `dsa_switch_ops.tag_8021q_vlan_add` and `dsa_switch_ops.tag_8021q_vlan_del`.
-   - Program the YT9215 switch's internal 4K VLAN table (`YT921X_VLAN_TABLE_ADDR`) to configure egress tagging on the CPU port (Port 8) and untagged egress on user ports (Ports 0–3).
+   - Program the YT9215 switch's internal 4K VLAN table to configure egress tagging on the primary CPU port (Port 8) and untagged egress on user ports (Ports 0–3).
+   - Resolve PVID cross-tagging and prevent collisions with Linux bridge VLAN filtering.
    - Set the default conduit tagger in `ipq5018-cr8818.dts`:
      ```dts
      &dp2 {
          dsa,tag-protocol = "tag_8021q";
      };
      ```
-3. **Feasibility:** **HIGH.** The YT9215 silicon contains a full hardware 802.1Q VLAN engine. This requires ~250–350 lines of C code in `yt921x.c`.
+3. **Feasibility Assessment:** **High Effort R&D.** While YT9215 silicon supports 802.1Q VLANs, implementing robust `tag_8021q` handling requires deep register programming, FDB isolation, and extensive hardware validation. It cannot be simplified as a trivial patch.
 
 ### Strategy 2: The Hardware Topology Bypass Solution (Dual-Conduit Physical Demux)
-If writing a full `tag_8021q` driver is deferred, we can exploit the physical board layout of the CR8818:
+If `tag_8021q` driver development is deferred, the physical board layout of the CR8818 provides an alternative:
 - **Physical Reality:**
-  - GMAC0 (`&dp1`) connects via internal GE PHY to Switch Port 4 (PHY 4).
-  - GMAC1 (`&dp2`) connects via SGMII SerDes to Switch Port 8.
+  - GMAC0 (`&dp1` / `eth0`) connects via Qualcomm Internal GE PHY (`88000.mdio:07`) to Switch Port 4 (`cpu2`).
+  - GMAC1 (`&dp2` / `eth1`) connects via Uniphy SerDes (SGMII 1000M) to Switch Port 8 (`cpu1`).
+  - Switch Port 3 is wired to the physical external WAN RJ45 port.
 - **Implementation:**
-  - Configure the switch hardware so that Port 3 (WAN) is isolated and hard-bridged in hardware directly to Port 4 (GMAC0), **without any DSA tags** (`untagged`).
-  - Configure Ports 0, 1, 2 (LAN) to communicate over Port 8 (GMAC1).
+  - Configure the switch hardware so that Port 3 (WAN) is isolated and bridged in hardware directly to Port 4 (`cpu2` / GMAC0), **without any DSA tags** (`untagged`).
+  - Configure Ports 0, 1, 2 (LAN) to communicate over Port 8 (`cpu1` / GMAC1).
   - In Linux:
-    - `eth0` (`&dp1`) becomes the pure physical WAN netdev (100% untagged Ethernet).
+    - `eth0` becomes the pure physical WAN netdev (100% untagged Ethernet).
     - `qca-dwmac-nss` claims `eth0` as an accelerated WAN port.
     - ECM offloads flows between `eth0` (WAN) and `br-lan` (LAN).
-- **Feasibility:** **MEDIUM.** Can be achieved primarily via DTS and switch initialization registers, but reduces flexibility for per-port LAN VLAN tagging.
+- **Feasibility Assessment:** **Medium.** Exploits the topology validated in `zcop`, but requires custom DTS and switch matrix setup.
 
 ---
 
