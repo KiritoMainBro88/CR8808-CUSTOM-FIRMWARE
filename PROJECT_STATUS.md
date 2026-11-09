@@ -2,10 +2,10 @@
 
 - Version: `0.1.0-dev.2`
 - Date: 2026-11-09
-- Phase: P1 Architecture Gate G1 Finalized (Round 3 Hardware Demarcation) / P2 Preparation
-- Current Branch: `feature/g1-corrections-round3`
-- Overall status: `GATE_G1_CORRECTIONS_ROUND3_COMPLETE`
-- GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`, `feature/g1-corrections-round3`)
+- Phase: P1 Architecture Gate G1 Finalized (Round 4 Consistency & Hardware Audit) / P2 Preparation
+- Current Branch: `feature/g1-corrections-round4`
+- Overall status: `GATE_G1_CORRECTIONS_ROUND4_COMPLETE`
+- GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`, `feature/g1-corrections-round3`, `feature/g1-corrections-round4`)
 - Flash authorization: `NO-GO pending independent recovery validation`
 - Initial Firmware Baseline: `CLEAN_DSA_LINUX_6.18_WITHOUT_NSS` (Approved)
 - Primary Hardware Reference: `zcop/immortalwrt` (commit `c5ad88b`) — Approved for CR881x DTS & YT921x DSA
@@ -16,8 +16,13 @@
 - Firmware build: `NOT_STARTED`
 - Hardware validation: `NOT_STARTED`
 
-## Confirmed
-- Owner identifies the physical device as Xiaomi CR8808 Ver.B — `OWNER_CONFIRMED`.
+## Confirmed via Owner & Prior Device Readback
+- Commercial device: Xiaomi CR8808 Ver.B — `OWNER_CONFIRMED`.
+- Internal model string: `CR8818` — `DEVICE_READBACK` (Certified via stock `ubus call system board` in prior audit).
+- Board profile string: `ap-mp03.3` — `DEVICE_READBACK` (Certified via stock system readback).
+- SoC: Qualcomm IPQ5018 dual-core Cortex-A53 — `DEVICE_READBACK`.
+- Usable RAM: ~182 MB usable by Linux (`MemTotal`) — `DEVICE_READBACK`.
+- Active Stock Firmware: Xiaomi RA82 Global v1.4.31 (Linux 4.4.60) — `DEVICE_READBACK`.
 - Owner wants to preserve the current LAN/Internet connection during development — `OWNER_CONFIRMED`.
 - Owner does not have UART and cannot independently recover a bricked router — `OWNER_CONFIRMED`.
 - Existing lab workspace `D:\vibecode\test_wifi` preserved and untouched — `MEASURED`.
@@ -27,16 +32,11 @@
 - `zcop/immortalwrt` approved as primary reference for CR881x board DTS, YT921x enhanced DSA driver, and GPIO39 reset — `OWNER_CONFIRMED` / Architecture Lead approved.
 - History cleanup dry-run executed on isolated clone: 100% elimination of netbios hostname and private IPs verified — `MEASURED`.
 
-## Reported but not re-verified on-device
-- Internal model string `CR8818`.
-- Board string `ap-mp03.3`.
-- Qualcomm IPQ5018.
-- Motorcomm switch suffix: `UNKNOWN / REPORTED_UNVERIFIED` (YT9215S vs YT9215SC unconfirmed).
-- GPIO 39 LDO power function: `INFERRED / UNVERIFIED` (DTS declares `reset-gpios`).
-- QCN6102 5 GHz radio.
-- 256 MB RAM.
-- Winbond W25N01GWZEIG NAND.
-- Xiaomi RA82 v1.4.31 and Linux 4.4.60.
+## Reported / Unverified on-device
+- Motorcomm switch physical silicon suffix: `UNKNOWN / REPORTED_UNVERIFIED` (YT9215S vs YT9215SC unconfirmed).
+- GPIO 39 hardware function: DTS declares `reset-gpios`.
+- Winbond W25N01GWZEIG NAND physical part marking.
+- Xiaomi bootloader failover flags (`flag_try_sysX_failed`): `REPORTED_UNVERIFIED`.
 
 ## Current blockers
 1. No verified recovery path independent of UART (Permanent constraint; flash remains `NO-GO`).
@@ -49,3 +49,4 @@
 - 2026-11-09: Architecture Gate G1 conditionally approved. Baseline selected: Clean DSA Linux 6.18 without NSS. Git history dry-run executed on test clone (100% clean). Authored feature parity matrix, DSA baseline design, NSS experimental design, non-UART recovery architecture, and Class R0 read-only audit manifest. Deliverable: `reports/2026-11-09/FINAL_G1_ARCHITECTURE_DECISION.md`. Author: Gemini (Implementation Lead).
 - 2026-11-09: Architecture Gate G1 Round 2 Corrections completed on branch `feature/g1-corrections-round2`. Disambiguated internal PHY `0x004dd0c0` from Motorcomm switch at `0x1d`; mapped DSA driver divergence (upstream vs zcop); rebuilt feature parity matrix with empirical taxonomy; corrected BoringTun target ABI to AArch64; overhauled recovery design with real Xiaomi boot flags and TFTP flash reality; refined R0 read-only manifest for QSDK tooling. Updated dry-run rewrite verified 100% clean across all 6 commits. Deliverable: `reports/2026-11-09/G1_REVIEW_ROUND2.md`. Author: Gemini (Implementation Lead).
 - 2026-11-09: Architecture Gate G1 Round 3 Corrections completed on branch `feature/g1-corrections-round3`. Grounded switch port mapping in zcop reference DTS (P0-P2 LAN1-3, P3 WAN, P4 CPU2 dp1 internal GE PHY, P8 CPU1 dp2 SGMII 1000M, P10 MCU); removed erroneous 2500Base-X claims; investigated Issue #5 GPIO39 switch init bug (0xffff chip ID) and established 4-part 20-cycle reboot test protocol; separated upstream OpenWrt stmmac from zcop nss-dp dual-conduit; disambiguated DRAM BDF staging (0x4c400000/0x4d100000) from physical NAND 0:ART (0x780000); decoupled generic packages in parity matrix; established BoringTun Rust as sole WireGuard engine (in-kernel marked NOT_SELECTED); reconciled Git commit history evidence. Deliverable: `reports/2026-11-09/G1_REVIEW_ROUND3.md`. Author: Gemini (Implementation Lead).
+- 2026-11-09: Architecture Gate G1 Round 4 Corrections completed on branch `feature/g1-corrections-round4`. Resolved DSA vs NSS architecture contradiction: Phase 1 defined strictly on upstream `dwmac-ipq5018` (`stmmac`) single-conduit SGMII 1000M Port 8 (zero NSS Datapath, Port 4 disabled); Phase 2 defined on `qcom,nss-dp` dual-conduit (`dp1`/`dp2`); performed deep analysis of Issue #5 GPIO 39 reset bug, rejecting userspace procd hook and designing 20-cycle reboot test; detailed Wi-Fi calibration pipeline from NAND 0:ART to DRAM and Q6 WCSS; decoupled unmeasured performance assertions from source availability in parity matrix; re-established `CR8818` and `ap-mp03.3` as `DEVICE_READBACK`; reinforced strict non-UART `NO-GO` on flashing. Deliverable: `reports/2026-11-09/G1_REVIEW_ROUND4.md`. Author: Gemini (Implementation Lead).

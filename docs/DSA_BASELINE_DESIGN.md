@@ -1,50 +1,71 @@
-# Architecture Design: Clean DSA Baseline (Linux 6.18 without NSS)
+# Architecture Design: Clean DSA Baseline (Linux 6.18 Upstream stmmac)
 
 - **Document ID:** `docs/DSA_BASELINE_DESIGN.md`
 - **Project:** `CR8808-CUSTOM-FIRMWARE` (v0.1.0-dev.2)
 - **Target Hardware:** Xiaomi CR8808 Ver.B (Codename `CR8818`, Qualcomm IPQ5018 dual-core Cortex-A53 + Motorcomm YT9215S/SC)
-- **Target Platform:** OpenWrt / ImmortalWrt Clean DSA Baseline (Linux 6.18, `qualcommax/ipq50xx`, AArch64 userspace)
-- **Architecture Lead Decision:** Phase 1 Baseline — Clean DSA without NSS
+- **Target Platform:** OpenWrt Clean DSA Baseline (Linux 6.18, `qualcommax/ipq50xx`, AArch64 userspace)
+- **Architecture Lead Decision:** Phase 1 Baseline — Pure Upstream stmmac DSA without NSS
 - **Status:** Approved Baseline Architecture Specification
-- **Revision:** Round 3 Review (Correct Port Mapping, SGMII 1000M, and GPIO39 Initialization Analysis)
+- **Revision:** Round 4 Review (Separation of stmmac from NSS Datapath, Single-Conduit Architecture, and Issue #5 Critical Analysis)
 
 ---
 
-## 1. Architectural Motivation
+## 1. Architectural Motivation & Strict Scope Separation
 
-In accordance with the **Architecture Gate G1 Final Review**, the initial custom firmware baseline must establish a **clean, reproducible, and verifiable Distributed Switch Architecture (DSA) operating on modern Linux 6.18, without Qualcomm NSS packet-processing acceleration**.
-
-### Key Rationale:
-1. **Isolation of Variables:** Attempting to simultaneously bring up new switch hardware, modern Linux 6.18, `ath11k` Wi-Fi, BoringTun Rust, and experimental NSS offload introduces too many failure vectors. If an Ethernet blackout or reboot loop occurs, isolating whether the fault lies in the NSS firmware IPC, memory exhaustion, or switch SerDes timing is nearly impossible.
-2. **Deterministic Baseline:** The dual-core 1.0 GHz Cortex-A53 CPU running Linux software flow offload (`nftables flowtable`) is capable of routing gigabit line-rate IPv4 TCP (~940 Mbps) with ~50–65% CPU utilization. This provides a rock-solid, fully functional daily-driver foundation.
-3. **RAM Preservation:** Running without NSS saves 8–16 MiB of contiguous physical SDRAM otherwise required for the NSS NPU firmware load region, maximizing available memory for Linux network buffers and userspace services on this 256 MB device.
-
----
-
-## 2. Hardware Subsystem Specifications & DTS Mapping
+In accordance with the **Architecture Gate G1 Final Review & Round 4 Consistency Audit**, the initial custom firmware baseline (Phase 1) is strictly defined as a **pure upstream Linux Distributed Switch Architecture (DSA) operating on modern Linux 6.18 with Synopsys DesignWare MAC (`stmmac`), completely free of Qualcomm NSS Datapath (`qcom,nss-dp`) and NSS firmware**.
 
 ```mermaid
-graph LR
-    subgraph "Qualcomm IPQ5018 SoC (AArch64)"
+flowchart TD
+    subgraph "Phase 1: Clean DSA Baseline (CURRENT GOAL)"
+        P1_MAC["Synopsys DesignWare MAC (stmmac / dwmac-ipq5018)"]
+        P1_CONDUIT["Single CPU Conduit: GMAC1 (eth1) over SGMII 1000M to Port 8"]
+        P1_DSA["Upstream Linux DSA Core (net/dsa/) + Motorcomm yt9215.c"]
+        P1_PORTS["DSA Slave Netdevs: lan1 (P0), lan2 (P1), lan3 (P2), wan (P3)"]
+        P1_OFFLOAD["Linux In-Kernel Software Flowtable (nftables flow_offload)"]
+        P1_MEM["Zero NSS Reservation (~182 MB usable RAM for Linux)"]
+        P1_MAC --> P1_CONDUIT --> P1_DSA --> P1_PORTS --> P1_OFFLOAD
+    end
+
+    subgraph "Phase 2: Qualcomm NSS Datapath (EXPERIMENTAL POST-BASELINE)"
+        P2_DP["Qualcomm NSS Datapath (qcom,nss-dp / qca-nss-dp.ko)"]
+        P2_CONDUIT["Dual CPU Conduit: dp2 (Port 8 SGMII) + dp1 (Port 4 Internal GE PHY)"]
+        P2_TAG["Out-of-Tree Enhanced DSA Tagger (tag_yt921x_enhanced.c)"]
+        P2_NSS["Qualcomm NSS NPU Firmware (retail_router0.bin @ 1 GHz)"]
+        P2_ECM["Enhanced Connection Manager (qca-nss-ecm.ko)"]
+        P2_MEM["8–16 MiB Pinned DRAM Heap (nss_region) + qca-nss-pbuf"]
+        P2_DP --> P2_CONDUIT --> P2_TAG --> P2_ECM --> P2_NSS
+    end
+```
+
+### Key Architectural Rules:
+1. **Zero NSS Datapath in Phase 1:** Phase 1 does NOT use `qcom,nss-dp`, does NOT declare `dp1` or `dp2`, does NOT load `qca-nss-drv.ko` or `qca-nss-ecm.ko`, and does NOT allocate the NSS DRAM memory region (`cr881x_nss_region`).
+2. **Upstream MAC Ownership:** Hardware GMAC1 is owned strictly by the Synopsys DesignWare MAC driver (`dwmac-ipq5018` / `stmmac`), registering standard Linux netdev `eth1`.
+3. **Isolation of Confounding Variables:** By validating the switch, PHY, wireless subsystem, and userspace software on upstream `stmmac` first, any hardware issues (such as switch reset timing or SerDes negotiation) can be debugged without interference from NSS firmware IPC or NPU ring buffer panics.
+
+---
+
+## 2. Phase 1 Hardware Subsystem Specifications & Single-Conduit Datapath
+
+```mermaid
+graph TD
+    subgraph "Qualcomm IPQ5018 SoC (AArch64 musl)"
         CPU["Dual-Core Cortex-A53 @ 1.0 GHz"]
-        GMAC1["GMAC1 (dp2 / eth1)"]
-        GMAC0["GMAC0 (dp1 / eth0)"]
-        INT_PHY["Internal GE PHY (88000.mdio:07)"]
-        WIFI0["AHB wifi0 (2.4 GHz 11ax)"]
-        TLMM["TLMM GPIO Controller"]
+        GMAC1["GMAC1 (dwmac-ipq5018 / stmmac -> netdev eth1)"]
+        GMAC0["GMAC0 (Disabled / Unbound in Phase 1 Single-Conduit)"]
+        TLMM["TLMM GPIO Controller (GPIO 36/37 MDIO, GPIO 39 Reset)"]
+        WIFI0["AHB wifi0 (IPQ5018 Integrated 2.4 GHz 11ax)"]
     end
 
-    subgraph "External Peripherals"
-        SWITCH["Motorcomm YT9215S/SC Switch (MDIO 0x1d)"]
-        WIFI1["Qualcomm QCN6102 (5 GHz HE160)"]
-        NAND["Winbond 128 MB SPI-NAND"]
+    subgraph "External Switch & Peripherals"
+        SWITCH["Motorcomm YT9215 Switch (MDIO Addr: 0x1d)"]
+        WIFI1["Qualcomm QCN6102 (5 GHz HE160 Radio)"]
+        NAND["Winbond W25N01GWZEIG (128 MB SPI-NAND)"]
     end
 
-    GMAC1 -- "CPU1: SGMII Fixed-Link 1000M (Port 8)" --> SWITCH
-    GMAC0 --> INT_PHY -- "CPU2: Internal Fixed-Link 1000M (Port 4)" --> SWITCH
-    TLMM -- "GPIO 39 (Reset Control / Workaround Analysis)" --> SWITCH
-    TLMM -- "GPIO 36/37 (MDC/MDIO Bus 1)" --> SWITCH
-    CPU -- "PCIe / AHB" --> WIFI1
+    GMAC1 -- "Sole CPU Conduit: SGMII 1000M Fixed-Link" --> PORT8["Switch Port 8 (CPU Port)"]
+    TLMM -- "MDIO Bus 1 (MDC/MDIO)" --> SWITCH
+    TLMM -- "GPIO 39 (Hardware Reset Control)" --> SWITCH
+    CPU -- "PCIe" --> WIFI1
     CPU -- "QPIC SPI" --> NAND
 
     SWITCH --> LAN1["LAN 1 (Port 0)"]
@@ -53,111 +74,124 @@ graph LR
     SWITCH --> WAN["WAN (Port 3)"]
 ```
 
-### 2.1 Authoritative Switch Port Mapping (Source: `target/linux/qualcommax/dts/ipq5018-cr881x.dts`)
+### 2.1 Authoritative Switch Port Mapping (Phase 1 Baseline)
+In Phase 1, the switch ports are mapped as follows:
 
-Direct inspection of `ipq5018-cr881x.dts` in the reference tree establishes the exact hardware port assignments:
-
-| Switch Port | Internal PHY | Interface Label | Connected Subsystem / Role | Operational Parameters |
+| Switch Port | Internal PHY | Interface Netdev | Connected Subsystem / Role | Phase 1 Operational Configuration |
 |---|---|---|---|---|
-| **`port@0`** | `sw_phy0` (addr 0) | `lan1` | Physical LAN Port 1 | 10/100/1000BASE-T auto-negotiation (`phy-mode = "internal"`). |
-| **`port@1`** | `sw_phy1` (addr 1) | `lan2` | Physical LAN Port 2 | 10/100/1000BASE-T auto-negotiation (`phy-mode = "internal"`). |
-| **`port@2`** | `sw_phy2` (addr 2) | `lan3` | Physical LAN Port 3 | 10/100/1000BASE-T auto-negotiation (`phy-mode = "internal"`). |
-| **`port@3`** | `sw_phy3` (addr 3) | `wan` | Physical WAN Port | 10/100/1000BASE-T auto-negotiation (`phy-mode = "internal"`). |
-| **`port@4`** | `sw_phy4` (addr 4) | `cpu` (Secondary) | CPU Conduit 2 (`dp1` / `eth0`) | Connected to Qualcomm Internal GE PHY (`phy-handle = <&ge_phy>`), fixed-link 1000 Mbps full-duplex. Constrained to WAN traffic via `motorcomm,secondary-conduit-user-mask = <0x8>`. |
-| **`port@8`** | SerDes MAC8 | CPU (Primary) | CPU Conduit 1 (`dp2` / `eth1`) | **SGMII fixed-link 1000 Mbps full-duplex** (`phy-mode = "sgmii"`, `speed = <1000>`). Primary conduit for all LAN user ports. **NOT 2500Base-X.** |
-| **`port@10`**| N/A | `mcu` | Internal MCU Channel | Internal switch hardware state and management channel. |
+| **`port@0`** | `sw_phy0` (addr 0) | `lan1` | Physical LAN Port 1 | Slave netdev bridged into `br-lan` (`phy-mode = "internal"`). |
+| **`port@1`** | `sw_phy1` (addr 1) | `lan2` | Physical LAN Port 2 | Slave netdev bridged into `br-lan` (`phy-mode = "internal"`). |
+| **`port@2`** | `sw_phy2` (addr 2) | `lan3` | Physical LAN Port 3 | Slave netdev bridged into `br-lan` (`phy-mode = "internal"`). |
+| **`port@3`** | `sw_phy3` (addr 3) | `wan` | Physical WAN Port | Slave netdev assigned to WAN firewall zone (`phy-mode = "internal"`). |
+| **`port@4`** | `sw_phy4` (addr 4) | N/A | Connected to Internal GE PHY | **Disabled / Unconfigured in Phase 1.** (Reserved for Phase 2 dual-conduit). |
+| **`port@8`** | SerDes MAC8 | `eth1` (Conduit Master) | **Sole CPU Conduit (Primary)** | **SGMII fixed-link 1000 Mbps full-duplex** (`phy-mode = "sgmii"`, `speed = <1000>`). Conduit for all 4 user ports. |
+| **`port@10`**| N/A | N/A | Internal MCU Channel | Internal switch hardware state and management channel. |
 
 ---
 
-### 2.2 SGMII Link Configuration vs. Erroneous 2500Base-X Claims
+### 2.2 Single-Conduit WAN/LAN Traffic Demultiplexing & Tagging
 
-- **DTS Ground Truth:** In `ipq5018-cr881x.dts`, Port 8 is declared as:
-  ```dts
-  port@8 {
-      reg = <8>;
-      phy-mode = "sgmii";
-      ethernet = <&dp2>;
-      fixed-link {
-          speed = <1000>;
-          full-duplex;
-          pause;
-          asym-pause;
-      };
-  };
-  ```
-- **Correction:** Prior documentation rounds incorrectly asserted a `2500base-x` SerDes link. The Xiaomi CR8818 board design couples the IPQ5018 UNIPHY to Motorcomm Port 8 strictly at **1000 Mbps SGMII**. Any attempt to configure `2500base-x` will result in SerDes clock mismatch and total link loss.
+#### How 4 Ports Function Over a Single CPU Conduit:
+In pure upstream DSA without secondary conduits:
+1. **Master Netdev:** GMAC1 initializes under `stmmac` as master interface `eth1` with SGMII 1000 Mbps link.
+2. **DSA Slave Netdev Creation:** The Linux DSA core registers independent virtual network devices: `lan1`, `lan2`, `lan3`, and `wan`.
+3. **Egress Path (CPU $ightarrow$ Switch):**
+   - When a packet is transmitted on `wan` or `lan1`, the DSA tagger appends a Motorcomm DSA header containing the destination port index (0, 1, 2, or 3).
+   - The master interface (`eth1`) transmits the tagged frame over the SGMII 1000 Mbps link to Port 8.
+   - Switch Port 8 strips the DSA tag and forwards the frame to the corresponding physical port.
+4. **Ingress Path (Switch $ightarrow$ CPU):**
+   - Packets arriving at physical Port 3 (WAN) or Ports 0–2 (LAN) are tagged by the switch hardware with ingress port metadata.
+   - The frame is forwarded across SGMII Port 8 to master netdev `eth1`.
+   - The kernel DSA core strips the tag and demultiplexes the packet into the appropriate slave netdev (`wan` or `lanX`).
+5. **VLAN & Firewall Isolation:**
+   - LAN ports (`lan1-lan3`) are enrolled into Linux bridge `br-lan`.
+   - WAN (`wan`) is kept completely unbridged and assigned to firewall zone `wan`.
+   - The Linux network stack ensures 100% layer-2 and layer-3 isolation between WAN and LAN.
 
----
-
-### 2.3 GPIO 39 Switch Initialization & The "No Ethernet" Bug (Issue #5 Analysis)
-
-Investigation of empirical data from `https://github.com/zcop/immortalwrt/issues/5` ("CR880X M79 B no ethernet") reveals a critical hardware initialization vulnerability on CR880x/CR881x Ver.B hardware:
-
-#### The Failure Symptom:
-When booting generic or improperly sequenced CR881x firmware, all Ethernet ports are completely dead. Dmesg inspection reveals:
-```text
-yt921x 90000.mdio-1:1d: Unexpected chipid 0xffff
-```
-Because the MDIO bus read returns `0xffff`, the Motorcomm DSA driver fails to probe, no netdevs are created, and only Wi-Fi operates.
-
-#### Root-Cause Mechanics:
-1. **Reset Pin Sequencing:** GPIO 39 controls the hardware reset line of the Motorcomm switch.
-2. In stock firmware and the default DTS (`reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>; reset-assert-us = <10000>; reset-deassert-us = <50000>;`), the active-low pulse duration or LDO power ramp-up timing is insufficient on cold boot or warm reboot. The switch is either held in reset or in an undefined power state when the MDIO bus controller begins device enumeration.
-3. **Userspace Workaround:** Community user Gaojianli proved that setting GPIO 39 (`gpio551`) to `1` (HIGH) manually and triggering a driver rebind (`echo "90000.mdio-1:1d" > /sys/bus/mdio_bus/drivers/yt921x/bind`) immediately revived all Ethernet ports. However, ports disappeared again on warm reboot.
-4. **GPIO Hog Workaround:** Gaojianli verified that configuring a TLMM `gpio-hog` forced HIGH (`output-high`) on GPIO 39 and removing `reset-gpios` from `ethernet-switch@1d` allowed Ethernet to survive initial boot.
-
-#### Architectural Mitigation & Test Suite:
-We must NOT simply apply a workaround blindly. We define three candidate approaches to be evaluated during hardware validation:
-- **Approach A (Extended Reset Timing):** Increase deassert delay in DTS (`reset-assert-us = <50000>; reset-deassert-us = <250000>;`) to give the switch internal PLL and LDO time to stabilize before MDIO probe.
-- **Approach B (GPIO Hog):** Lock GPIO 39 to HIGH at the pin controller level (`gpio-hog`), relying on hardware power-on-reset circuitry rather than driver-pulsed software reset.
-- **Approach C (Early Userspace Procd Hook):** Pre-probe GPIO initialization script in `procd` before network service startup.
-
-#### Mandatory Hardware Reboot Test Protocol:
-Before any firmware build is considered functionally verified, it must pass a **4-part reboot validation suite**:
-1. **Cold Boot Test:** Complete power cut for 30 seconds; power on; verify all 4 ports probe with valid chip ID (not `0xffff`).
-2. **Warm Reboot Test:** Issue software `reboot` command; verify Ethernet links re-establish without power cycle.
-3. **Reset Button Test:** Pulse physical reset button while running; verify switch recovers cleanly.
-4. **20-Cycle Automated Reboot Soak Test:** Execute 20 consecutive automated reboots via test script, logging dmesg on each cycle. Acceptance criteria: **0 failures out of 20 cycles** (100% Ethernet probe success).
+#### Driver Parser & Property Reality:
+- In upstream Linux 6.19+ DSA (`drivers/net/dsa/motorcomm/yt9215.c`), standard DSA tag operations apply.
+- The custom property `motorcomm,secondary-conduit-user-mask = <0x8>` is parsed **ONLY** by `zcop`'s out-of-tree enhanced driver (`tag_yt921x_enhanced.c`). Upstream Linux DSA ignores or rejects this property. Phase 1 relies strictly on standard upstream single-conduit tagging.
 
 ---
 
-### 2.4 Wireless Subsystem & BDF Staging Reality
+## 3. Investigation of GPIO 39 Switch Initialization & The "No Ethernet" Bug
 
-- **2.4 GHz Radio:** `wifi0` (Integrated IPQ5018 AHB radio, 2x2 802.11ax, up to 574 Mbps).
-- **5 GHz Radio:** `wifi1` (Qualcomm QCN6102 / QCN6122, 2x2 802.11ax, **HE160 mandatory up to 2402 Mbps**).
-- **Strict HE160 Mandate:** Channel 36–64 continuous 160 MHz width must be maintained. Lowering to 80 MHz is strictly prohibited.
-- **DRAM BDF Staging vs. Physical NAND Flash:**
-  - Physical calibration lives in NAND partition `0:ART` at offset `0x00780000` (length 1 MiB).
-  - DTS declares `qcom,bdf-addr = <0x4c400000>` for 2.4 GHz and `qcom,bdf-addr = <0x4d100000>` for 5 GHz.
-  - These are **DRAM memory staging addresses** where the ath11k Q6 WCSS remote processor loads the calibration data, NOT raw offsets in NAND flash.
+### 3.1 Empirical Facts vs. Hypotheses (zcop Issue #5 Analysis)
+
+| Category | Finding / Telemetry | Technical Significance |
+|---|---|---|
+| **Observed Empirical Fact** | `yt921x 90000.mdio-1:1d: Unexpected chipid 0xffff` | On initial boot with default DTS, the switch MDIO read returns `0xffff`. Driver probe fails; all Ethernet ports are missing; Wi-Fi works. |
+| **Observed Empirical Fact** | User Gaojianli exported GPIO 39 (`gpio551`) in userspace, set value to `1` (HIGH), and issued driver rebind: `echo "90000.mdio-1:1d" > /sys/bus/mdio_bus/drivers/yt921x/bind`. | All Ethernet ports immediately came UP and operated normally. However, after software reboot, ports were lost again. |
+| **Observed Empirical Fact** | Configuring TLMM `gpio-hog` forced HIGH on GPIO 39 with `reset-gpios` commented out allowed Ethernet to survive initial boot. | Proves GPIO 39 must be maintained HIGH for switch operation. |
+| **Technical Hypothesis** | LDO power-rail sequencing / internal PLL clock settling time. | **Do NOT state as fact that GPIO 39 is an "LDO enable" pin** without physical board schematics; DTS explicitly labels it `reset-gpios`. The failure is likely caused by active-low reset assertion timing or power-on delay before MDIO enumeration. |
+| **Flawed Proposed Workaround** | Userspace `procd` pre-init GPIO toggle hook. | **INVALID / REJECTED:** Kernel dmesg logs show the driver probe occurs at kernel timestamp ~5.6s, well before userspace `procd` starts. A userspace script cannot retroactively fix a built-in kernel driver probe failure unless module loading order is fundamentally restructured. |
+
+### 3.2 Candidate Solutions for Hardware Validation
+During future hardware verification (Phase P5), three specific kernel-level approaches will be evaluated:
+1. **Approach 1 (Extended Reset Timing in DTS):** Retain `reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>` with extended deassert delay:
+   ```dts
+   reset-assert-us = <50000>;  /* 50ms */
+   reset-deassert-us = <250000>; /* 250ms */
+   ```
+2. **Approach 2 (TLMM GPIO Hog):** Lock GPIO 39 HIGH at the pinctrl driver level:
+   ```dts
+   switch_rst_hog: switch_rst_hog {
+       gpio-hog;
+       gpios = <39 GPIO_ACTIVE_HIGH>;
+       output-high;
+       line-name = "switch_rst";
+   };
+   ```
+3. **Approach 3 (Out-of-Tree Modular Driver):** Compile `yt921x` as a loadable module (`.ko`), allowing an early userspace script to sequence GPIO 39 before `insmod`.
+
+### 3.3 Mandatory Hardware Reboot Test Protocol (Phase P5)
+> [!IMPORTANT]
+> **NO live hardware tests will be executed in this phase.** When hardware validation is authorized in Phase P5, the build must pass:
+> 1. **Cold Boot Test:** 30s complete power cut $ightarrow$ boot $ightarrow$ verify 0 `0xffff` errors in dmesg.
+> 2. **Warm Reboot Test:** Issue `reboot` command $ightarrow$ verify Ethernet links re-establish without power cycle.
+> 3. **Reset Button Test:** Pulse physical reset button $ightarrow$ verify switch recovers cleanly.
+> 4. **20-Cycle Automated Reboot Soak Test:** 20 consecutive automated reboot cycles logging dmesg. Passing threshold: **0 failures out of 20 cycles** (100% Ethernet probe success).
 
 ---
 
-## 3. VPN Subsystem: BoringTun Rust Architecture
+## 4. Wireless Subsystem: Calibration Dataflow & HE160 Architecture
 
-### 3.1 Architecture & Single Engine Mandate
-In accordance with Architecture Lead instructions, **BoringTun Rust is the SOLE WireGuard engine** for this project.
-- In-kernel WireGuard (`kmod-wireguard`) is **`NOT_SELECTED`** to prevent kernel bloat and maintain a unified userspace cryptographic architecture.
-- **Target ABI:** Modern 64-bit **`aarch64-unknown-linux-musl`** (matching Cortex-A53 CPU on OpenWrt `qualcommax/ipq50xx`).
-- **Current Evidence Status:** `SOURCE_VERIFIED (Target ABI AArch64)` / `NOT_BUILD_VERIFIED (AArch64)`. The AArch64 binary will be compiled and verified on PC in Phase P4.
+### 4.1 Calibration Dataflow from NAND Flash to Q6 WCSS Firmware
 
 ```mermaid
-graph TD
-    subgraph "Userspace (AArch64 musl)"
-        CONF["/etc/wireguard/wg0.conf"] --> TOOLS["wireguard-tools (wg / wg-quick)"]
-        TOOLS -- "UAPI over UNIX Domain Socket (/var/run/wireguard/wg0.sock)" --> BT["BoringTun Daemon (Rust AArch64)"]
-    end
+sequenceDiagram
+    autonumber
+    participant NAND as "Winbond SPI NAND (0:ART @ 0x00780000)"
+    participant KERNEL as "Linux Kernel (nvmem / smem-part)"
+    participant DRAM as "DRAM Reserved Staging Memory"
+    participant Q6 as "ath11k Q6 WCSS Remote Processor"
 
-    subgraph "Linux Kernel 6.18 (AArch64)"
-        BT -- "TUN Character Device (/dev/net/tun)" --> TUN["wg0 Netdev Interface"]
-        TUN --> NFT["nftables Flow Offload"]
-        NFT --> BR["br-lan / DSA Switch"]
-    end
+    Note over NAND,KERNEL: System Boot & Driver Probe
+    KERNEL->>NAND: Read 1 MiB factory calibration block from partition 0:ART
+    KERNEL->>KERNEL: Extract mac_addr_dp1, mac_addr_dp2, and RF tables
+    KERNEL->>DRAM: Write 2.4 GHz BDF to DRAM @ 0x4c400000
+    KERNEL->>DRAM: Write 5 GHz BDF to DRAM @ 0x4d100000
+    Note over DRAM,Q6: ath11k Firmware Handshake
+    Q6->>DRAM: Read BDF calibration data from DRAM staging addresses
+    Q6->>Q6: Initialize RF synth, power amplifiers, and HE160 stage
+    Q6-->>KERNEL: Signal wireless hardware ready
 ```
 
-### 3.2 Empirical AArch64 Benchmarking Protocol
-To replace prior speculative memory comparisons, BoringTun will be evaluated against strict empirical metrics on target hardware:
-1. **Single-Client & 4-Client Saturated Throughput:** Bidirectional `iperf3 -P 4` over tunnel; record sustained throughput.
-2. **Resident Memory Profile:** Measure `VmRSS`, `VmHWM` (High Water Mark), and PSS over a continuous 24-hour soak test. Acceptance threshold: Peak `VmRSS < 15 MB`.
-3. **CPU Utilization:** Per-core CPU load under 300 Mbps encrypted traffic.
-4. **Handshake & RTT Jitter:** Time required for 1-RTT handshake and round-trip ping jitter under saturated link.
+### 4.2 Silicon Disambiguation: QCN6102 vs. QCN6122
+- **DTS Ground Truth:** `ipq5018-cr881x.dts` includes `"ipq5018-qcn6122.dtsi"`, while the node is commented `// QCN6102` with `qcom,board_id = <0x60>;` and firmware `ath11k/QCN6122/hw1.0/m3_fw.mdt`.
+- **Silicon Demarcation:** Qualcomm's QCN6102 and QCN6122 belong to the same Pine/Waikiki hardware family. QCN6122 is the dual-band/multi-radio SoC variant, whereas QCN6102 is the dedicated 5 GHz variant deployed on the CR8818 board. Both utilize the identical `ath11k` driver codebase and QCN6122 firmware line.
+- **Empirical Validation Rule:** Defining `qcom,bdf-addr = <0x4d100000>` in DTS does NOT prove that extraction from `0:ART` succeeded. Successful loading must be empirically certified by inspecting dmesg for `ath11k_pci ... fw_version ... calibration loaded` during Phase P5.
+- **Strict HE160 Mandate:** 5 GHz Wi-Fi 6 HE160 (160 MHz continuous channel width, 2402 Mbps theoretical PHY rate) is a **non-negotiable MUST requirement** and will not be degraded to 80 MHz.
+
+---
+
+## 5. VPN Subsystem: BoringTun Rust Architecture
+
+- **Sole WireGuard Engine:** BoringTun Rust is the **ONLY** WireGuard implementation in target firmware; in-kernel WireGuard (`kmod-wireguard`) is classified as **`NOT_SELECTED`**.
+- **Target ABI:** Modern 64-bit **`aarch64-unknown-linux-musl`** (matching Cortex-A53 CPU on OpenWrt `qualcommax/ipq50xx`).
+- **Current Evidence Status:** `NOT_BUILD_VERIFIED` (ARMv7 tested in lab; AArch64 compilation scheduled for Phase P4).
+- **Target Acceptance Criteria:**
+  - Peak resident memory under load: `VmRSS < 15 MB` (`ACCEPTANCE_TARGET`).
+  - Sustained throughput: >350 Mbps over encrypted tunnel (`ACCEPTANCE_TARGET`).
+  - Handshake latency: <15 ms (`ACCEPTANCE_TARGET`).
+  - 24-hour soak test with zero memory leaks or thread crashes (`ACCEPTANCE_TARGET`).

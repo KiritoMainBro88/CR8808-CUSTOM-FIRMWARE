@@ -6,11 +6,11 @@
 - **Primary Operational Constraint:** **Operator has NO UART serial console and NO external hardware programmer.**
 - **Architecture Lead Decision:** **`NO-GO on flashing pending independent recovery validation`**
 - **Status:** Authoritative Pre-P2 Reference Specification
-- **Revision:** Round 3 Review (Empirical Demarcation & Non-UART Reality Verification)
+- **Revision:** Round 4 Review (Strict Demarcation of Unverified Bootloader Behavior & No-Flash Policy)
 
 ---
 
-## 1. Problem Statement and Safety Mandate
+## 1. Problem Statement and Absolute Safety Mandate
 
 The project owner depends on this physical router for daily workstation Internet access and does not possess a UART USB-TTL adapter soldered to the board, nor a dedicated SOP-8/WSON-8 flash programmer.
 
@@ -60,8 +60,10 @@ Stock Xiaomi U-Boot does **NOT** use generic upstream U-Boot variables like `boo
 | **`flag_try_sys2_failed`** | `0`, `1`, `2` | Counter/flag incremented by U-Boot when Sys2 fails to complete boot. | `REPORTED_UNVERIFIED` |
 | **`flag_last_success`** | `0` or `1` | Indicates which system partition last successfully reached userland. | `REPORTED_UNVERIFIED` |
 
-**Xiaomi Failover Boot Mechanism (`REPORTED_UNVERIFIED`):**
-When U-Boot starts, it reads `flag_boot_rootfs`. If the target system fails to boot multiple times (triggering hardware watchdog reset before `flag_boot_success` is written to `1`), U-Boot increments the corresponding `flag_try_sysX_failed` variable. Once the failure threshold is reached, U-Boot flips `flag_boot_rootfs` to the opposite slot and attempts to boot the fallback image. This behavior is documented in IPQ5018 community teardowns but has not yet been verified on this specific device.
+> [!WARNING]
+> **No Premature NVRAM Writes:**
+> All bootloader failover mechanisms and counter behaviors documented above are classified as **`REPORTED_UNVERIFIED`** on this specific CR8808 Ver.B hardware.
+> Under no circumstances will automated or manual scripts execute destructive or modifying NVRAM commands (such as `nvram set flag_boot_rootfs=0` or `nvram commit`) until the bootloader's exact behavior and watchdog fallback sequence have been independently verified.
 
 ---
 
@@ -83,7 +85,7 @@ Without a soldered UART console:
 
 ---
 
-## 4. Defense-in-Depth Rollback Hierarchy
+## 4. Defense-in-Depth Rollback Hierarchy (Conceptual Planning Only)
 
 ```mermaid
 flowchart TD
@@ -91,7 +93,7 @@ flowchart TD
         S1["Slot 1 (Sys2): Stock Xiaomi RA82 v1.4.31 (Active)"]
     end
 
-    subgraph "Staging Protocol (Phase P6 Target)"
+    subgraph "Hypothetical Staging Protocol (Requires Prior Validation)"
         BACKUP["Full Byte-Level MTD Partition Dumps Verified Off-Device"]
         S0["Slot 0 (Sys1): Custom OpenWrt Image Staged"]
         FLAG["Set flag_boot_rootfs = 0; flag_boot_success = 0"]
@@ -105,19 +107,12 @@ flowchart TD
         FAIL --> S1_RECOVER["Router Boots Back into Stock RA82 Slot 1"]
     end
 
-    S1 --> BACKUP --> S0 --> FLAG --> BOOT
+    S1 -. "BLOCKED" .-> BACKUP -. "BLOCKED" .-> S0 -. "BLOCKED" .-> FLAG
 ```
 
-### 4.1 Tier 1: Inactive Slot 0 Staging (Slot 1 Stock Untouched)
-1. **Never Touch Active Slot:** The stock Xiaomi RA82 firmware remains running on Slot 1 (`0:rootfs_1`).
-2. **Flash Inactive Slot Only:** The custom OpenWrt image is flashed strictly to Slot 0 (`0:rootfs`).
-3. **One-Shot Boot Attempt:** The NVRAM flags are set:
-   ```sh
-   nvram set flag_boot_rootfs=0
-   nvram set flag_boot_success=0
-   nvram commit
-   ```
-4. **Automated Rollback:** If Slot 0 fails to reach the userland confirmation service within the watchdog timeout window, U-Boot automatically fails over back to `flag_boot_rootfs=1` (Stock RA82).
+### 4.1 Tier 1: Inactive Slot 0 Staging (Theoretical)
+- If persistent installation is ever considered in future phases, the stock firmware on Slot 1 must remain untouched.
+- However, because A/B automated fallback is currently `REPORTED_UNVERIFIED` and lacks UART verification, **Slot 0 staging cannot be treated as a guaranteed fail-safe**.
 
 ### 4.2 Tier 2: OpenWrt Failsafe Mode
 If Slot 0 boots successfully to userland but network configuration (DSA, firewall, or SSH) is corrupted:

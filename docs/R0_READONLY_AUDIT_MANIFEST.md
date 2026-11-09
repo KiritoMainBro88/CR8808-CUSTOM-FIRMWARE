@@ -5,7 +5,7 @@
 - **Target Device:** Xiaomi CR8808 Ver.B (Stock Firmware: RA82 Global v1.4.31, QSDK Linux 4.4.60)
 - **Status:** **PROPOSAL ONLY — NOT YET AUTHORIZED FOR EXECUTION**
 - **Safety Class:** Class R0 (Pure Read-Only, Zero Router State Modification)
-- **Revision:** Round 3 Review (Correct Port Demarcation & Bus Read Risk Levels)
+- **Revision:** Round 4 Review (Correct Port Demarcation & Bus Read Risk Levels)
 
 ---
 
