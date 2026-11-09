@@ -2,17 +2,17 @@
 
 - Version: `0.1.0-dev.2`
 - Date: 2026-11-09
-- Phase: P1 Architecture Gate G1 Finalized (Round 2 Corrections) / P2 Preparation
-- Current Branch: `feature/g1-corrections-round2`
-- Overall status: `GATE_G1_CORRECTIONS_ROUND2_COMPLETE`
-- GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`)
+- Phase: P1 Architecture Gate G1 Finalized (Round 3 Hardware Demarcation) / P2 Preparation
+- Current Branch: `feature/g1-corrections-round3`
+- Overall status: `GATE_G1_CORRECTIONS_ROUND3_COMPLETE`
+- GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`, `feature/g1-corrections-round3`)
 - Flash authorization: `NO-GO pending independent recovery validation`
 - Initial Firmware Baseline: `CLEAN_DSA_LINUX_6.18_WITHOUT_NSS` (Approved)
 - Primary Hardware Reference: `zcop/immortalwrt` (commit `c5ad88b`) — Approved for CR881x DTS & YT921x DSA
 - Secondary NSS Reference: `kuncy7/nss-packages` & `kuncy7/openwrt-nss-edma` — Architectural reference for Phase 2
-- WireGuard Target Engine: `BoringTun Rust` (Compiled for `aarch64-unknown-linux-musl`)
+- WireGuard Target Engine: `BoringTun Rust` (Target ABI: `aarch64-unknown-linux-musl`; sole engine)
 - Wi-Fi Target Mode: `5 GHz HE160 (160 MHz)` (Mandatory retention)
-- Git History Remediation: `DRY_RUN_VALIDATED_CLEAN` (Mirror backup refreshed; 6/6 commits verified 100% clean)
+- Git History Remediation: `DRY_RUN_VALIDATED_CLEAN` (All commits verified 100% clean)
 - Firmware build: `NOT_STARTED`
 - Hardware validation: `NOT_STARTED`
 
@@ -48,3 +48,4 @@
 - 2026-11-09: ChatGPT Architecture Review received. Branch `review/g1-architecture-corrections` created. Git history security audit executed; technical report conclusions corrected; in-depth NSS comparative analysis authored; `manifests/sources.yaml` synchronized. Author: Gemini (Implementation Lead).
 - 2026-11-09: Architecture Gate G1 conditionally approved. Baseline selected: Clean DSA Linux 6.18 without NSS. Git history dry-run executed on test clone (100% clean). Authored feature parity matrix, DSA baseline design, NSS experimental design, non-UART recovery architecture, and Class R0 read-only audit manifest. Deliverable: `reports/2026-11-09/FINAL_G1_ARCHITECTURE_DECISION.md`. Author: Gemini (Implementation Lead).
 - 2026-11-09: Architecture Gate G1 Round 2 Corrections completed on branch `feature/g1-corrections-round2`. Disambiguated internal PHY `0x004dd0c0` from Motorcomm switch at `0x1d`; mapped DSA driver divergence (upstream vs zcop); rebuilt feature parity matrix with empirical taxonomy; corrected BoringTun target ABI to AArch64; overhauled recovery design with real Xiaomi boot flags and TFTP flash reality; refined R0 read-only manifest for QSDK tooling. Updated dry-run rewrite verified 100% clean across all 6 commits. Deliverable: `reports/2026-11-09/G1_REVIEW_ROUND2.md`. Author: Gemini (Implementation Lead).
+- 2026-11-09: Architecture Gate G1 Round 3 Corrections completed on branch `feature/g1-corrections-round3`. Grounded switch port mapping in zcop reference DTS (P0-P2 LAN1-3, P3 WAN, P4 CPU2 dp1 internal GE PHY, P8 CPU1 dp2 SGMII 1000M, P10 MCU); removed erroneous 2500Base-X claims; investigated Issue #5 GPIO39 switch init bug (0xffff chip ID) and established 4-part 20-cycle reboot test protocol; separated upstream OpenWrt stmmac from zcop nss-dp dual-conduit; disambiguated DRAM BDF staging (0x4c400000/0x4d100000) from physical NAND 0:ART (0x780000); decoupled generic packages in parity matrix; established BoringTun Rust as sole WireGuard engine (in-kernel marked NOT_SELECTED); reconciled Git commit history evidence. Deliverable: `reports/2026-11-09/G1_REVIEW_ROUND3.md`. Author: Gemini (Implementation Lead).

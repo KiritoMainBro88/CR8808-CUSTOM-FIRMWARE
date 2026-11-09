@@ -52,7 +52,7 @@ graph LR
 - **The Error in Early Discovery:** Early dmesg logs reported `0x004dd0c0` during Ethernet PHY initialization, which was mistakenly conflated with the external Motorcomm switch.
 - **The Correct Technical Reality:**
   - `0x004dd0c0` has Qualcomm OUI `00:4d:d0` and belongs to the **IPQ5018 Internal Gigabit PHY** residing on the internal AHB MDIO bus at address `07` (`88000.mdio:07`).
-  - The **Motorcomm YT9215 switch** is an external IC connected to GMAC1 via 2500Base-X SerDes and managed via bit-banged MDIO Bus 1 (GPIO 36 MDC, GPIO 37 MDIO, GPIO 39 reset) at MDIO address **`0x1d`** (29 decimal).
+  - The **Motorcomm YT9215 switch** is an external IC connected to GMAC1 via SGMII 1000M SerDes and managed via bit-banged MDIO Bus 1 (GPIO 36 MDC, GPIO 37 MDIO, GPIO 39 reset) at MDIO address **`0x1d`** (29 decimal).
   - All project documents (`02_DEVICE_BASELINE.md`, `DSA_BASELINE_DESIGN.md`, `R0_READONLY_AUDIT_MANIFEST.md`, `FINAL_G1_ARCHITECTURE_DECISION.md`, `G1_DISCOVERY_REPORT.md`, `CHATGPT_G1_REVIEW_RESPONSE.md`) have been audited and updated to maintain this strict hardware separation.
 
 ---

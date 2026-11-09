@@ -5,7 +5,7 @@
 - **Target Device:** Xiaomi CR8808 Ver.B (Stock Firmware: RA82 Global v1.4.31, QSDK Linux 4.4.60)
 - **Status:** **PROPOSAL ONLY — NOT YET AUTHORIZED FOR EXECUTION**
 - **Safety Class:** Class R0 (Pure Read-Only, Zero Router State Modification)
-- **Revision:** Round 2 Review (QSDK Tooling Realities & Bus Read Risk Levels)
+- **Revision:** Round 3 Review (Correct Port Demarcation & Bus Read Risk Levels)
 
 ---
 
@@ -52,7 +52,14 @@ Even within read-only operations, commands carry different levels of bus interac
 ## 4. Hardware Disambiguation & `/proc/smi` Technical Overview
 
 ### 4.1 PHY vs. Switch Hardware Demarcation
-- **Switch Hardware:** The Motorcomm YT9215S/SC switch is an external IC addressed at MDIO address `0x1d` on MDIO Bus 1 (GPIO 36 MDC, GPIO 37 MDIO). Its registers govern port isolation, SerDes link configuration, and VLAN tags.
+- **Switch Hardware:** The Motorcomm YT9215S/SC switch is an external IC addressed at MDIO address `0x1d` on MDIO Bus 1 (GPIO 36 MDC, GPIO 37 MDIO). Its ports are wired as:
+  - `port@0`: LAN1 (internal PHY 0)
+  - `port@1`: LAN2 (internal PHY 1)
+  - `port@2`: LAN3 (internal PHY 2)
+  - `port@3`: WAN (internal PHY 3)
+  - `port@4`: CPU Conduit 2 (`dp1` / `eth0` via internal GE PHY, fixed-link 1000M)
+  - `port@8`: CPU Conduit 1 (`dp2` / `eth1` via SGMII fixed-link 1000M)
+  - `port@10`: Internal MCU management channel
 - **Internal SoC PHY:** The Qualcomm IPQ5018 Internal Gigabit Ethernet PHY sits at `88000.mdio:07` on the SoC internal MDIO bus, reporting PHY ID `0x004dd0c0`.
 - The R0 audit is designed to query these two distinct hardware components without conflating their addresses or driver interfaces.
 

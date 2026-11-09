@@ -6,7 +6,7 @@
 - **Primary Operational Constraint:** **Operator has NO UART serial console and NO external hardware programmer.**
 - **Architecture Lead Decision:** **`NO-GO on flashing pending independent recovery validation`**
 - **Status:** Authoritative Pre-P2 Reference Specification
-- **Revision:** Round 2 Review (U-Boot TFTP Reality & Real Xiaomi Boot Flags)
+- **Revision:** Round 3 Review (Empirical Demarcation & Non-UART Reality Verification)
 
 ---
 
@@ -44,30 +44,30 @@ graph TD
 
 ### 2.1 Critical Factory Partitions
 - **`0:boot` (U-Boot):** Contains the primary Qualcomm IPQ bootloader. Must NEVER be overwritten.
-- **`0:ART`:** Acoustic / RF Tuning table containing calibration for IPQ5018 2.4 GHz and QCN6102 5 GHz radios. Irreplaceable without lab RF equipment.
+- **`0:ART`:** Acoustic / RF Tuning table containing calibration for IPQ5018 2.4 GHz and QCN6102 5 GHz radios. Irreplaceable without lab RF equipment. Located at NAND offset `0x00780000`, size 1 MiB (`reg = <0x00780000 0x00100000>`).
 - **`0:bdata`:** Contains board serial number, country code, and factory MAC addresses.
 - **`0:rootfs` (Sys1 / Slot 0):** Primary firmware image partition.
 - **`0:rootfs_1` (Sys2 / Slot 1):** Secondary firmware image partition. Currently active with stock Xiaomi RA82 v1.4.31.
 
-### 2.2 Real Xiaomi Bootloader NVRAM Flags
+### 2.2 Real Xiaomi Bootloader NVRAM Flags (`REPORTED_UNVERIFIED`)
 Stock Xiaomi U-Boot does **NOT** use generic upstream U-Boot variables like `bootcounter` or `boot_success`. Instead, Xiaomi's boot logic is governed by specific NVRAM variables:
 
-| NVRAM Variable | Valid Values | Operational Role |
-|---|---|---|
-| **`flag_boot_rootfs`** | `0` or `1` | Selects active boot slot. `0` boots Sys1 (`rootfs`), `1` boots Sys2 (`rootfs_1`). |
-| **`flag_boot_success`** | `0` or `1` | Set to `0` by bootloader during boot attempt; must be set to `1` by userland script upon successful boot completion. |
-| **`flag_try_sys1_failed`** | `0`, `1`, `2` | Counter/flag incremented by U-Boot when Sys1 fails to complete boot. |
-| **`flag_try_sys2_failed`** | `0`, `1`, `2` | Counter/flag incremented by U-Boot when Sys2 fails to complete boot. |
-| **`flag_last_success`** | `0` or `1` | Indicates which system partition last successfully reached userland. |
+| NVRAM Variable | Valid Values | Operational Role | Evidence Status |
+|---|---|---|---|
+| **`flag_boot_rootfs`** | `0` or `1` | Selects active boot slot. `0` boots Sys1 (`rootfs`), `1` boots Sys2 (`rootfs_1`). | `REPORTED_UNVERIFIED` (Stock readback planned in R0) |
+| **`flag_boot_success`** | `0` or `1` | Set to `0` by bootloader during boot attempt; must be set to `1` by userland script upon successful boot completion. | `REPORTED_UNVERIFIED` |
+| **`flag_try_sys1_failed`** | `0`, `1`, `2` | Counter/flag incremented by U-Boot when Sys1 fails to complete boot. | `REPORTED_UNVERIFIED` |
+| **`flag_try_sys2_failed`** | `0`, `1`, `2` | Counter/flag incremented by U-Boot when Sys2 fails to complete boot. | `REPORTED_UNVERIFIED` |
+| **`flag_last_success`** | `0` or `1` | Indicates which system partition last successfully reached userland. | `REPORTED_UNVERIFIED` |
 
-**Xiaomi Failover Boot Mechanism:**
-When U-Boot starts, it reads `flag_boot_rootfs`. If the target system fails to boot multiple times (triggering hardware watchdog reset before `flag_boot_success` is written to `1`), U-Boot increments the corresponding `flag_try_sysX_failed` variable. Once the failure threshold is reached, U-Boot flips `flag_boot_rootfs` to the opposite slot and attempts to boot the fallback image.
+**Xiaomi Failover Boot Mechanism (`REPORTED_UNVERIFIED`):**
+When U-Boot starts, it reads `flag_boot_rootfs`. If the target system fails to boot multiple times (triggering hardware watchdog reset before `flag_boot_success` is written to `1`), U-Boot increments the corresponding `flag_try_sysX_failed` variable. Once the failure threshold is reached, U-Boot flips `flag_boot_rootfs` to the opposite slot and attempts to boot the fallback image. This behavior is documented in IPQ5018 community teardowns but has not yet been verified on this specific device.
 
 ---
 
 ## 3. Stock Xiaomi U-Boot TFTP Reality vs. Non-UART Limitations
 
-### 3.1 The Stock TFTP Recovery Behavior
+### 3.1 The Stock TFTP Recovery Behavior (`REPORTED_UNVERIFIED`)
 Stock Xiaomi routers include a TFTP client in U-Boot triggered by holding the reset button during power-on:
 1. U-Boot assigns the router a static IP (typically `192.168.31.1`).
 2. U-Boot sends TFTP requests to a host at `192.168.31.100` (or `192.168.31.2`) requesting a specific recovery filename (e.g. `test.bin` or `firmware.bin`).
@@ -135,7 +135,7 @@ If both slots become unbootable:
 
 Before any request to flash physical NAND can even be submitted:
 - [ ] Complete byte-level backup of all physical MTD partitions (`0:boot`, `0:ART`, `0:bdata`, `0:rootfs`, `0:rootfs_1`, `0:boot_env`) downloaded and SHA-256 verified off-device.
-- [ ] Stock U-Boot TFTP recovery behavior verified via packet capture (Wireshark) to confirm exact TFTP client IP, port, and filename requests.
+- [ ] Stock U-Boot TFTP recovery behavior verified via non-destructive packet capture (Wireshark) to confirm exact TFTP client IP, port, and filename requests.
 - [ ] Verification of Xiaomi boot flag failover behavior documented from verified IPQ5018 community teardowns.
 - [ ] Product Owner explicit authorization.
 

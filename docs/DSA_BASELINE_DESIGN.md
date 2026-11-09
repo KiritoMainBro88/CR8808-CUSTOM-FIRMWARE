@@ -6,7 +6,7 @@
 - **Target Platform:** OpenWrt / ImmortalWrt Clean DSA Baseline (Linux 6.18, `qualcommax/ipq50xx`, AArch64 userspace)
 - **Architecture Lead Decision:** Phase 1 Baseline — Clean DSA without NSS
 - **Status:** Approved Baseline Architecture Specification
-- **Revision:** Round 2 Review (DSA Driver Mapping & AArch64 ABI Target)
+- **Revision:** Round 3 Review (Correct Port Mapping, SGMII 1000M, and GPIO39 Initialization Analysis)
 
 ---
 
@@ -25,10 +25,11 @@ In accordance with the **Architecture Gate G1 Final Review**, the initial custom
 
 ```mermaid
 graph LR
-    subgraph "Qualcomm IPQ5018 SoC"
-        CPU["Dual-Core Cortex-A53 @ 1.0 GHz (AArch64)"]
-        GMAC1["GMAC1 (DWMAC)"]
-        GMAC0["GMAC0 (DWMAC)"]
+    subgraph "Qualcomm IPQ5018 SoC (AArch64)"
+        CPU["Dual-Core Cortex-A53 @ 1.0 GHz"]
+        GMAC1["GMAC1 (dp2 / eth1)"]
+        GMAC0["GMAC0 (dp1 / eth0)"]
+        INT_PHY["Internal GE PHY (88000.mdio:07)"]
         WIFI0["AHB wifi0 (2.4 GHz 11ax)"]
         TLMM["TLMM GPIO Controller"]
     end
@@ -39,75 +40,106 @@ graph LR
         NAND["Winbond 128 MB SPI-NAND"]
     end
 
-    GMAC1 -- "Primary Conduit (2500Base-X / Port 8)" --> SWITCH
-    GMAC0 -. "Secondary Conduit (Port 7)" .-> SWITCH
-    TLMM -- "GPIO 39 (Active-Low Reset)" --> SWITCH
+    GMAC1 -- "CPU1: SGMII Fixed-Link 1000M (Port 8)" --> SWITCH
+    GMAC0 --> INT_PHY -- "CPU2: Internal Fixed-Link 1000M (Port 4)" --> SWITCH
+    TLMM -- "GPIO 39 (Reset Control / Workaround Analysis)" --> SWITCH
     TLMM -- "GPIO 36/37 (MDC/MDIO Bus 1)" --> SWITCH
     CPU -- "PCIe / AHB" --> WIFI1
     CPU -- "QPIC SPI" --> NAND
 
-    SWITCH --> WAN["WAN (Port 3)"]
-    SWITCH --> LAN1["LAN 1 (Port 2)"]
+    SWITCH --> LAN1["LAN 1 (Port 0)"]
     SWITCH --> LAN2["LAN 2 (Port 1)"]
-    SWITCH --> LAN3["LAN 3 (Port 0)"]
+    SWITCH --> LAN3["LAN 3 (Port 2)"]
+    SWITCH --> WAN["WAN (Port 3)"]
 ```
 
-### 2.1 Ethernet & Switch Subsystem (DTS: `target/linux/qualcommax/dts/ipq5018-cr881x.dts`)
-- **Ethernet MAC Driver:** Upstream Synopsys DesignWare MAC (`dwmac-ipq5018` / `stmmac`).
-- **Primary Conduit:** IPQ5018 GMAC1 binds to Motorcomm YT9215 CPU Port 8 via 2500Base-X SerDes (`phy-mode = "2500base-x"`).
-- **Secondary Conduit:** IPQ5018 GMAC0 binds to Port 7 (`motorcomm,conduit-role = "secondary-conduit"`).
-- **MDIO Management:** MDIO Bus 1 using GPIO 36 (MDC) and GPIO 37 (MDIO). Switch sits at MDIO address `0x1d`.
-- **Switch Hardware Reset:** GPIO 39 (`reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>`), with 10 ms assertion and 50 ms deassertion delay.
-- **Internal SoC PHY:** Qualcomm IPQ5018 Internal GE PHY sits separately at MDIO `88000.mdio:07` (PHY ID `0x004dd0c0`), distinct from the external switch.
-- **User Ports Exposed:**
-  - `lan1` (Switch Port 2, internal PHY 2)
-  - `lan2` (Switch Port 1, internal PHY 1)
-  - `lan3` (Switch Port 0, internal PHY 0)
-  - `wan`  (Switch Port 3, internal PHY 3)
+### 2.1 Authoritative Switch Port Mapping (Source: `target/linux/qualcommax/dts/ipq5018-cr881x.dts`)
 
-### 2.2 DSA Driver Compatibility & Driver Divergence Analysis
+Direct inspection of `ipq5018-cr881x.dts` in the reference tree establishes the exact hardware port assignments:
 
-There are two primary implementations for Motorcomm YT9215 DSA switching in the OpenWrt ecosystem:
-
-1. **Upstream Linux Baseline (Linux 6.19+ & Backports on 6.18):**
-   - Compatible string: `compatible = "motorcomm,yt9215";`
-   - Upstream location: `drivers/net/dsa/motorcomm/` (merged in Linux 6.19).
-   - OpenWrt backport: `target/linux/generic/backport-6.18/967-net-dsa-motorcomm.patch`.
-   - Driver model: Standard Linux DSA switchdev, single CPU conduit binding, standard tag protocol `DSA_TAG_PROTO_YT9215`.
-   - Advantages: Clean upstream code, strict Linux network subsystem conventions, zero out-of-tree maintenance burden.
-   - Risks: Multi-conduit (dual GMAC) aggregation not supported in upstream baseline; hardware VLAN offload depends on standard switchdev ops.
-
-2. **`zcop` Out-of-Tree Enhanced Overlay (`target/linux/qualcommax/files/`):**
-   - Compatible string: `compatible = "motorcomm,yt9215-enhanced";`
-   - Components: `drivers/net/dsa/yt921x_driver.c`, `net/dsa/tag_yt921x_enhanced.c`.
-   - Driver model: Custom enhanced tag protocol supporting hardware accelerated port isolation and dual GMAC conduit distribution (GMAC1 primary, GMAC0 secondary).
-   - Advantages: Specifically tuned and verified by zcop for IPQ5018 CR881x boards.
-   - Risks: Out-of-tree patch drift; potential symbol breakages on minor kernel updates.
-
-**Architectural Plan:**
-In Phase P4/P5, we build the clean DSA baseline with the backported upstream driver (`motorcomm,yt9215`) as the primary target. If dual-conduit routing or SerDes link initialization requires the vendor-specific enhanced tagging, we will fall back to `motorcomm,yt9215-enhanced` as a controlled patch set.
-
-### 2.3 Wireless Subsystem (`ath11k`)
-- **2.4 GHz Radio:** `wifi0` (Integrated IPQ5018 AHB radio, 2x2 802.11b/g/n/ax).
-- **5 GHz Radio:** `wifi1` (Qualcomm QCN6102 / QCN6122, 2x2 802.11a/n/ac/ax, HE160 up to 2402 Mbps).
-- **Calibration & BDF:** Board Data File loaded from physical partition `0:art` via nvmem layout (`qcom,bdf-addr = <0x4d100000>`).
-- **Operating Modes:** Channel 36–64 (160 MHz continuous), DFS radar detection, WPA2/WPA3 Mixed and WPA3-SAE.
-
-### 2.4 Memory Profile Configuration (256 MB Physical RAM)
-To prevent OOM kernel panics on 256 MB RAM:
-- `CONFIG_ATH11K_MEM_PROFILE_256M=y` (scales down internal ring buffer sizes in `package/kernel/mac80211/ath.mk`).
-- `qcom,ath11k-fw-memory-mode = <1>` configured in DTS.
-- NSS heap reservation completely removed from DTS in this baseline (`cr881x_nss_region` omitted), freeing ~16 MiB of contiguous physical memory for Linux slab and userspace buffers.
+| Switch Port | Internal PHY | Interface Label | Connected Subsystem / Role | Operational Parameters |
+|---|---|---|---|---|
+| **`port@0`** | `sw_phy0` (addr 0) | `lan1` | Physical LAN Port 1 | 10/100/1000BASE-T auto-negotiation (`phy-mode = "internal"`). |
+| **`port@1`** | `sw_phy1` (addr 1) | `lan2` | Physical LAN Port 2 | 10/100/1000BASE-T auto-negotiation (`phy-mode = "internal"`). |
+| **`port@2`** | `sw_phy2` (addr 2) | `lan3` | Physical LAN Port 3 | 10/100/1000BASE-T auto-negotiation (`phy-mode = "internal"`). |
+| **`port@3`** | `sw_phy3` (addr 3) | `wan` | Physical WAN Port | 10/100/1000BASE-T auto-negotiation (`phy-mode = "internal"`). |
+| **`port@4`** | `sw_phy4` (addr 4) | `cpu` (Secondary) | CPU Conduit 2 (`dp1` / `eth0`) | Connected to Qualcomm Internal GE PHY (`phy-handle = <&ge_phy>`), fixed-link 1000 Mbps full-duplex. Constrained to WAN traffic via `motorcomm,secondary-conduit-user-mask = <0x8>`. |
+| **`port@8`** | SerDes MAC8 | CPU (Primary) | CPU Conduit 1 (`dp2` / `eth1`) | **SGMII fixed-link 1000 Mbps full-duplex** (`phy-mode = "sgmii"`, `speed = <1000>`). Primary conduit for all LAN user ports. **NOT 2500Base-X.** |
+| **`port@10`**| N/A | `mcu` | Internal MCU Channel | Internal switch hardware state and management channel. |
 
 ---
 
-## 3. VPN Subsystem: BoringTun Rust Integration
+### 2.2 SGMII Link Configuration vs. Erroneous 2500Base-X Claims
 
-### 3.1 Architecture & ABI Target
-In this clean baseline, WireGuard connectivity is managed by **BoringTun 0.7.1** compiled natively for **`aarch64-unknown-linux-musl`**.
+- **DTS Ground Truth:** In `ipq5018-cr881x.dts`, Port 8 is declared as:
+  ```dts
+  port@8 {
+      reg = <8>;
+      phy-mode = "sgmii";
+      ethernet = <&dp2>;
+      fixed-link {
+          speed = <1000>;
+          full-duplex;
+          pause;
+          asym-pause;
+      };
+  };
+  ```
+- **Correction:** Prior documentation rounds incorrectly asserted a `2500base-x` SerDes link. The Xiaomi CR8818 board design couples the IPQ5018 UNIPHY to Motorcomm Port 8 strictly at **1000 Mbps SGMII**. Any attempt to configure `2500base-x` will result in SerDes clock mismatch and total link loss.
 
-> **ABI Architecture Clarification:**
-> While stock Xiaomi RA82 Linux 4.4 ran a 32-bit ARMv7 musleabi userspace, custom OpenWrt on `qualcommax/ipq50xx` runs a modern **64-bit AArch64 kernel and userspace**. The IPQ5018 dual-core Cortex-A53 CPU natively supports AArch64. Consequently, the BoringTun Rust daemon for custom firmware will be compiled for target **`aarch64-unknown-linux-musl`** (not `armv7-unknown-linux-musleabi`).
+---
+
+### 2.3 GPIO 39 Switch Initialization & The "No Ethernet" Bug (Issue #5 Analysis)
+
+Investigation of empirical data from `https://github.com/zcop/immortalwrt/issues/5` ("CR880X M79 B no ethernet") reveals a critical hardware initialization vulnerability on CR880x/CR881x Ver.B hardware:
+
+#### The Failure Symptom:
+When booting generic or improperly sequenced CR881x firmware, all Ethernet ports are completely dead. Dmesg inspection reveals:
+```text
+yt921x 90000.mdio-1:1d: Unexpected chipid 0xffff
+```
+Because the MDIO bus read returns `0xffff`, the Motorcomm DSA driver fails to probe, no netdevs are created, and only Wi-Fi operates.
+
+#### Root-Cause Mechanics:
+1. **Reset Pin Sequencing:** GPIO 39 controls the hardware reset line of the Motorcomm switch.
+2. In stock firmware and the default DTS (`reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>; reset-assert-us = <10000>; reset-deassert-us = <50000>;`), the active-low pulse duration or LDO power ramp-up timing is insufficient on cold boot or warm reboot. The switch is either held in reset or in an undefined power state when the MDIO bus controller begins device enumeration.
+3. **Userspace Workaround:** Community user Gaojianli proved that setting GPIO 39 (`gpio551`) to `1` (HIGH) manually and triggering a driver rebind (`echo "90000.mdio-1:1d" > /sys/bus/mdio_bus/drivers/yt921x/bind`) immediately revived all Ethernet ports. However, ports disappeared again on warm reboot.
+4. **GPIO Hog Workaround:** Gaojianli verified that configuring a TLMM `gpio-hog` forced HIGH (`output-high`) on GPIO 39 and removing `reset-gpios` from `ethernet-switch@1d` allowed Ethernet to survive initial boot.
+
+#### Architectural Mitigation & Test Suite:
+We must NOT simply apply a workaround blindly. We define three candidate approaches to be evaluated during hardware validation:
+- **Approach A (Extended Reset Timing):** Increase deassert delay in DTS (`reset-assert-us = <50000>; reset-deassert-us = <250000>;`) to give the switch internal PLL and LDO time to stabilize before MDIO probe.
+- **Approach B (GPIO Hog):** Lock GPIO 39 to HIGH at the pin controller level (`gpio-hog`), relying on hardware power-on-reset circuitry rather than driver-pulsed software reset.
+- **Approach C (Early Userspace Procd Hook):** Pre-probe GPIO initialization script in `procd` before network service startup.
+
+#### Mandatory Hardware Reboot Test Protocol:
+Before any firmware build is considered functionally verified, it must pass a **4-part reboot validation suite**:
+1. **Cold Boot Test:** Complete power cut for 30 seconds; power on; verify all 4 ports probe with valid chip ID (not `0xffff`).
+2. **Warm Reboot Test:** Issue software `reboot` command; verify Ethernet links re-establish without power cycle.
+3. **Reset Button Test:** Pulse physical reset button while running; verify switch recovers cleanly.
+4. **20-Cycle Automated Reboot Soak Test:** Execute 20 consecutive automated reboots via test script, logging dmesg on each cycle. Acceptance criteria: **0 failures out of 20 cycles** (100% Ethernet probe success).
+
+---
+
+### 2.4 Wireless Subsystem & BDF Staging Reality
+
+- **2.4 GHz Radio:** `wifi0` (Integrated IPQ5018 AHB radio, 2x2 802.11ax, up to 574 Mbps).
+- **5 GHz Radio:** `wifi1` (Qualcomm QCN6102 / QCN6122, 2x2 802.11ax, **HE160 mandatory up to 2402 Mbps**).
+- **Strict HE160 Mandate:** Channel 36–64 continuous 160 MHz width must be maintained. Lowering to 80 MHz is strictly prohibited.
+- **DRAM BDF Staging vs. Physical NAND Flash:**
+  - Physical calibration lives in NAND partition `0:ART` at offset `0x00780000` (length 1 MiB).
+  - DTS declares `qcom,bdf-addr = <0x4c400000>` for 2.4 GHz and `qcom,bdf-addr = <0x4d100000>` for 5 GHz.
+  - These are **DRAM memory staging addresses** where the ath11k Q6 WCSS remote processor loads the calibration data, NOT raw offsets in NAND flash.
+
+---
+
+## 3. VPN Subsystem: BoringTun Rust Architecture
+
+### 3.1 Architecture & Single Engine Mandate
+In accordance with Architecture Lead instructions, **BoringTun Rust is the SOLE WireGuard engine** for this project.
+- In-kernel WireGuard (`kmod-wireguard`) is **`NOT_SELECTED`** to prevent kernel bloat and maintain a unified userspace cryptographic architecture.
+- **Target ABI:** Modern 64-bit **`aarch64-unknown-linux-musl`** (matching Cortex-A53 CPU on OpenWrt `qualcommax/ipq50xx`).
+- **Current Evidence Status:** `SOURCE_VERIFIED (Target ABI AArch64)` / `NOT_BUILD_VERIFIED (AArch64)`. The AArch64 binary will be compiled and verified on PC in Phase P4.
 
 ```mermaid
 graph TD
@@ -123,30 +155,9 @@ graph TD
     end
 ```
 
-### 3.2 Service Lifecycle & Daemon Control
-- **Startup Script:** `/etc/init.d/boringtun` manages the lifecycle under OpenWrt `procd`.
-- **Socket Path:** `/var/run/wireguard/wg0.sock` created for standard WireGuard UAPI commands (`wg setconf`, `wg show`).
-- **Signal Handling:** Fixed via POSIX `sigaction` + `eventfd` fallback in `epoll.rs` (mitigating kernel `signalfd` `ENOSYS 38` failures observed on legacy kernels), ensuring clean exit within ~1.1s without leaving dangling socket files.
-
-### 3.3 Empirical Memory & Performance Evaluation Protocol
-Earlier comparisons cited Go's `VmSize = 522 MB` as memory usage. This has been corrected:
-- `VmSize` reflects **virtual address space reservation** (goroutine thread stacks, heap pre-allocations), not actual physical DRAM usage.
-- In stock firmware testing, Go's physical resident memory (`VmRSS`) measured **~3.7 MB**.
-- However, Go runtime's garbage collection cycles, stop-the-world pauses, and background runtime threads introduce latency jitter under high packet rates on constrained dual-core CPUs.
-- **Empirical Evaluation Metrics for BoringTun Rust vs. Go:**
-  1. **Peak `VmRSS`:** Resident physical memory under continuous 500 Mbps encrypted traffic.
-  2. **`VmHWM` (High Water Mark):** Peak physical memory observed over a 24-hour soak period.
-  3. **PSS (Proportional Set Size):** Actual unique memory burden accounting for shared libraries.
-  4. **Throughput & CPU Utilization:** Max sustained Mbps and % CPU load per core during bidirectional `iperf3`.
-  5. **Handshake & RTT Jitter:** Time required for initial 1-RTT handshake and round-trip ping jitter under load.
-
----
-
-## 4. Acceptance & Verification Gates for Baseline
-
-Before this DSA baseline is considered ready for testing, it must pass the following checks:
-1. **Static Build Verification:** Compiles cleanly to a signed sysupgrade image without missing kernel symbols or unresolved package dependencies.
-2. **Switch Probe Cleanliness:** Kernel dmesg logs confirm Motorcomm switch probes cleanly at MDIO `0x1d` on MDIO Bus 1 with zero failed reset timeouts. Qualcomm internal GE PHY probes separately at `88000.mdio:07`.
-3. **Link State & DSA Bridging:** Physical insertion of Ethernet cables triggers instant PHY state transitions on `lan1`-`lan3` and `wan` with zero softirq storm.
-4. **Wireless Association:** Client successfully associates at 5 GHz HE160 (160 MHz channel width) and passes bidirectional traffic.
-5. **BoringTun Tunnel Traffic:** Successfully establishes handshake, routes encrypted IP packets, and maintains tunnel connection across simulated interface restarts with peak VmRSS < 15 MB.
+### 3.2 Empirical AArch64 Benchmarking Protocol
+To replace prior speculative memory comparisons, BoringTun will be evaluated against strict empirical metrics on target hardware:
+1. **Single-Client & 4-Client Saturated Throughput:** Bidirectional `iperf3 -P 4` over tunnel; record sustained throughput.
+2. **Resident Memory Profile:** Measure `VmRSS`, `VmHWM` (High Water Mark), and PSS over a continuous 24-hour soak test. Acceptance threshold: Peak `VmRSS < 15 MB`.
+3. **CPU Utilization:** Per-core CPU load under 300 Mbps encrypted traffic.
+4. **Handshake & RTT Jitter:** Time required for 1-RTT handshake and round-trip ping jitter under saturated link.

@@ -115,7 +115,7 @@ All 8 candidate repositories specified in `manifests/sources.yaml` were audited 
   - MDIO Bus 1: GPIO 36 (MDC), GPIO 37 (MDIO); Switch address `0x1d`
 - **Ethernet/EDMA Paths:**
   - `gmac0`: Secondary conduit (port 7)
-  - `gmac1`: Primary conduit (port 8) via `2500base-x` SGMII trunk to switch
+  - `gmac1`: Primary conduit (port 8) via SGMII 1000 Mbps fixed-link trunk to switch
 - **NSS/ECM/qdisc Paths:**
   - `feeds.conf.default`: pins `https://github.com/qosmio/nss-packages.git^0d970dbf0185e3f53709bd803e8a466598023c57`
   - `docs/cr881x/NSS Offload status.md`: documents native NSS on Linux 6.18.60 reaching 936 Mbps routed IPv4 TCP with 98% idle CPU.
@@ -274,7 +274,7 @@ All 8 candidate repositories specified in `manifests/sources.yaml` were audited 
 ### 7.1 Motorcomm YT9215S/SC Hardware Control (Physical Suffix UNKNOWN)
 Empirical source code inspection of `zcop/immortalwrt` reveals the exact hardware binding:
 - **Switch Chip ID:** Motorcomm YT9215S / YT9215SC (exact physical suffix UNKNOWN; configured at MDIO address `0x1d` on MDIO Bus 1). Distinct from Qualcomm SoC internal PHY (`0x004dd0c0` at `88000.mdio:07`). 7-port non-blocking switch with 5 integrated 1 GbE PHYs.
-- **MII / Bus Interface:** SGMII / 2500Base-X SerDes between IPQ5018 GMAC1 and YT9215 Port 8. Secondary conduit connected to GMAC0.
+- **MII / Bus Interface:** SGMII (1000 Mbps fixed-link) SerDes between IPQ5018 GMAC1 and YT9215 Port 8. Secondary conduit connected to GMAC0.
 - **Power & Reset Sequencing:**
   - GPIO 39 is wired to switch power LDO and hardware reset.
   - DTS definition: `reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>`, `reset-assert-us = <10000>`, `reset-deassert-us = <50000>`.
