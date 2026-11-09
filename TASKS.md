@@ -12,15 +12,24 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P1-004 | Produce source/hardware compatibility report | P1 | DONE | Gemini | P1-001..003 |
 | P1-GH | GitHub repository integration, security audit and remote push | P1 | DONE | Gemini | P1-004 |
 | P1-REV | ChatGPT Architecture Review response & technical corrections | P1 | DONE | Gemini | P1-GH |
-| P1-005 | Final Gate G1 sign-off & Git history remediation decision | P1/P2 | BLOCKED | ChatGPT + User | P1-REV |
-| P2-001 | Re-audit router baseline using approved read-only commands | P2 | BLOCKED | Gemini | P1-005 + explicit approval |
-| P2-002 | Create feature parity inventory against RA82 | P2 | NOT_STARTED | Gemini | Router evidence |
-| P2-003 | Select base and integration strategy | P2 | BLOCKED | ChatGPT + User | P1-004, P2-001 |
-| P3-001 | Implement approved target and driver changes | P3 | NOT_STARTED | Gemini | P2-003 |
-| P3-002 | Integrate Rust WireGuard package/service | P3 | NOT_STARTED | Gemini | P2-003 |
-| P4-001 | Reproducible PC build and static validation | P4 | NOT_STARTED | Gemini | P3 |
-| P5-001 | Non-persistent hardware validation feasibility | P5 | BLOCKED | ChatGPT + User | P4 + safe recovery design |
+| P1-G1F | Gate G1 architecture finalization, parity matrix & design specs | P1 | DONE | Gemini | P1-REV |
+| P1-CLN | Git history cleanup application (Option 1 force-push) | P1 | BLOCKED | Product Owner | P1-G1F dry-run approval |
+| P2-001 | Re-audit router baseline using approved Class R0 read-only commands | P2 | BLOCKED | Gemini | R0 Manifest approval |
+| P2-002 | Finalize feature parity inventory against on-device baseline | P2 | NOT_STARTED | Gemini | P2-001 |
+| P2-003 | Select base and integration strategy | P2 | DONE | ChatGPT + User | Clean DSA baseline approved |
+| P3-001 | Implement approved clean DSA target and YT9215 driver changes | P3 | NOT_STARTED | Gemini | P2-003, P1-CLN |
+| P3-002 | Integrate Rust BoringTun package and procd service | P3 | NOT_STARTED | Gemini | P2-003 |
+| P4-001 | Setup WSL2 build toolchain & reproducible PC compilation | P4 | NOT_STARTED | Gemini | P3 |
+| P5-001 | Non-persistent RAM initramfs netboot hardware validation | P5 | BLOCKED | ChatGPT + User | P4 + safe recovery design |
 | P6-001 | Release candidate and deployment decision | P6 | BLOCKED | User | All gates |
 
 ## Current instruction
-Phase P1 Architecture Review Response task (`P1-REV`) is completed on branch `review/g1-architecture-corrections`. Deliverable produced at `reports/2026-11-09/CHATGPT_G1_REVIEW_RESPONSE.md`. Awaiting Product Owner and Architecture Lead decisions on Git history remediation and Phase P2 read-only command approval. Gemini execution stopped.
+Gate G1 Architecture Decision and design specifications completed (`P1-G1F`). Branch `feature/g1-final-architecture-deliverables` created. Deliverables authored:
+- `reports/2026-11-09/FINAL_G1_ARCHITECTURE_DECISION.md`
+- `docs/FEATURE_PARITY_MATRIX.md`
+- `docs/DSA_BASELINE_DESIGN.md`
+- `docs/NSS_INTEGRATION_DESIGN.md`
+- `docs/RECOVERY_AND_ROLLBACK_DESIGN.md`
+- `docs/R0_READONLY_AUDIT_MANIFEST.md`
+
+Tasks `P1-CLN` (applying Git history rewrite to GitHub remote) and `P2-001` (running Class R0 router audit) are BLOCKED awaiting Product Owner and Architecture Lead approvals. Gemini execution stopped.

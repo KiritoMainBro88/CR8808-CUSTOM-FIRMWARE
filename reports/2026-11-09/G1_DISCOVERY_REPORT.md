@@ -145,7 +145,7 @@ All 8 candidate repositories specified in `manifests/sources.yaml` were audited 
 - **DTS Paths:** `target/linux/qualcommax/dts/ipq5018-cr8806.dts`, `ipq5018-cr880x.dtsi`
 - **Switch/MDIO/GPIO Paths:**
   - Configures Qualcomm QCA8337 switch at MDIO `0x17` (`compatible = "qca,qca8337"`).
-  - DOES NOT configure Motorcomm YT9215SC switch.
+  - DOES NOT configure Motorcomm YT9215S/SC switch (suffix UNKNOWN on device).
 - **NSS Paths:** Upstream `stmmac` data-path claim API (Patch `0956`), `kmod-qca-dwmac-nss`, `qca-nss-drv`.
 - **Compatibility Assessment:** **UNSUITABLE as a complete image** (CR8806 image will brick Ethernet on CR8808 Ver.B); **REFERENCE_ONLY** for NSS kernel glue and 256 MB memory configuration.
 - **Confidence:** High (`SOURCE_VERIFIED`).
@@ -270,9 +270,9 @@ All 8 candidate repositories specified in `manifests/sources.yaml` were audited 
 
 ## 7. Switch / DSA Feasibility
 
-### 7.1 Motorcomm YT9215SC Hardware Control
+### 7.1 Motorcomm YT9215S/SC Hardware Control (Physical Suffix UNKNOWN)
 Empirical source code inspection of `zcop/immortalwrt` reveals the exact hardware binding:
-- **Switch Chip ID:** Motorcomm YT9215S / YT9215SC (7-port non-blocking switch with 5 integrated 1 GbE PHYs).
+- **Switch Chip ID:** Motorcomm YT9215S / YT9215SC (exact physical suffix UNKNOWN; internal PHY ID `0x004dd0c0`, MDIO address `0x1d`). 7-port non-blocking switch with 5 integrated 1 GbE PHYs.
 - **MII / Bus Interface:** SGMII / 2500Base-X SerDes between IPQ5018 GMAC1 and YT9215 Port 8. Secondary conduit connected to GMAC0.
 - **Power & Reset Sequencing:**
   - GPIO 39 is wired to switch power LDO and hardware reset.
