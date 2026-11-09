@@ -1,0 +1,20 @@
+schema_version: 1
+status: planned_not_run
+tests:
+  - {id: HW-001, area: boot, status: NOT_RUN}
+  - {id: ETH-001, area: ethernet_ports, status: NOT_RUN}
+  - {id: ETH-002, area: switch_vlan_fdb, status: NOT_RUN}
+  - {id: WAN-001, area: wan_services, status: NOT_RUN}
+  - {id: NET-001, area: ipv4_ipv6_dns_firewall, status: NOT_RUN}
+  - {id: WIFI-001, area: wifi_24ghz, status: NOT_RUN}
+  - {id: WIFI-002, area: wifi_5ghz_he160, status: NOT_RUN}
+  - {id: WIFI-003, area: ofdma_mumimo, status: NOT_RUN}
+  - {id: NSS-001, area: nss_hardware_offload, status: NOT_RUN}
+  - {id: WG-001, area: boringtun_peer_traffic, status: NOT_RUN}
+  - {id: WG-002, area: boringtun_service_soak, status: NOT_RUN}
+  - {id: PERF-001, area: latency_jitter_loss, status: NOT_RUN}
+  - {id: PERF-002, area: throughput, status: NOT_RUN}
+  - {id: MEM-001, area: memory_pressure, status: NOT_RUN}
+  - {id: THERM-001, area: thermal_soak, status: NOT_RUN}
+  - {id: FEAT-001, area: xiaomi_feature_parity, status: NOT_RUN}
+  - {id: SEC-001, area: security_review, status: NOT_RUN}

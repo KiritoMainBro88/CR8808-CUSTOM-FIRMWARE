@@ -1,0 +1,27 @@
+# Source Audit
+
+- Alias:
+- Repository URL:
+- Owner:
+- Audit date:
+- Default branch:
+- Commit SHA:
+- Commit date:
+- Tags/releases:
+- License:
+- Kernel version:
+- Toolchain:
+- Target architecture/ABI:
+- Device profiles:
+- DTS paths:
+- Switch/MDIO/GPIO paths:
+- Ethernet/EDMA paths:
+- NSS/ECM/qdisc paths:
+- Wi-Fi/ath11k paths:
+- Build instructions:
+- Known issues:
+- Relevant PRs/issues:
+- Differences from upstream:
+- Compatibility assessment: SUITABLE / REFERENCE_ONLY / UNSUITABLE / UNKNOWN
+- Confidence:
+- Evidence links and raw paths:

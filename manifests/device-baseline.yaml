@@ -1,0 +1,24 @@
+schema_version: 1
+device:
+  commercial_product: Xiaomi_CR8808
+  hardware_revision: Ver.B
+  commercial_identity_status: OWNER_CONFIRMED
+  internal_model_string_reported: CR8818
+  internal_model_status: REPORTED_UNVERIFIED
+  board_string_reported: ap-mp03.3
+  board_status: REPORTED_UNVERIFIED
+  soc_reported: Qualcomm_IPQ5018
+  soc_status: REPORTED_UNVERIFIED
+  cpu_reported: dual_Cortex_A53_approximately_1GHz
+  ram_reported: 256MiB
+  switch_reported: Motorcomm_YT9215S_or_YT9215SC
+  switch_exact_suffix_status: UNKNOWN
+  radio_5ghz_reported: QCN6102
+  nand_reported: Winbond_W25N01GWZEIG_128MiB
+  firmware_reported: Xiaomi_RA82_v1.4.31
+  kernel_reported: Linux_4.4.60
+  wifi_5ghz_reported: HE160_channel_40
+evidence_policy:
+  - Re-run read-only commands before using these values for a build.
+  - Do not infer compatibility from model string alone.
+  - Redact keys, passwords, tokens and unnecessary identifiers.

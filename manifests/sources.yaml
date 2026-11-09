@@ -1,0 +1,44 @@
+schema_version: 1
+status: candidate_sources_not_yet_pinned
+last_reviewed: 2026-11-09
+sources:
+  - alias: openwrt
+    url: https://github.com/openwrt/openwrt
+    role: upstream_base_candidate
+    revision: TO_BE_AUDITED
+    approved_for_integration: false
+  - alias: immortalwrt
+    url: https://github.com/immortalwrt/immortalwrt
+    role: distribution_candidate
+    revision: TO_BE_AUDITED
+    approved_for_integration: false
+  - alias: zcop
+    url: https://github.com/zcop/immortalwrt
+    role: cr881x_board_and_yt921x_reference
+    revision: TO_BE_AUDITED
+    approved_for_integration: false
+  - alias: kuncy7_nss_edma
+    url: https://github.com/kuncy7/openwrt-nss-edma
+    role: nss_integration_reference
+    revision: TO_BE_AUDITED
+    approved_for_integration: false
+  - alias: kuncy7_nss_packages
+    url: https://github.com/kuncy7/nss-packages
+    role: nss_packages_reference
+    revision: TO_BE_AUDITED
+    approved_for_integration: false
+  - alias: fanha99_cr8806
+    url: https://github.com/fanha99/openwrt-xiaomi-cr8806-nss
+    role: cr8806_reference_only
+    revision: TO_BE_AUDITED
+    approved_for_integration: false
+  - alias: hzyitc
+    url: https://github.com/hzyitc/openwrt-redmi-ax3000
+    role: legacy_ipq50xx_reference
+    revision: TO_BE_AUDITED
+    approved_for_integration: false
+  - alias: marchmin_zcop
+    url: https://github.com/marchmin/immortalwrt-zcop
+    role: yt9215_register_reference
+    revision: TO_BE_AUDITED
+    approved_for_integration: false
