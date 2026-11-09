@@ -20,6 +20,8 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P1-REV5.1 | Gate G1 Round 5.1 corrections (yangfl audit, SerDes patch 940, caldata fix, governance) | P1 | DONE | Gemini | P1-REV5 |
 | P1-REV5.2 | Gate G1 Round 5.2 corrections (Exact cal paths, AHB bus, PCIe audit, Kuncy/zcop, NAND) | P1 | DONE | Gemini | P1-REV5.1 |
 | P2-NSS-RES | Qualcomm NSS Hardware Offload Porting Research (Phase A Source Audit & Phase B Feasibility) | P2 | DONE | Gemini | P1-REV5.2 |
+| P2-NSS-POC-M1-M2 | NSS + YT9215SC PC Prototype: M1 Source Lock & M2 Tag Adapter Compile & Test | P2 | DONE | Gemini | P2-NSS-RES |
+| P2-NSS-POC-M3-M5 | NSS + YT9215SC PC Prototype: M3 Unit Tests, M4 NSS Glue Compile & M5 Report | P2 | BLOCKED | ChatGPT + User | M1-M2 Architecture Review Approval |
 | P1-CLN | Git history cleanup application (Option 1 force-push) | P1 | BLOCKED | Product Owner | P1-REV5.2 dry-run approval |
 | P2-001 | Re-audit router baseline using approved Class R0 read-only commands | P2 | BLOCKED | Gemini | R0 Manifest approval |
 | P2-002 | Finalize feature parity inventory against on-device baseline | P2 | NOT_STARTED | Gemini | P2-001 |
@@ -31,16 +33,13 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P6-001 | Release candidate and deployment decision | P6 | BLOCKED | User | All gates |
 
 ## Current instruction
-NSS Hardware Offload Porting Research completed (`P2-NSS-RES`). Branch `feature/nss-cr8818-research` created. Deliverables authored & updated (7 files):
-- `reports/NSS_PORTING_RESEARCH_REPORT.md` (Executive Research Report answering all 3 mandatory evaluation criteria)
-- `docs/NSS_CR8818_FEASIBILITY.md` (Feasibility analysis, classification matrix, switch tagging collision, Go/No-Go conditions)
-- `docs/NSS_DATAPATH_ARCHITECTURE.md` (Comprehensive physical & logical datapath diagrams, DWMAC analysis, packet lifecycles, BoringTun Rust hybrid model)
-- `docs/NSS_COMPONENT_COMPATIBILITY.md` (Component-by-component audit across kernels 4.4, 5.15, and 6.18, API breaking changes, patch references)
-- `docs/NSS_YT9215_ADAPTER_DESIGN.md` (NEW: Anatomy of 8-byte CPU tag with TPID 0x9988, CPU conduit topology, tag_8021q feasibility, and dual-conduit demux)
-- `docs/NSS_256MB_MEMORY_VALIDATION.md` (NEW: Grounded Kuncy 256MB profile audit with nss_region 8M, coherent_pool=512k, patch 0828, VmSize vs VmRSS, and buddyinfo)
-- `docs/NSS_WIREGUARD_DATAPATH.md` (NEW: Two-tier hybrid acceleration datapath, ARM NEON optimization, and parallel wg1 test isolation protocol)
-- `PROJECT_STATUS.md` & `TASKS.md` (Updated tracking to P2-NSS-RES, recorded transition log)
+NSS + YT9215SC PC Prototype Milestones M1 & M2 completed (`P2-NSS-POC-M1-M2`). Branch `feature/nss-cr8818-poc` created. Deliverables authored & verified:
+- `manifests/nss-poc-sources.lock.yaml` (M1: Pinned commit lockfile for yangfl b230c2f, kuncy7 c94a780/047ee4c, zcop c5ad88b, Linux 6.18)
+- `tests/poc/yt921x_tag_proto.h` & `yt921x_tag_proto.c` (M2: Standalone compilable prototype for Motorcomm 8-byte tag TPID 0x9988, DSA tag_8021q TPID 0x8100, and NSS parser simulation)
+- `tests/poc/test_yt921x_poc.c` & `tests/poc/Makefile` (M2: Unit test harness compiled cleanly on PC with MSYS2 GCC 14.2.0; 30/30 unit tests PASS)
+- `patches/nss-cr8818/0001-net-dsa-tag_yt921x-8021q-nss-compat.patch` (M2: Kernel DSA tag_8021q adapter patch for drivers/net/dsa/yt921x.c and net/dsa/tag_yt921x.c)
+- `patches/nss-cr8818/0002-arm64-dts-ipq5018-cr8818-dual-conduit-nss.patch` (M2: Dual-conduit DTS patch for port@4 cpu2 eth0 untagged WAN and port@8 cpu1 eth1 LAN)
+- Corrected analytical documents: `docs/NSS_WIREGUARD_DATAPATH.md`, `docs/NSS_CR8818_FEASIBILITY.md`, `docs/NSS_YT9215_ADAPTER_DESIGN.md`, `docs/NSS_256MB_MEMORY_VALIDATION.md`, `reports/NSS_PORTING_RESEARCH_REPORT.md`
+- `reports/NSS_POC_M1_M2_REPORT.md` (M1-M2 deliverable report for Architecture Review)
 
-Tasks `P1-CLN` (applying Git history rewrite to GitHub remote) and `P2-001` (running Class R0 router audit) remain BLOCKED awaiting Product Owner and Architecture Lead approvals. Gemini execution stopped.
-
-Tasks `P1-CLN` (applying Git history rewrite to GitHub remote) and `P2-001` (running Class R0 router audit) remain BLOCKED awaiting Product Owner and Architecture Lead approvals. Gemini execution stopped.
+M1-M2 deliverables are ready for review by ChatGPT and Product Owner. Gemini execution halted at M2 gate per instruction. Tasks `P2-NSS-POC-M3-M5` remain BLOCKED awaiting review approval. Router untouched (NO SSH, NO FLASH).

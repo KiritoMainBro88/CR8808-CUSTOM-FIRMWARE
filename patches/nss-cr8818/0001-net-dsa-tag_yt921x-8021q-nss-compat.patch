@@ -1,0 +1,137 @@
+From: Gemini <gemini@antigravity.internal>
+Date: Mon, 9 Nov 2026 23:55:00 +0700
+Subject: [PATCH 1/2] net: dsa: yt921x: add tag_8021q adapter support for Qualcomm NSS offload
+
+The Motorcomm YT9215SC switch driver (drivers/net/dsa/yt921x.c) natively injects
+an 8-byte proprietary CPU tag with hardware-default TPID 0x9988 (ETH_P_YT921X).
+When Qualcomm NSS hardware acceleration (qca-dwmac-nss / retail_router0.bin)
+is active on the IPQ5018 SoC, frames with TPID 0x9988 cannot be parsed by the
+NSS hardware parser, causing packet classification failures or CPU punt exceptions.
+
+This patch adds support for DSA tag_8021q on the YT9215 switch:
+1. Implements dsa_tag_8021q_ops (tag_8021q_vlan_add / del) in drivers/net/dsa/yt921x.c.
+2. Programs the switch 4K VLAN table to tag traffic egressing toward the CPU conduit
+   using IEEE 802.1Q (TPID 0x8100) with VID = base_vid + source_port.
+3. Allows Qualcomm NSS firmware to parse L2/L3 headers natively without proprietary
+   tag collisions.
+
+Signed-off-by: Gemini <gemini@antigravity.internal>
+---
+ drivers/net/dsa/yt921x.c | 68 ++++++++++++++++++++++++++++++++++++++++++++++++
+ include/net/dsa.h        |  1 +
+ net/dsa/tag_yt921x.c     | 32 ++++++++++++++++++++++-
+ 3 files changed, 100 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -21,6 +21,7 @@
+ #include <linux/phylink.h>
+ #include <net/dsa.h>
++#include <net/dsa_8021q.h>
+ 
+ #define YT921X_CHIP_ID_REG		0x0000
+ #define YT921X_CHIP_ID_YT9215		0x9215
+@@ -520,6 +521,68 @@ static int yt921x_port_bridge_leave(stru
+ 	return 0;
+ }
+ 
++static int yt921x_tag_8021q_vlan_add(struct dsa_switch *ds, int port, u16 vid,
++				      u16 flags)
++{
++	struct yt921x_priv *priv = ds->priv;
++	bool untagged = flags & BRIDGE_VLAN_INFO_UNTAGGED;
++	int ret;
++
++	/* Program YT9215 internal 4K VLAN table entry */
++	ret = yt921x_vlan_entry_add(priv, vid, BIT(port), untagged ? BIT(port) : 0);
++	if (ret)
++		return ret;
++
++	if (flags & BRIDGE_VLAN_INFO_PVID)
++		return yt921x_port_set_pvid(priv, port, vid);
++
++	return 0;
++}
++
++static int yt921x_tag_8021q_vlan_del(struct dsa_switch *ds, int port, u16 vid)
++{
++	struct yt921x_priv *priv = ds->priv;
++
++	return yt921x_vlan_entry_del(priv, vid, BIT(port));
++}
++
++static enum dsa_tag_protocol yt921x_get_tag_protocol(struct dsa_switch *ds,
++						     int port,
++						     enum dsa_tag_protocol mp)
++{
++	struct yt921x_priv *priv = ds->priv;
++
++	if (priv->use_tag_8021q)
++		return DSA_TAG_PROTO_8021Q;
++
++	return DSA_TAG_PROTO_YT921X;
++}
++
++static const struct dsa_switch_ops yt921x_switch_ops = {
++	.get_tag_protocol	= yt921x_get_tag_protocol,
++	.setup			= yt921x_setup,
++	.port_enable		= yt921x_port_enable,
++	.port_disable		= yt921x_port_disable,
++	.port_bridge_join	= yt921x_port_bridge_join,
++	.port_bridge_leave	= yt921x_port_bridge_leave,
++	.port_stp_state_set	= yt921x_port_stp_state_set,
++	.tag_8021q_vlan_add	= yt921x_tag_8021q_vlan_add,
++	.tag_8021q_vlan_del	= yt921x_tag_8021q_vlan_del,
++};
++
+--- a/net/dsa/tag_yt921x.c
++++ b/net/dsa/tag_yt921x.c
+@@ -10,6 +10,7 @@
+ #include <linux/etherdevice.h>
+ #include <linux/netdevice.h>
+ #include <net/dsa.h>
++#include <net/dsa_8021q.h>
+ 
+ #define ETH_P_YT921X			0x9988
+ #define YT921X_TAG_LEN			8
+@@ -60,6 +61,37 @@ static const struct dsa_device_ops yt921
+ 	.proto	= DSA_TAG_PROTO_YT921X,
+ };
+ 
++/* NSS-Compatible tag_8021q conduit wrapper */
++static struct sk_buff *yt921x_8021q_xmit(struct sk_buff *skb,
++					 struct net_device *dev)
++{
++	struct dsa_port *dp = dsa_slave_to_port(dev);
++	u16 vid = dsa_tag_8021q_tx_vid(dp);
++
++	return dsa_8021q_xmit(skb, dev, false, vid);
++}
++
++static struct sk_buff *yt921x_8021q_rcv(struct sk_buff *skb,
++					struct net_device *dev)
++{
++	int port = dsa_8021q_rx_source_port(skb);
++
++	if (port < 0)
++		return NULL;
++
++	skb->dev = dsa_master_find_slave(dev, port);
++	if (!skb->dev)
++		return NULL;
++
++	return dsa_8021q_rcv(skb, dev);
++}
++
++static const struct dsa_device_ops yt921x_8021q_netdev_ops = {
++	.name	= "yt921x_8021q",
++	.proto	= DSA_TAG_PROTO_8021Q,
++	.xmit	= yt921x_8021q_xmit,
++	.rcv	= yt921x_8021q_rcv,
++	.needed_headroom = VLAN_HLEN,
++};
++
+ MODULE_LICENSE("GPL");
+-MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_YT921X);
++MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_YT921X);
++MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_8021Q);

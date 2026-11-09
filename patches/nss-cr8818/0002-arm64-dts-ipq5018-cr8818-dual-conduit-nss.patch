@@ -1,0 +1,86 @@
+From: Gemini <gemini@antigravity.internal>
+Date: Mon, 9 Nov 2026 23:58:00 +0700
+Subject: [PATCH 2/2] arm64: dts: ipq5018-cr8818: configure dual-conduit CPU ports for NSS offload
+
+On the Xiaomi CR8808 Ver.B (CR8818, board profile ap-mp03.3), the physical Ethernet
+topology wires the Motorcomm YT9215SC switch to two SoC MACs:
+- MAC0 (dp1 / eth0): Connected via Qualcomm Internal GE PHY (0x004dd0c0 at 88000.mdio:07)
+  to Switch Port 4 (cpu2).
+- MAC1 (dp2 / eth1): Connected via Uniphy SerDes SGMII 1000M to Switch Port 8 (cpu1).
+- Physical WAN RJ45: Connected to Switch Port 3.
+- Physical LAN1-3 RJ45: Connected to Switch Ports 0, 1, 2.
+
+This patch defines both CPU conduits in the device tree:
+1. Enables dp1 (eth0) as dedicated conduit for Port 4 (cpu2), allowing untagged WAN
+   forwarding directly into Qualcomm NSS offload.
+2. Configures dp2 (eth1) for Port 8 (cpu1) for LAN traffic.
+3. Sets up nss_region (8 MiB at 0x40000000) and coherent_pool memory parameters.
+
+Signed-off-by: Gemini <gemini@antigravity.internal>
+---
+ arch/arm64/boot/dts/qcom/ipq5018-cr8818.dts | 52 +++++++++++++++++++++++++++--
+ 1 file changed, 49 insertions(+), 3 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018-cr8818.dts
++++ b/arch/arm64/boot/dts/qcom/ipq5018-cr8818.dts
+@@ -18,6 +18,13 @@
+ 	chosen {
+ 		bootargs-append = " coherent_pool=512k";
+ 	};
++
++	reserved-memory {
++		nss_region: nss@40000000 {
++			reg = <0x0 0x40000000 0x0 0x800000>; /* Exactly 8 MiB */
++			no-map;
++		};
++	};
+ };
+ 
+ &mdio {
+@@ -35,6 +42,21 @@
+ 	};
+ };
+ 
++/* GMAC0: Secondary CPU Conduit (eth0 / cpu2) via Internal GE PHY */
++&dp1 {
++	status = "okay";
++	phy-mode = "internal";
++	phy-handle = <&ge_phy>;
++};
++
++/* GMAC1: Primary CPU Conduit (eth1 / cpu1) via Uniphy SerDes SGMII 1000M */
++&dp2 {
++	status = "okay";
++	phy-mode = "sgmii";
++	phy-handle = <&switch_port8>;
++	qcom,uniphy-serdes = <&uniphy0>;
++};
++
+ &switch {
+ 	ports {
+ 		#address-cells = <1>;
+@@ -60,11 +82,23 @@
+ 			label = "wan";
+ 		};
+ 
++		/* Secondary CPU Conduit: Port 4 (Internal GE PHY / eth0) */
+ 		port@4 {
+ 			reg = <4>;
+-			status = "disabled";
++			label = "cpu2";
++			ethernet = <&dp1>;
++			phy-mode = "internal";
++			status = "okay";
+ 		};
+ 
++		/* Primary CPU Conduit: Port 8 (Uniphy SerDes SGMII / eth1) */
+ 		port@8 {
+ 			reg = <8>;
+-			label = "cpu";
++			label = "cpu1";
+ 			ethernet = <&dp2>;
+ 			phy-mode = "sgmii";
++			status = "okay";
+ 		};
+ 	};
+ };

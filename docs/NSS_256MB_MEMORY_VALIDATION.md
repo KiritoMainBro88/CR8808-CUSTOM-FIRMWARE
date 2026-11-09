@@ -47,7 +47,7 @@ reserved-memory {
     };
 };
 ```
-Setting `nss_region` higher than 8 MiB unnecessarily robs the Linux page allocator of general-purpose RAM. Setting it lower than 8 MiB prevents the NSS 12.5 firmware (`retail_router0.bin`) from initializing.
+Setting `nss_region` higher than 8 MiB unnecessarily robs the Linux page allocator of general-purpose RAM. Setting it lower than 8 MiB may prevent NSS 12.5 firmware (`retail_router0.bin`) from initializing. Note: The 8 MiB carve-out must be cross-checked against the specific NSS firmware release binary used during image generation.
 
 ---
 
@@ -107,7 +107,7 @@ pie title Grounded Usable DRAM Budget (Total ~182 MB)
 - **Qualcomm NSS Firmware Pinned Region (`nss_region`):** 8 MB
 - **Qualcomm NSS Packet Buffer Pool (`qca-nss-pbuf` MP_256):** ~10 MB
 - **`ath11k` Wi-Fi DMA Rings & Buffers (`ATH11K_MEM_PROFILE_256M`):** ~18 MB
-- **BoringTun Rust Userspace Daemon (Peak RSS):** <15 MB
+- **BoringTun Rust Userspace Daemon (Peak RSS):** <15 MB (`ACCEPTANCE_TARGET`; unverified until live physical benchmark)
 - **Core Userspace Daemons (`procd`, `ubus`, `netifd`, `dropbear`, `dnsmasq`, `hostapd`):** ~20 MB
 - **Total Committed Memory:** **~156 MB**
 - **Free Headroom for Page Cache / Ephemeral Sockets:** **~26 MB (14.3% safety margin)**.

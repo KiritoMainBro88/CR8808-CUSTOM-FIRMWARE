@@ -13,76 +13,109 @@
 
 The integration of **BoringTun Rust** as the exclusive WireGuard engine on the Xiaomi CR8808 Ver.B router addresses a critical CPU and memory limitation:
 - The stock Go WireGuard daemon (`wireguard-go`) relies on a garbage-collected runtime that pre-allocates large virtual memory arenas (e.g. `VmSize` 522 MB) and incurs periodic garbage collection cycles.
-- BoringTun Rust operates with a deterministic, lightweight footprint (peak `VmRSS < 15 MB`, zero garbage collection pauses).
+- BoringTun Rust operates with a deterministic, lightweight footprint (targeted `VmRSS < 15 MB` as `ACCEPTANCE_TARGET`, zero garbage collection pauses).
 
 However, an essential technical distinction must be maintained regarding Qualcomm NSS hardware offload:
 > [!IMPORTANT]
-> **Silicon Cryptographic Limitation:**
-> The Qualcomm IPQ5018 SoC contains hardware crypto acceleration engines for **IPsec** (AES-CBC, AES-GCM, SHA1/256) and **DTLS**.
-> **The IPQ5018 does NOT possess hardware acceleration for ChaCha20-Poly1305** (the sole cipher suite utilized by the WireGuard protocol).
-> Therefore, NSS **CANNOT** decrypt or encrypt WireGuard packets directly in hardware. Any claim that NSS provides full end-to-end WireGuard cryptographic offload is technically unfounded.
+> **Silicon Cryptographic Limitation & Datapath Realities:**
+> 1. The Qualcomm IPQ5018 SoC contains hardware crypto acceleration engines for **IPsec** (AES-CBC, AES-GCM, SHA1/256) and **DTLS**.
+> 2. **The IPQ5018 does NOT possess hardware acceleration for ChaCha20-Poly1305** (the sole cipher suite utilized by the WireGuard protocol). Therefore, NSS **CANNOT** decrypt or encrypt WireGuard packets directly in hardware.
+> 3. **ECM Offload Scope & Local Delivery:** Qualcomm ECM is architecturally designed to accelerate **forwarded NAT/routing flows** between network interfaces. Local-delivery packets terminating on a local host UDP socket (`ip_local_deliver` / `ip_local_out`) do not automatically receive NSS bypass; outer UDP stream acceleration for userspace-terminating VPN sockets is strictly **`UNVERIFIED`** on IPQ5018 silicon until empirical hardware measurement.
+> 4. **Sole WireGuard Target:** BoringTun Rust is the sole WireGuard target engine for CR8818; Go WireGuard is legacy and will not be maintained.
 
-This document formalizes the **Two-Tier Hybrid Acceleration Datapath**, delineating exactly which packet stages are offloaded to NSS and which stages are processed by the host Cortex-A53 CPU using ARM NEON vector instructions.
+This document formalizes the **Two-Tier Hybrid Acceleration Datapath**, delineating exactly which packet stages are handled by the host Cortex-A53 CPU using ARM NEON vector instructions, which stages traverse Linux kernel networking, and where NSS offload is theorized vs. unverified.
 
 ---
 
 ## 2. The Two-Tier Hybrid Acceleration Datapath
 
+### 2.1 Inbound Datapath (Internet to LAN Host)
+
 ```
-                                  +------------------------------------+
-                                  |         Internet / Remote Peer     |
-                                  +-----------------+------------------+
-                                                    |
-                                    Encrypted UDP Traffic (Port 51821)
-                                                    |
-                                                    v
-                                          [ Physical WAN Port ]
-                                                    |
-                                                    v
+[ Internet / Remote WireGuard Peer ]
+               |
+  Encrypted UDP Datagram (Port 51821)
+               v
+     [ Physical WAN Port ]
+               |
+               v
 +==================================================================================================+
-| QUALCOMM NSS HARDWARE NPU LAYER (retail_router0.bin)                                             |
-|                                                                                                  |
-|   1. Ingress Processing:                                                                         |
-|      - Frame parsing, checksum offload, L2/L3 validation.                                        |
-|   2. Outer Tunnel Acceleration (ECM Offload):                                                    |
-|      - Qualcomm ECM detects high-volume UDP stream on port 51821.                                |
-|      - Fast-paths outer UDP delivery to host socket without software netfilter traversal.        |
+| PHYSICAL & MAC LAYER (Synopsys DWMAC / stmmac / NSS Ingress Ring)                                |
+|   - Physical frame reception, CRC/checksum check, L2 validation.                                 |
+|   - Status: NSS outer UDP offload for local-delivery terminating socket is UNVERIFIED.           |
 +===================================================+==============================================+
-                                                    |
-                                    Outer UDP Datagram (Encrypted)
-                                                    |
-                                                    v
+               |
+               v
 +==================================================================================================+
-| LINUX KERNEL NETWORKING STACK (Linux 6.18)                                                       |
-|                                                                                                  |
-|   UDP Socket Buffer (SO_RCVBUF) ---> Passed to Userspace /dev/net/tun                            |
+| LINUX KERNEL NETWORK STACK: LOCAL INGRESS                                                        |
+|   - IP Ingress -> UDP layer (Port 51821 lookup) -> Linux UDP Socket Buffer (SO_RCVBUF)           |
 +===================================================+==============================================+
-                                                    |
-                                                    v
+               |
+    recvmsg() / UDP Socket Read (Plain Socket API)
+               v
 +==================================================================================================+
-| USERSPACE BORINGTUN RUST DAEMON (AArch64 musl / ARMv7 NEON)                                     |
-|                                                                                                  |
-|   1. WireGuard State Machine & Session Key Handshake.                                            |
-|   2. Cryptographic Execution on Cortex-A53 CPU:                                                  |
-|      - ChaCha20 Stream Cipher Decryption (ARMv8 / ARMv7 NEON Vectorized).                        |
-|      - Poly1305 One-Time MAC Authentication (NEON SIMD Multiply-Accumulate).                     |
-|   3. Plaintext Extraction: Emits clean IP packet into /dev/net/tun.                              |
+| USERSPACE BORINGTUN RUST DAEMON (AArch64 musl / ARM NEON)                                        |
+|   1. Reads encrypted UDP payload from Linux UDP Socket.                                          |
+|   2. Poly1305 MAC Verification (ARM NEON SIMD accelerated).                                     |
+|   3. ChaCha20 Stream Decryption (ARM NEON SIMD accelerated).                                     |
+|   4. Plaintext IP Packet Extraction.                                                             |
+|   5. Writes Decrypted Plaintext IP packet to /dev/net/tun.                                       |
 +===================================================+==============================================+
-                                                    |
-                                      Plaintext IP Packet (e.g. 10.8.0.2)
-                                                    |
-                                                    v
+               |
+     write() to /dev/net/tun
+               v
 +==================================================================================================+
-| LINUX KERNEL ROUTING & FIREWALL (tun0 / wg1 Interface)                                           |
-|                                                                                                  |
-|   1. Linux IP Routing: Destination lookup (LAN subnet vs local host).                            |
-|   2. Netfilter / nftables: Zone firewall rules (VPN to LAN policy).                              |
-|   3. In-Kernel Software Flowtable (Clean Baseline) OR NSS L3 Acceleration:                       |
-|      - Forwarded to destination Ethernet port.                                                   |
+| LINUX KERNEL ROUTING & FORWARDING (Virtual wg1 / tun0 Interface)                                 |
+|   1. Ingress from TUN driver -> Linux IP Routing Table Lookup.                                   |
+|   2. Netfilter / nftables zone evaluation (VPN-to-LAN firewall policy, conntrack).               |
+|   3. Egress Forwarding: Destination LAN subnet lookup.                                           |
+|   4. Forwarded Flow Acceleration (ECM Classification):                                           |
+|      - Clean Baseline: Handled by Linux in-kernel software flowtable (nftables flow_offload).    |
+|      - NSS Offload (If active & interfaces supported): ECM installs L3 flow rule into NSS.       |
 +===================================================+==============================================+
-                                                    |
-                                                    v
-                                          [ Destination LAN Host ]
+               |
+               v
+     [ Motorcomm YT9215SC Switch -> Destination LAN Host ]
+```
+
+### 2.2 Outbound Datapath (LAN Host to Internet)
+
+```
+[ LAN Host (e.g. 192.168.1.100) ]
+               |
+      Plaintext IP Packet
+               v
++==================================================================================================+
+| LINUX KERNEL ROUTING & FIREWALL                                                                  |
+|   1. Ingress from LAN interface (br-lan).                                                        |
+|   2. Linux Routing Table evaluates route -> matches WireGuard subnet -> egress to wg1 (TUN).     |
+|   3. Netfilter / nftables evaluates outbound policy.                                             |
+|   4. Linux TUN driver places packet in /dev/net/tun read queue.                                  |
++===================================================+==============================================+
+               |
+     read() from /dev/net/tun
+               v
++==================================================================================================+
+| USERSPACE BORINGTUN RUST DAEMON (AArch64 musl / ARM NEON)                                        |
+|   1. Reads plaintext IP packet from /dev/net/tun.                                                |
+|   2. Route / Peer Matching (AllowedIPs lookup).                                                  |
+|   3. ChaCha20 Stream Encryption (ARM NEON SIMD accelerated).                                     |
+|   4. Poly1305 MAC Authentication Tag Generation (ARM NEON SIMD).                                 |
+|   5. Encapsulates into UDP Datagram (destination peer IP:port).                                  |
+|   6. Sends datagram via Linux UDP socket: sendto() / sendmsg().                                  |
++===================================================+==============================================+
+               |
+     sendto() via Linux UDP Socket
+               v
++==================================================================================================+
+| LINUX KERNEL NETWORK STACK: LOCAL EGRESS                                                         |
+|   - UDP Socket output -> IP Egress routing -> Netfilter POSTROUTING (NAT/masquerade if needed)   |
+|   - Transmitted out through WAN interface (eth0/eth1).                                           |
+|   - Note: Acceleration of local socket egress by ECM is UNVERIFIED on IPQ5018.                   |
++===================================================+==============================================+
+               |
+               v
+     [ Physical WAN Port -> Internet Gateway ]
 ```
 
 ---
@@ -91,10 +124,10 @@ This document formalizes the **Two-Tier Hybrid Acceleration Datapath**, delineat
 
 | Datapath Stage | Responsible Processing Entity | Acceleration Mechanism & Characteristics |
 |---|---|---|
-| **Outer WireGuard UDP Transport** | **Qualcomm NSS NPU** (via ECM) | **Hardware Offloaded:** Outer UDP (Port 51821) encapsulation, IP routing, NAT, checksum verification, and GMAC DMA. |
+| **Outer WireGuard UDP Socket Delivery** | **Linux Kernel UDP Stack / NSS (Unverified)** | **`UNVERIFIED` Hardware Offload:** Qualcomm ECM accelerates forwarded NAT flows. Whether outer UDP sockets terminating in userspace bypass software netfilter without CPU exception is unverified on IPQ5018. |
 | **ChaCha20 Decryption / Encryption** | **Host CPU (Cortex-A53)** | **SIMD Accelerated:** Vectorized using ARM NEON instructions (zero hardware NPU offload). |
 | **Poly1305 MAC Verification / Tagging**| **Host CPU (Cortex-A53)** | **SIMD Accelerated:** Vectorized polynomial arithmetic in BoringTun Rust. |
-| **Inner Tunnel IP Routing & Firewall** | **Linux Kernel / NSS** | **Hybrid:** Netfilter evaluates policy; subsequent established plaintext flows can be accelerated if interfaces are supported by ECM. |
+| **Inner Tunnel Forwarding (wg1 <-> LAN)** | **Linux Kernel / NSS ECM** | **Forwarded NAT Flow:** Plaintext forwarded flows between `wg1` and `br-lan` can be offloaded by software flowtable (Clean Baseline) or programmed into NSS via ECM if virtual interfaces are supported. |
 | **LAN Physical Delivery** | **Motorcomm YT9215SC Switch** | **Hardware Switched:** Transmitted across physical LAN port at 1 Gbps wire speed. |
 
 ### 3.1 Net Engineering Benefit of the Hybrid Model:
@@ -137,7 +170,7 @@ To eliminate ungrounded throughput assertions (such as speculative claims of 250
 | **Sustained TCP Throughput** | `iperf3 -c <peer> -t 60` | Mbits/sec | `ACCEPTANCE_TARGET` (Baseline record) |
 | **Sustained UDP Throughput** | `iperf3 -u -b 500M -c <peer>` | Mbits/sec & Jitter (ms) | `ACCEPTANCE_TARGET` |
 | **Per-Core CPU Utilization** | `mpstat -P ALL 1 60` / `top` | %usr, %sys, %sirq, %idle | Must observe CPU1 vs CPU0 load balance |
-| **Resident Memory (RSS)** | `grep -i vmrss /proc/<pid>/status`| Kilobytes (KB) | **< 15,000 KB (15 MB)** |
+| **Resident Memory (RSS)** | `grep -i vmrss /proc/<pid>/status`| Kilobytes (KB) | `ACCEPTANCE_TARGET` (< 15,000 KB targeted; unverified until live benchmark) |
 | **Peak Memory (HWM)** | `grep -i vmhwm /proc/<pid>/status`| Kilobytes (KB) | Record maximum resident watermark |
 | **Latency Under Load (P50/P95/P99)**| `ping -i 0.2 -c 500 <peer>` | Milliseconds (ms) | Compare P99 latency against Go baseline |
 | **SoftIRQ Overhead** | `/proc/softirqs` (NET_RX / NET_TX) | Rate (interrupts/sec) | Confirm NAPI behavior under load |

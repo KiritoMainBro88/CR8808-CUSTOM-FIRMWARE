@@ -38,25 +38,25 @@ This document performs an exhaustive, component-level feasibility analysis to an
 
 ### Question 2: Can NSS run together with the Motorcomm YT9215SC DSA Switch?
 - **Verdict:** **CONDITIONALLY YES — But STRICTLY INCOMPATIBLE Out-of-the-Box (`INCOMPATIBLE_WITHOUT_ADAPTER`).**
-- **Root Cause of Incompatibility:**
-  - The closed-source Qualcomm NSS firmware binary (`retail_router0.bin`) parses L2/L3 headers in hardware. It understands standard Ethernet II, IEEE 802.1Q VLAN (`0x8100`), IEEE 802.1ad QinQ (`0x88a8`), PPPoE (`0x8864`), IPv4, and IPv6.
-  - The NSS firmware contains **zero parser logic** for Motorcomm's proprietary 8-byte CPU tag (`tag_yt921x.c` / `tag_yt921x_enhanced.c`), whose hardware default EtherType is **`0x9988`** (`ETH_P_YT921X`).
-  - Passing frames with `0x9988` tags directly to NSS causes hardware packet classification failures (packet drops or fallbacks to CPU).
-- **Engineering Solutions Required:**
-  - **Solution A (`tag_8021q` Adapter):** Implement `tag_8021q` operations in `drivers/net/dsa/yt921x.c` so the switch uses standard 802.1Q VLAN IDs to represent CPU switch ports instead of proprietary tags. (Note: This is a complex R&D task involving 4K VLAN table management, PVID cross-tagging, and FDB learning; see [`docs/NSS_YT9215_ADAPTER_DESIGN.md`](NSS_YT9215_ADAPTER_DESIGN.md)).
-  - **Solution B (Physical Dual-Conduit Demux):** Exploit the dual-conduit topology of CR8818 (`port@4` = `cpu2` / `eth0`, `port@8` = `cpu1` / `eth1`): configure `cpu2` (Port 4) as an untagged, dedicated WAN conduit linked in hardware to Port 3 (physical WAN), and `cpu1` (Port 8) for LAN. NSS can offload WAN-to-LAN NAT without proprietary tags on the WAN interface.
+- **Root Cause & Technical Assessment:**
+  - The closed-source Qualcomm NSS firmware binary (`retail_router0.bin`) parses L2/L3 headers in hardware. It officially documents support for standard Ethernet II, IEEE 802.1Q VLAN (`0x8100`), IEEE 802.1ad QinQ (`0x88a8`), PPPoE (`0x8864`), IPv4, and IPv6.
+  - The Motorcomm DSA driver (`tag_yt921x.c` / `tag_yt921x_enhanced.c`) injects an 8-byte CPU tag whose hardware default EtherType is **`0x9988`** (`ETH_P_YT921X` / `YT921X_CPU_TAG_TPID_TPID_DEFAULT`).
+  - **NSS Hardware Parser Status:** The exact response of NSS silicon to EtherType `0x9988` is **`UNVERIFIED`** on physical hardware. Architecturally, because `0x9988` is not recognized as an L2/L3 framing protocol by NSS firmware, it is expected to fail hardware flow classification (resulting in either packet drops or software CPU fallback exceptions).
+- **Engineering Solutions Under Prototyping:**
+  - **Solution A (`tag_8021q` Adapter):** Implement `tag_8021q` operations in `drivers/net/dsa/yt921x.c` so the switch uses standard 802.1Q VLAN tags (`0x8100`) to encode switch port IDs. (Note: The mere existence of a 4K VLAN table does not guarantee operational `tag_8021q`; this requires active prototyping of VLAN/PVID programming, FDB isolation, and egress untagging; see [`docs/NSS_YT9215_ADAPTER_DESIGN.md`](NSS_YT9215_ADAPTER_DESIGN.md)).
+  - **Solution B (Physical Dual-Conduit Demux):** Exploit the dual-conduit topology of CR8818 (`port@4` = `cpu2` / `eth0`, `port@8` = `cpu1` / `eth1`): configure `cpu2` (Port 4) as an untagged, dedicated WAN conduit linked in hardware to Port 3 (physical WAN), and `cpu1` (Port 8) for LAN.
 
 ### Question 3: Can performance and RAM stability be maintained on a 256 MB device?
-- **Verdict:** **YES, with Strict Low-Memory Engineering (`FEASIBLE_WITH_CONSTRAINTS`).**
+- **Verdict:** **FEASIBLE WITH CONSTRAINTS (`FEASIBLE_WITH_CONSTRAINTS`).**
 - **Evidence & Parameters (Grounded in Kuncy 256MB Profile):**
   - Usable physical RAM on CR8818 is ~182 MB (due to U-Boot and TrustZone reservations).
-  - Applying Kuncy's verified 256 MB profile (detailed in [`docs/NSS_256MB_MEMORY_VALIDATION.md`](NSS_256MB_MEMORY_VALIDATION.md)):
-    - `nss_region`: Exactly **8 MiB** (at `0x40000000`, size `0x800000`).
-    - `NSS_MEM_PROFILE_LOW=y` / `MP_256` (restricts `qca-nss-pbuf` to ~8–12 MiB).
-    - `ATH11K_MEM_PROFILE_256M=y` (reduces Wi-Fi DMA rings from 1024 to 256/512 descriptors, saving ~18 MiB).
-    - `coherent_pool=512k` (strictly requires patch 0828 to prevent coherent DMA allocation failures).
-    - Replacing `wireguard-go` with **BoringTun Rust** (peak `VmRSS < 15 MB`).
-  - Total resident RAM with all services active is estimated at ~140–150 MB, leaving 32–42 MB free buffer headroom. Memory pressure must be judged by `allocstall`, `pgscan`, and `pgsteal`, not virtual address `VmSize`.
+  - Memory parameters referenced from Kuncy 256MB tree:
+    - `nss_region`: Referenced as **8 MiB** (at `0x40000000`, size `0x800000`), but must be validated against exact NSS firmware versions.
+    - `NSS_MEM_PROFILE_LOW=y` / `MP_256` (restricts `qca-nss-pbuf` to ~8–12 MiB reference estimate).
+    - `ATH11K_MEM_PROFILE_256M=y` (reduces Wi-Fi DMA rings from 1024 to 256/512 descriptors, estimated ~18 MiB savings).
+    - `coherent_pool=512k` (pinned to patch 0828 to avoid excessive coherent DMA reservation).
+    - WireGuard target: **BoringTun Rust** (targeted `VmRSS < 15 MB` as `ACCEPTANCE_TARGET`; unverified until live test).
+  - Total resident RAM with all services active is an engineering estimate (~140–150 MB). Memory pressure must be judged by `/proc/vmstat` metrics (`allocstall`, `pgscan`, `pgsteal`), not virtual address `VmSize`. Setting `vm.min_free_kbytes=8192` is recommended tuning, though it does not guarantee absolute immunity against memory pressure during burst allocations.
 
 ---
 
@@ -98,12 +98,12 @@ When this packet arrives at the IPQ5018 Synopsys DWMAC receiver:
 3. The NSS firmware hardware parser inspects bytes 12–13:
    - Expected: `0x0800` (IPv4) or `0x86dd` (IPv6) or `0x8100` (802.1Q VLAN).
    - Actual: `0x9988` (Motorcomm Tag EtherType, `ETH_P_YT921X`).
-4. Because `0x9988` is an unrecognized protocol to the closed NSS firmware:
-   - **Does NOT create an ECM acceleration entry.**
-   - Either drops the frame or punts it to the host CPU via an exception path.
-   - Result: 0% hardware acceleration, high packet drop rates, and kernel log spam.
+4. NSS Firmware Parser Evaluation for `0x9988`:
+   - Hardware response is formally **`UNVERIFIED`** on physical silicon.
+   - Theoretical analysis: Because `0x9988` is absent from documented NSS firmware L2/L3 parsing tables, ECM cannot extract IP 5-tuples from tagged frames without parser modifications.
+   - Expected silicon behavior: Failure of hardware classification leading to frame drop or exception fallback to slow-path CPU handling.
 
-### 4.2 Why `tag_8021q` Solves the Collision
+### 4.2 The `tag_8021q` Adaptation Hypothesis
 The Linux kernel DSA subsystem includes a universal tagging driver: `net/dsa/tag_8021q.c`.
 Instead of injecting proprietary bytes, `tag_8021q` uses a standard IEEE 802.1Q VLAN tag:
 ```
@@ -112,11 +112,12 @@ Frame with DSA tag_8021q:
 ```
 - In `tag_8021q`, the 12-bit VLAN ID encodes the source switch port:
   `VID = base_vid + port_id` (e.g. VID 100 = LAN1, VID 101 = LAN2, VID 102 = LAN3, VID 103 = WAN).
-- When this frame enters the NSS firmware:
+- Architectural theory for NSS compatibility:
   - Bytes 12–13 are `0x8100` (Standard 802.1Q).
-  - NSS firmware extracts the VLAN ID, peels the tag, and parses the underlying IPv4/IPv6 packet natively!
-  - ECM installs a hardware flow rule mapping the connection to the appropriate VLAN sub-interface.
-  - The frame is forwarded at 1 Gbps wire speed by the NSS NPU!
+  - NSS firmware natively recognizes `0x8100`, extracts the VLAN ID, peels the tag, and parses the underlying IPv4/IPv6 packet.
+  - ECM installs a hardware flow rule mapping the connection to the corresponding VLAN sub-interface.
+  - Target: Forwarding offload up to wire speed (Target: >900 Mbps as `ACCEPTANCE_TARGET`; pending empirical hardware test).
+  - Note: Prototyping must confirm that the switch's internal VLAN tables, PVID translation, and FDB learning work synchronously without causing packet drop or bridge filtering collisions.
 
 ---
 

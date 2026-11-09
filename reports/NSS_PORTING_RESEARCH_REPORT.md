@@ -29,8 +29,8 @@ Our research solves this gap by analyzing the exact datapath collision, identify
 | Evaluation Question | Mandatory Standard | Research Finding & Empirical Verdict |
 |---|---|---|
 | **1. Does IPQ5018 have NSS working on Linux Kernel 6.18?** | Source and build evidence | **CONFIRMED (`SOURCE_VERIFIED` & `BUILD_VERIFIED`).** <br> Demonstrated in `kuncy7/openwrt-nss-edma` and OpenWrt Forum thread #253014. Upstream `stmmac` is successfully claimed by `qca-dwmac-nss`, achieving >900 Mbps IPv4 NAT offload with host CPU >90% idle. |
-| **2. Can NSS run together with the Motorcomm YT9215SC DSA Switch?** | Architectural proof of compatibility | **ARCHITECTURALLY PROVEN, BUT REQUIRES ADAPTER (`INCOMPATIBLE_WITHOUT_ADAPTER`).** <br> NSS firmware rejects proprietary `tag_yt921x` headers (TPID `0x9988`). Compatibility requires implementing `tag_8021q` operations in `yt921x.c` (Strategy 1, see [`docs/NSS_YT9215_ADAPTER_DESIGN.md`](NSS_YT9215_ADAPTER_DESIGN.md)) or configuring physical dual-conduit WAN/LAN isolation (Strategy 2). |
-| **3. Can performance and RAM stability be maintained on 256 MB?** | Benchmark and empirical evidence | **CONFIRMED FEASIBLE WITH LOW-MEMORY CONSTRAINTS (`FEASIBLE_WITH_CONSTRAINTS`).** <br> Applying Kuncy's 256MB profile (`nss_region` 8 MiB, `coherent_pool=512k` with patch 0828, `ATH11K_MEM_PROFILE_256M`, `NSS_MEM_PROFILE_LOW` MP_256) and BoringTun Rust (peak `VmRSS < 15 MB`) maintains resident memory at ~140–150 MB out of ~182 MB usable RAM (see [`docs/NSS_256MB_MEMORY_VALIDATION.md`](NSS_256MB_MEMORY_VALIDATION.md)). |
+| **2. Can NSS run together with the Motorcomm YT9215SC DSA Switch?** | Architectural proof of compatibility | **ARCHITECTURALLY PROVEN, BUT REQUIRES ADAPTER (`INCOMPATIBLE_WITHOUT_ADAPTER`).** <br> Switch uses default TPID `0x9988` (`ETH_P_YT921X`). NSS silicon parser response to `0x9988` is `UNVERIFIED` on physical hardware (expected to fail hardware classification without parser support). Compatibility requires prototyping `tag_8021q` operations in `yt921x.c` (Strategy 1, see [`docs/NSS_YT9215_ADAPTER_DESIGN.md`](NSS_YT9215_ADAPTER_DESIGN.md)) or configuring physical dual-conduit WAN/LAN isolation (Strategy 2). |
+| **3. Can performance and RAM stability be maintained on 256 MB?** | Benchmark and empirical evidence | **CONFIRMED FEASIBLE WITH LOW-MEMORY CONSTRAINTS (`FEASIBLE_WITH_CONSTRAINTS`).** <br> Applying Kuncy's 256MB profile (`nss_region` 8 MiB, `coherent_pool=512k` with patch 0828, `ATH11K_MEM_PROFILE_256M`, `NSS_MEM_PROFILE_LOW` MP_256) and BoringTun Rust (targeted `VmRSS < 15 MB` as `ACCEPTANCE_TARGET`) maintains estimated resident memory at ~140–150 MB out of ~182 MB usable RAM (see [`docs/NSS_256MB_MEMORY_VALIDATION.md`](NSS_256MB_MEMORY_VALIDATION.md)). |
 
 ---
 
@@ -41,11 +41,11 @@ Our research solves this gap by analyzing the exact datapath collision, identify
    - IPQ5018 does **NOT** contain Qualcomm's proprietary EDMA engine found on IPQ807x/IPQ6018.
    - It contains two standard **Synopsys DesignWare Ethernet MACs (DWMAC)**.
    - In upstream Linux, these are driven by `stmmac` (`dwmac-ipq5018.c`).
-2. **The Switch Tagging Collision & 8-Byte Tag Anatomy:**
+4. **The Switch Tagging Collision & 8-Byte Tag Anatomy:**
    - The Motorcomm DSA driver (`drivers/net/dsa/yt921x.c`) injects an 8-byte proprietary CPU tag with hardware default EtherType **`0x9988`** (`ETH_P_YT921X` / `YT921X_CPU_TAG_TPID_TPID_DEFAULT`).
    - Tag layout: 2B Tag TPID (`0x9988`), 2B VLAN Tag, 2B Rx Port & Forwarding Command, 2B Tx Port Mask.
-   - The closed Qualcomm NSS firmware (`retail_router0.bin`) parses L2/L3 headers in hardware. It strictly understands Ethernet II, IEEE 802.1Q (`0x8100`), QinQ (`0x88a8`), PPPoE (`0x8864`), IPv4, and IPv6.
-   - **NSS firmware has zero capability to parse `0x9988`.** Frames injected with this tag fail hardware classification, causing packet drops or forcing slow-path CPU handling.
+   - The closed Qualcomm NSS firmware (`retail_router0.bin`) parses L2/L3 headers in hardware. It officially recognizes Ethernet II, IEEE 802.1Q (`0x8100`), QinQ (`0x88a8`), PPPoE (`0x8864`), IPv4, and IPv6.
+   - **NSS hardware behavior with `0x9988` is UNVERIFIED on silicon:** Because `0x9988` is not recognized by NSS L2/L3 parsers, frames injected with this tag are theorized to fail hardware classification, causing packet drops or slow-path CPU fallback. Hardware validation is required.
 3. **Conduit Topology Disambiguation:**
    - `port@8`: CPU1 primary conduit (`eth1` / `dp2` via Uniphy SerDes SGMII 1000M).
    - `port@4`: CPU2 secondary conduit (`eth0` / `dp1` via Qualcomm Internal GE PHY `0x004dd0c0`).
@@ -80,9 +80,9 @@ Physical RAM on CR8818 is 256 MB DDR3L, with ~182 MB usable by Linux (`MemTotal`
    - Qualcomm IPQ5018 contains hardware acceleration for IPsec (AES-CBC, AES-GCM, SHA1/256), but **lacks hardware acceleration for ChaCha20-Poly1305** (WireGuard's cipher).
    - NSS cannot perform hardware cryptographic offload of WireGuard packets on IPQ5018.
 2. **The Two-Tier Acceleration Model (Detailed in [`docs/NSS_WIREGUARD_DATAPATH.md`](NSS_WIREGUARD_DATAPATH.md)):**
-   - **Inner Plaintext Packet:** Processed on `tun0` by the **BoringTun Rust** userspace daemon, utilizing **ARMv8 NEON SIMD** vector instructions on the Cortex-A53 CPU cores.
-   - **Outer Encrypted UDP Packet:** Once encrypted, BoringTun emits standard UDP packets (port 51821) to the WAN gateway.
-   - **NSS Hardware Offload:** Qualcomm ECM detects the high-throughput outer UDP stream and installs a hardware flow rule. **NSS accelerates the outer UDP encapsulation, routing, NAT translation, and GMAC transmission at wire speed.**
+   - **Inbound:** Physical WAN -> Linux UDP Socket -> BoringTun reads payload and decrypts via ARM NEON SIMD -> writes plaintext to `/dev/net/tun` -> Linux kernel routing -> LAN host.
+   - **Outbound:** LAN host -> Linux kernel routing -> writes plaintext to `/dev/net/tun` -> BoringTun reads plaintext and encrypts via ARM NEON SIMD -> sends datagram via Linux UDP socket -> Physical WAN.
+   - **ECM & NSS Status:** Forwarded LAN-to-VPN flows can be offloaded if interfaces are supported by ECM. Outer UDP local socket acceleration by NSS is strictly **`UNVERIFIED`** on IPQ5018 silicon.
    - **Performance Standard:** Throughput is classified strictly as an **`ACCEPTANCE_TARGET`** pending live physical benchmarking; unmeasured speculative throughput claims are prohibited.
 
 ---

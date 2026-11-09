@@ -34,3 +34,6 @@ Thumbs.db
 *.ovpn
 *.conf.bak
 scratch/
+*.exe
+*.o
+*.obj
