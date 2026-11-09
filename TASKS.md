@@ -38,8 +38,9 @@ NSS + YT9215SC PC Prototype Milestone M3 completed (`P2-NSS-POC-M3`). Branch `fe
 - `manifests/nss-poc-sources.lock.yaml` (M3: Reconciled source lockfile, yangfl cr8818 branch 6729bbe verified via git cat-file on all 4 remotes)
 - `tests/poc/yt921x_tag_proto.h` & `yt921x_tag_proto.c` (M3: Upstream bitfield definitions, strict error codes, explicit simulation disclaimers)
 - `tests/poc/test_yt921x_poc.c` & `tests/poc/Makefile` (M3: Independent oracle unit test suite; 61/61 PASS on Windows UCRT64 GCC and Linux WSL2 GCC; cross-compiles cleanly to AArch64 ELF with aarch64-linux-gnu-gcc)
-- `scripts/validate_dts.sh` & `scripts/compile_dts.sh` (M3: Device Tree preflight and DTC compilation validation suite)
-- `reports/NSS_POC_M3_REPORT.md` (M3 Deliverable Report answering all 6 mandatory architecture review questions)
+- `patches/nss-cr8818/` (M3: Repaired Patch 0001 for Linux 6.18 and Patch 0002 for OpenWrt qualcommax; both pass `git apply --check` cleanly)
+- `scripts/compile_dts.sh` & `scripts/generate_m3_patches.py` (M3: DTC compilation suite; compiles Option B Base, Option B NSS, Option A Baseline, and Option A Patched to binary DTBs with dtc 1.6.1)
+- `reports/NSS_POC_M3_REPORT.md` (M3 Deliverable Report answering all 6 mandatory architecture review questions with exact SHA-256 table)
 - Verified workspace preservation: `D:\vibecode\test_wifi` confirmed clean, zero edits.
 
 M3 deliverables are ready for review by ChatGPT and Product Owner. Gemini execution halted at M3 gate per instruction. Tasks `P2-NSS-POC-M4-M5` remain BLOCKED awaiting review approval. Router untouched (NO SSH, NO FLASH).
