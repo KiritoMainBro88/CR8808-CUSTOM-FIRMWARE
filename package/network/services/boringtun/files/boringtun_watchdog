@@ -4,14 +4,23 @@
 
 IFACE="${1:-wg0}"
 TIMEOUT="${2:-180}"
+SOCK_PATH="/var/run/wireguard/${IFACE}.sock"
 
-if [ ! -S "/var/run/wireguard/${IFACE}.sock" ]; then
-    logger -t boringtun-watchdog "Interface socket /var/run/wireguard/${IFACE}.sock not found. Skipping."
+if [ ! -S "$SOCK_PATH" ]; then
+    logger -t boringtun-watchdog "Interface socket $SOCK_PATH not found. Skipping."
     exit 0
 fi
 
 NOW=$(date +%s)
 STALE_FOUND=0
+
+# Determine socket age (seconds elapsed since boringtun daemon socket was created)
+SOCK_TIME=$(date -r "$SOCK_PATH" +%s 2>/dev/null || stat -c %Y "$SOCK_PATH" 2>/dev/null || echo "$NOW")
+if [ "$NOW" -ge "$SOCK_TIME" ]; then
+    SOCK_AGE=$((NOW - SOCK_TIME))
+else
+    SOCK_AGE=0
+fi
 
 # Query latest handshakes
 HANDSHAKES=$(wg show "$IFACE" latest-handshakes 2>/dev/null)
@@ -20,21 +29,29 @@ HANDSHAKES=$(wg show "$IFACE" latest-handshakes 2>/dev/null)
 # Process line by line without pipeline subshell to preserve STALE_FOUND across loop termination
 while read -r peer handshake; do
     [ -n "$peer" ] || continue
-    if [ -n "$handshake" ] && [ "$handshake" -gt 0 ]; then
-        if [ "$handshake" -lt 1000000000 ]; then
-            # BoringTun userspace UAPI reports relative duration elapsed (seconds since handshake)
-            AGE="$handshake"
-        elif [ "$NOW" -ge "$handshake" ]; then
-            # Kernel WireGuard reports absolute UNIX epoch seconds
-            AGE=$((NOW - handshake))
-        else
-            # Clock stepped back (e.g. NTP synchronization during early boot)
-            AGE=0
+    if [ -z "$handshake" ] || [ "$handshake" -eq 0 ]; then
+        # Handshake has never completed. Check if tunnel has exceeded initial grace period.
+        if [ "$SOCK_AGE" -gt "$TIMEOUT" ]; then
+            logger -t boringtun-watchdog "Peer $peer has never completed handshake and socket is stale ($SOCK_AGE seconds old > $TIMEOUT threshold)."
+            STALE_FOUND=1
         fi
+    elif [ "$handshake" -lt 1000000000 ]; then
+        # BoringTun userspace UAPI reports relative duration elapsed (seconds since handshake)
+        AGE="$handshake"
         if [ "$AGE" -gt "$TIMEOUT" ]; then
             logger -t boringtun-watchdog "Peer $peer handshake is stale ($AGE seconds old > $TIMEOUT threshold)."
             STALE_FOUND=1
         fi
+    elif [ "$NOW" -ge "$handshake" ]; then
+        # Kernel WireGuard reports absolute UNIX epoch seconds
+        AGE=$((NOW - handshake))
+        if [ "$AGE" -gt "$TIMEOUT" ]; then
+            logger -t boringtun-watchdog "Peer $peer handshake is stale ($AGE seconds old > $TIMEOUT threshold)."
+            STALE_FOUND=1
+        fi
+    else
+        # Clock stepped back (e.g. NTP synchronization during early boot)
+        logger -t boringtun-watchdog "Peer $peer clock step detected (handshake $handshake > now $NOW). Resetting age."
     fi
 done <<EOF
 $HANDSHAKES
@@ -42,8 +59,12 @@ EOF
 
 if [ "$STALE_FOUND" -eq 1 ]; then
     logger -t boringtun-watchdog "Stale peers detected on $IFACE. Triggering interface refresh."
-    if [ -x /sbin/ifup ]; then
-        ifup "$IFACE"
+    if [ -x /sbin/ifdown ] && [ -x /sbin/ifup ]; then
+        /sbin/ifdown "$IFACE"
+        sleep 1
+        /sbin/ifup "$IFACE"
+    elif [ -x /sbin/ifup ]; then
+        /sbin/ifup "$IFACE"
     elif [ -x /etc/init.d/boringtun ]; then
         /etc/init.d/boringtun restart
     fi

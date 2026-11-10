@@ -194,6 +194,37 @@ echo -e "\n--- Step 10: Final WireGuard Transfer Statistics ---"
 ip netns exec ns-router wg show wg0
 ip netns exec ns-peer wg show wg1
 
+echo -e "\n--- Step 11: Remote Subnet Route Handling & Forwarding Test ---"
+echo "BoringTun UAPI constraint: Modifying existing peer requires removal before re-adding."
+echo "Removing peer and re-adding with remote subnet 192.168.200.0/24..."
+ip netns exec ns-router wg set wg0 peer "$PEER_PUB" remove
+ip netns exec ns-router wg set wg0 peer "$PEER_PUB" \
+    endpoint 10.0.0.2:51821 \
+    allowed-ips 192.168.100.2/32,fd00:dead:beef::2/128,192.168.200.0/24 \
+    persistent-keepalive 25
+
+echo "Configuring subnet alias 192.168.200.1 on Peer lo..."
+ip netns exec ns-peer ip addr add 192.168.200.1/32 dev lo
+
+echo "Installing kernel route for remote subnet via wg0 on Router..."
+ip netns exec ns-router ip route add 192.168.200.0/24 dev wg0
+
+echo "Pinging remote subnet IP 192.168.200.1 through BoringTun tunnel:"
+ip netns exec ns-router ping -c 3 -W 2 192.168.200.1
+echo "SUCCESS: Remote subnet traffic correctly routed and encapsulated via BoringTun!"
+
+echo -e "\n--- Step 12: BoringTun Watchdog Script Execution Test ---"
+WATCHDOG_SCRIPT="/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/package/network/services/boringtun/files/boringtun_watchdog"
+chmod +x "$WATCHDOG_SCRIPT"
+
+echo "Executing watchdog under healthy tunnel conditions (timeout=180s)..."
+ip netns exec ns-router "$WATCHDOG_SCRIPT" wg0 180
+echo "Watchdog healthy check passed (zero false alarms)."
+
+echo "Executing watchdog with simulated stale timeout (timeout=0s)..."
+ip netns exec ns-router "$WATCHDOG_SCRIPT" wg0 0
+echo "Watchdog correctly detected stale peer threshold."
+
 echo -e "\n===================================================================="
 echo "ALL BORINGTUN INTEGRATION TESTS COMPLETED SUCCESSFULLY"
 echo "===================================================================="

@@ -1,0 +1,45 @@
+# OpenWrt 25.12.6 Daily Driver Configuration for Xiaomi CR8808 Ver.B (CR8818)
+# Target Architecture: Qualcomm Atheros IPQ50xx (AArch64 Cortex-A53)
+CONFIG_TARGET_qualcommax=y
+CONFIG_TARGET_qualcommax_ipq50xx=y
+CONFIG_TARGET_qualcommax_ipq50xx_DEVICE_xiaomi_cr8818=y
+
+# Base System & Storage Layout (128MB SPI NAND, 40MB rootfs_1 SquashFS)
+CONFIG_TARGET_ROOTFS_SQUASHFS=y
+CONFIG_TARGET_ROOTFS_PARTSIZE=40
+CONFIG_RUST_TOOLCHAIN_PREBUILT=y
+
+# Ethernet Switching & DSA Subsystem (Motorcomm YT9215SC)
+CONFIG_PACKAGE_kmod-dsa=y
+CONFIG_PACKAGE_kmod-dsa-tag-yt921x=y
+CONFIG_PACKAGE_kmod-motorcomm-phy=y
+CONFIG_PACKAGE_kmod-sched-cake=y
+
+# Wireless Subsystem (Wi-Fi 6 802.11ax, 2.4GHz IPQ5018 + 5GHz QCN6102 HE160)
+CONFIG_PACKAGE_kmod-ath11k=y
+CONFIG_PACKAGE_kmod-ath11k-pci=y
+CONFIG_PACKAGE_ath11k-firmware-ipq5018=y
+CONFIG_PACKAGE_ath11k-firmware-qcn6102=y
+CONFIG_PACKAGE_wpad-mbedtls=y
+
+# Firewall & Offload (firewall4 nftables flowtable)
+CONFIG_PACKAGE_firewall4=y
+CONFIG_PACKAGE_nftables=y
+CONFIG_PACKAGE_kmod-nft-flow-offload=y
+
+# Rust VPN Subsystem (BoringTun 0.7.1 Userspace WireGuard)
+CONFIG_PACKAGE_boringtun=y
+CONFIG_PACKAGE_kmod-tun=y
+CONFIG_PACKAGE_wireguard-tools=y
+
+# Management, Web UI & Security
+CONFIG_PACKAGE_luci=y
+CONFIG_PACKAGE_luci-ssl=y
+CONFIG_PACKAGE_dropbear=y
+CONFIG_PACKAGE_odhcpd-ipv6only=y
+CONFIG_PACKAGE_dnsmasq-full=y
+
+# Exclusions: Out-of-tree Qualcomm NSS acceleration strictly quarantined in Experimental track
+# CONFIG_PACKAGE_kmod-qca-nss-drv is not set
+# CONFIG_PACKAGE_kmod-qca-nss-dp is not set
+# CONFIG_PACKAGE_kmod-qca-nss-ecm is not set

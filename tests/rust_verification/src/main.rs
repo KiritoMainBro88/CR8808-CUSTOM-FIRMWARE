@@ -101,6 +101,37 @@ fn main() {
     let proc_mem = ProcessMemory::parse_proc_status(100, boringtun_status);
     run_test!("BoringTun VmRSS 3.8 MB complies with <15 MB budget", proc_mem.complies_with_boringtun_target());
 
+    println!("\n=== Group 6: Watchdog Dual-Mode Stale Handshake & Grace Period Logic ===");
+    let timeout = 180u64;
+    run_test!(
+        "Unhandshaken peer within grace period (socket_age 30s <= 180s) NOT stale",
+        is_peer_handshake_stale(0, 1770000030, 30, timeout) == Ok(false)
+    );
+    run_test!(
+        "Unhandshaken peer beyond grace period (socket_age 200s > 180s) IS STALE",
+        is_peer_handshake_stale(0, 1770000200, 200, timeout) == Ok(true)
+    );
+    run_test!(
+        "BoringTun relative duration (15s <= 180s) NOT stale",
+        is_peer_handshake_stale(15, 1770000100, 300, timeout) == Ok(false)
+    );
+    run_test!(
+        "BoringTun stale relative duration (240s > 180s) IS STALE",
+        is_peer_handshake_stale(240, 1770000300, 500, timeout) == Ok(true)
+    );
+    run_test!(
+        "Kernel WireGuard absolute timestamp (age 50s <= 180s) NOT stale",
+        is_peer_handshake_stale(1770000000, 1770000050, 60, timeout) == Ok(false)
+    );
+    run_test!(
+        "Kernel WireGuard stale epoch timestamp (age 250s > 180s) IS STALE",
+        is_peer_handshake_stale(1770000000, 1770000250, 300, timeout) == Ok(true)
+    );
+    run_test!(
+        "NTP clock step backward detected as future handshake error",
+        is_peer_handshake_stale(1770000100, 1770000050, 60, timeout) == Err("Clock step detected: handshake in future")
+    );
+
     println!("\n====================================================================");
     println!("Test Summary: {} Passed, {} Failed (Total: {})", passed, total - passed, total);
     println!("====================================================================");

@@ -271,4 +271,57 @@ mod tests {
         let age_absolute = now - kernel_handshake;
         assert_eq!(age_absolute, 20);
     }
+
+    #[test]
+    fn test_watchdog_stale_decision_logic() {
+        let timeout = 180u64;
+
+        // Case 1: Peer has never handshaken (handshake = 0), socket just created (socket_age = 30s) -> Not stale (within grace period)
+        assert_eq!(is_peer_handshake_stale(0, 1770000030, 30, timeout), Ok(false));
+
+        // Case 2: Peer has never handshaken (handshake = 0), socket old (socket_age = 200s > 180s) -> Stale!
+        assert_eq!(is_peer_handshake_stale(0, 1770000200, 200, timeout), Ok(true));
+
+        // Case 3: BoringTun relative duration = 15s (< 180s) -> Not stale
+        assert_eq!(is_peer_handshake_stale(15, 1770000100, 300, timeout), Ok(false));
+
+        // Case 4: BoringTun relative duration = 240s (> 180s) -> Stale!
+        assert_eq!(is_peer_handshake_stale(240, 1770000300, 500, timeout), Ok(true));
+
+        // Case 5: Kernel WireGuard epoch timestamp = 1770000000, now = 1770000050 (age = 50s) -> Not stale
+        assert_eq!(is_peer_handshake_stale(1770000000, 1770000050, 60, timeout), Ok(false));
+
+        // Case 6: Kernel WireGuard epoch timestamp = 1770000000, now = 1770000250 (age = 250s) -> Stale!
+        assert_eq!(is_peer_handshake_stale(1770000000, 1770000250, 300, timeout), Ok(true));
+
+        // Case 7: Clock step detected (handshake in future due to NTP rollback)
+        assert_eq!(
+            is_peer_handshake_stale(1770000100, 1770000050, 60, timeout),
+            Err("Clock step detected: handshake in future")
+        );
+    }
 }
+
+/// Evaluates whether a WireGuard peer's handshake is considered stale according to the dual-mode watchdog logic.
+pub fn is_peer_handshake_stale(
+    handshake: u64,
+    now: u64,
+    socket_age: u64,
+    timeout: u64,
+) -> Result<bool, &'static str> {
+    if handshake == 0 {
+        // Peer has never handshaken. Stale only if socket has exceeded timeout.
+        Ok(socket_age > timeout)
+    } else if handshake < 1_000_000_000 {
+        // BoringTun userspace UAPI: relative elapsed duration
+        Ok(handshake > timeout)
+    } else if now >= handshake {
+        // Kernel WireGuard: absolute UNIX epoch seconds
+        let age = now - handshake;
+        Ok(age > timeout)
+    } else {
+        // Clock stepped back (e.g. NTP synchronization during early boot)
+        Err("Clock step detected: handshake in future")
+    }
+}
+

@@ -24,12 +24,13 @@ wireguard_boringtun_add_peer() {
 	local tmp_conf="$2"
 	local config="$3"
 
-	local public_key preshared_key endpoint_host endpoint_port persistent_keepalive
+	local public_key preshared_key endpoint_host endpoint_port persistent_keepalive route_allowed_ips
 	config_get public_key "$peer_config" public_key
 	config_get preshared_key "$peer_config" preshared_key
 	config_get endpoint_host "$peer_config" endpoint_host
 	config_get endpoint_port "$peer_config" endpoint_port
 	config_get persistent_keepalive "$peer_config" persistent_keepalive
+	config_get_bool route_allowed_ips "$peer_config" route_allowed_ips 1
 
 	[ -n "$public_key" ] || return 0
 
@@ -51,6 +52,26 @@ wireguard_boringtun_add_peer() {
 	config_get allowed_ips "$peer_config" allowed_ips
 	for aip in $allowed_ips; do
 		echo "AllowedIPs = $aip" >> "$tmp_conf"
+		if [ "$route_allowed_ips" -eq 1 ]; then
+			case "$aip" in
+				*/*)
+					;;
+				*:*)
+					aip="${aip}/128"
+					;;
+				*)
+					aip="${aip}/32"
+					;;
+			esac
+			case "$aip" in
+				*:*)
+					proto_add_ipv6_route "${aip%%/*}" "${aip##*/}"
+					;;
+				*)
+					proto_add_ipv4_route "${aip%%/*}" "${aip##*/}"
+					;;
+			esac
+		fi
 	done
 }
 
@@ -120,6 +141,16 @@ proto_wireguard_boringtun_setup() {
 
 	for addr in $addresses; do
 		case "$addr" in
+			*/*)
+				;;
+			*:*)
+				addr="${addr}/128"
+				;;
+			*)
+				addr="${addr}/32"
+				;;
+		esac
+		case "$addr" in
 			*:*)
 				proto_add_ipv6_address "${addr%%/*}" "${addr##*/}"
 				;;
@@ -135,8 +166,11 @@ proto_wireguard_boringtun_setup() {
 proto_wireguard_boringtun_teardown() {
 	local config="$1"
 	local iface="$2"
+	# Deleting tun device signals EOF to BoringTun worker threads, triggering clean exit
 	ip link del dev "$iface" 2>/dev/null || true
+	# Clean up socket and fallback process kill
 	rm -f "/var/run/wireguard/${iface}.sock" 2>/dev/null || true
+	pkill -f "boringtun.*${iface}" 2>/dev/null || true
 	proto_init_update "$iface" 0
 	proto_send_update "$config"
 }

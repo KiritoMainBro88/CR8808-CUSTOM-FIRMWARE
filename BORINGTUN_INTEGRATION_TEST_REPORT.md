@@ -11,4 +11,8 @@ Contains:
    - 10-second TCP `iperf3` throughput: **949 Mbps line rate** (1.10 GB transferred).
    - Physical memory measurement: **3.0 MB VmRSS** (under 15 MB budget) with zero leak under load.
    - Dynamic link failure and auto-reconnection test.
-4. Critical discovery: BoringTun UAPI relative timestamp idiosyncrasy and the dual-mode fix implemented in `boringtun_watchdog`.
+4. Critical discoveries:
+   - BoringTun UAPI relative timestamp idiosyncrasy and the dual-mode fix implemented in `boringtun_watchdog`.
+   - BoringTun `device/mod.rs:321` limitation (panic on modifying existing peers without removal), resolved via atomic `wg setconf`.
+   - Watchdog unestablished handshake (`handshake=0`) handling via socket creation age and netifd interface refresh (`ifdown` + `ifup`).
+   - Remote subnet route handling and address netmask normalization in `wireguard_boringtun.sh`.
