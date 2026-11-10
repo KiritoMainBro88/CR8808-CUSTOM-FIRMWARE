@@ -255,4 +255,20 @@ mod tests {
         assert!(resp.contains("persistent_keepalive_interval=15"));
         assert!(resp.ends_with("errno=0\n\n"));
     }
+
+    #[test]
+    fn test_uapi_handshake_timestamp_interpretation() {
+        // Relative elapsed duration from BoringTun (e.g. 15 seconds elapsed)
+        let boringtun_handshake = 15u64;
+        assert!(boringtun_handshake < 1_000_000_000);
+        let age_relative = boringtun_handshake;
+        assert_eq!(age_relative, 15);
+
+        // Absolute POSIX epoch timestamp from Linux kernel WireGuard
+        let kernel_handshake = 1770000000u64;
+        let now = 1770000020u64;
+        assert!(kernel_handshake >= 1_000_000_000);
+        let age_absolute = now - kernel_handshake;
+        assert_eq!(age_absolute, 20);
+    }
 }

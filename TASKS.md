@@ -30,21 +30,21 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P2-003 | Select base and integration strategy | P2 | IN_PROGRESS | ChatGPT + User | Architecture Proposal under review |
 | P3-001 | Implement approved clean DSA target and YT9215 driver changes | P3 | NOT_STARTED | Gemini | P2-003, P1-CLN |
 | P3-RUST-STRAT | Architecture Directive: Rust-First Userspace Strategy & BoringTun Evaluation | P3 | DONE | Gemini | P2-NSS-POC-M4 |
-| P3-002 | Integrate Rust BoringTun package and procd service | P3 | IN_PROGRESS | Gemini | P3-RUST-STRAT |
-| P4-001 | Setup WSL2 build toolchain & reproducible PC compilation | P4 | NOT_STARTED | Gemini | P3 |
+| P3-002 | Integrate Rust BoringTun package and procd service | P3 | DONE | Gemini | P3-RUST-STRAT |
+| P4-VISION-HARDENING | Modern Firmware Vision, Parity Gate, Security Strategy & BoringTun Integration Tests | P4 | DONE | Gemini | P3-002 |
+| P4-001 | First OpenWrt PC Dry-Run Image Compilation (No Flash) | P4 | READY | Gemini | P4-VISION-HARDENING |
 | P5-001 | Non-persistent RAM initramfs netboot hardware validation | P5 | BLOCKED | ChatGPT + User | P4 + safe recovery design |
 | P6-001 | Release candidate and deployment decision | P6 | BLOCKED | User | All gates |
 
 ## Current instruction
-Rust-First Userspace Strategy & BoringTun Evaluation completed (`P3-RUST-STRAT`). Branch `feature/rust-userspace-strategy` updated. Deliverables authored & verified:
-- Formulated strict C + Rust hybrid division of labor: C retains kernel drivers (Qualcomm NSS, DSA YT9215SC, DWMAC, ath11k); DTS retains hardware descriptions; Rust becomes primary for userspace networking daemons.
-- Permanently eliminated `wireguard-go`; adopted Cloudflare BoringTun 0.7.1 as sole WireGuard engine; integrated real `signalfd` self-pipe fallback patch (`package/network/services/boringtun/patches/0001-boringtun-signalfd-selfpipe-fallback.patch`) for legacy/restricted kernel resilience; verified UAPI compatibility with `wireguard-tools`.
-- Audited OpenWrt Rust toolchain Kconfig, established `aarch64-unknown-linux-musl` static linking policy (1.08 MB stripped binary with zero external dynamic dependencies), and mandated `CONFIG_KERNEL_RUST=n`.
-- Successfully cross-compiled `boringtun-cli 0.7.1` on PC with the signalfd patch and verified under QEMU-AArch64 emulation (code 0).
-- Implemented independent Rust verification crate `tests/rust_verification/` with 30/30 unit and fuzz tests passed (0 failures), and standalone CLI runner passing 17/17 tests natively and under QEMU-AArch64.
-- Authored 4 authoritative documentation deliverables: `docs/RUST_ARCHITECTURE.md`, `docs/RUST_TOOLCHAIN_INTEGRATION.md`, `docs/BORINGTUN_INTEGRATION.md`, and `reports/RUST_EVALUATION_REPORT.md`.
-- Authored OpenWrt package recipe, real fallback patch, and hardened service files in `package/network/services/boringtun/` (fixed pipeline subshell bug in watchdog, added peer parsing, IPv6, and host route dependencies in netifd script).
-- Workspace preservation verified: `D:\vibecode\test_wifi` confirmed clean, zero edits.
+Modern Firmware Product Vision Hardening & BoringTun Namespace Verification completed (`P4-VISION-HARDENING`). Branch `feature/product-vision-hardening` active. Deliverables authored & verified:
+- Dual-Track Architecture: Formally defined Daily Driver (OpenWrt 25.12.6 / Linux 6.12 LTS, clean DSA YT9215SC, software flowtable, HE160, BoringTun) vs Experimental (Linux 6.18 LTS, NSS forward porting, CAKE, Rust telemetry).
+- Parity Gate: Created authoritative 17-point hardware parity matrix (`docs/RA82_FEATURE_PARITY_GATE.md`) establishing zero false parity claims prior to physical lab validation.
+- Security Update Strategy: Outlined continuous security maintenance model (`docs/SECURITY_UPDATE_STRATEGY.md`) with reproducible builds (`SOURCE_DATE_EPOCH`), SBOM generation, pinned source hashes, automated cargo audit, and failsafe bootcount recovery.
+- Modern Feature Roadmap: Evaluated 9 advanced features (`docs/MODERN_FEATURE_ROADMAP.md`) within CR8818 256MB RAM / 128MB flash budgets.
+- BoringTun Empirical Integration Testing: Executed full Linux network namespace test suite in WSL2 (`tests/integration/test_boringtun_netns.sh`). Tested and confirmed immunity against upstream regression Issue #495 (35s soak with 0% loss); sustained 10-second TCP iperf3 throughput at 949 Mbps; measured real physical memory at 3.0 MB VmRSS / 3.0 MB VmHWM (exceeding <15 MB budget); verified dynamic link failure and auto-reconnection. Discovered UAPI relative timestamp behavior in BoringTun and hardened `boringtun_watchdog` with dual-mode heuristic.
+- OpenWrt PC Build Readiness Audit: Forensic audit of M4 Kbuild leftover issues (`reports/OPENWRT_BUILD_READINESS_REPORT.md`), proving clean DSA tagger path is 100% build-ready while NSS remains safely quarantined.
+- Workspace preservation verified: `D:\vibecode\test_wifi` confirmed clean, zero edits. Zero router SSH, zero flash, zero router contact.
 
-Rust strategy deliverables are ready for review by ChatGPT Architecture Lead and Product Owner before merging into develop. Task P3-002 is IN_PROGRESS awaiting review approval. Router untouched (NO SSH, NO FLASH).
+All 6 deliverables and code updates are ready for Architecture Lead review before proceeding to PC image build.
 

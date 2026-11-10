@@ -21,7 +21,11 @@ HANDSHAKES=$(wg show "$IFACE" latest-handshakes 2>/dev/null)
 while read -r peer handshake; do
     [ -n "$peer" ] || continue
     if [ -n "$handshake" ] && [ "$handshake" -gt 0 ]; then
-        if [ "$NOW" -ge "$handshake" ]; then
+        if [ "$handshake" -lt 1000000000 ]; then
+            # BoringTun userspace UAPI reports relative duration elapsed (seconds since handshake)
+            AGE="$handshake"
+        elif [ "$NOW" -ge "$handshake" ]; then
+            # Kernel WireGuard reports absolute UNIX epoch seconds
             AGE=$((NOW - handshake))
         else
             # Clock stepped back (e.g. NTP synchronization during early boot)
