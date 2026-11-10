@@ -1,0 +1,30 @@
+#!/bin/sh
+# Copyright (C) 2026 CR8808-CUSTOM-FIRMWARE Project
+# BoringTun Stale Handshake & Tunnel Watchdog
+
+IFACE="${1:-wg0}"
+TIMEOUT="${2:-180}"
+
+if [ ! -S "/var/run/wireguard/${IFACE}.sock" ]; then
+    logger -t boringtun-watchdog "Interface socket /var/run/wireguard/${IFACE}.sock not found. Skipping."
+    exit 0
+fi
+
+NOW=$(date +%s)
+STALE_FOUND=0
+
+# Iterate through latest handshakes
+wg show "$IFACE" latest-handshakes | while read -r peer handshake; do
+    if [ -n "$handshake" ] && [ "$handshake" -gt 0 ]; then
+        AGE=$((NOW - handshake))
+        if [ "$AGE" -gt "$TIMEOUT" ]; then
+            logger -t boringtun-watchdog "Peer $peer handshake is stale ($AGE seconds old > $TIMEOUT threshold)."
+            STALE_FOUND=1
+        fi
+    fi
+done
+
+if [ "$STALE_FOUND" -eq 1 ]; then
+    logger -t boringtun-watchdog "Stale peers detected on $IFACE. Triggering interface refresh."
+    /etc/init.d/boringtun restart
+fi

@@ -2,17 +2,17 @@
 
 - Version: `0.1.0-dev.2`
 - Date: 2026-11-10
-- Phase: P2 NSS Hardware Offload Prototype (Milestone M4 Completed / Kbuild Audit & Option A/B Separation)
-- Current Branch: `feature/nss-cr8818-poc`
-- Overall status: `NSS_POC_M4_COMPLETE_AWAITING_REVIEW`
-- GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`, `feature/g1-corrections-round3`, `feature/g1-corrections-round4`, `feature/g1-corrections-round5`, `feature/g1-corrections-round5.1`, `feature/g1-corrections-round5.2`, `feature/nss-cr8818-research`, `feature/nss-cr8818-poc`)
+- Phase: P3 Userspace Architecture & BoringTun Rust Strategy
+- Current Branch: `feature/rust-userspace-strategy`
+- Overall status: `RUST_STRATEGY_COMPLETE_AWAITING_REVIEW`
+- GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`, `feature/g1-corrections-round3`, `feature/g1-corrections-round4`, `feature/g1-corrections-round5`, `feature/g1-corrections-round5.1`, `feature/g1-corrections-round5.2`, `feature/nss-cr8818-research`, `feature/nss-cr8818-poc`, `feature/rust-userspace-strategy`)
 - Flash authorization: `NO-GO pending independent recovery validation`
 - Initial Firmware Baseline Proposal: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Architecture Proposal under review; NOT yet approved for implementation by Product Owner)
 - Primary Hardware References:
   - `yangfl/openwrt` (commit `6729bbe9f082dc15449f17908832447caeec5065` on `cr8818` branch) — Authoritative CR8818 DTS, SerDes REVSGMII abuse patch 940, caldata geometry
   - `zcop/immortalwrt` (commit `c5ad88b702dc2374c9d67141693cc06cce742dc8`) — Register reverse-engineering reference for YT9215 (NSS offload on CR8818: `NSS_NOT_VERIFIED`)
 - Secondary Reference: `kuncy7/openwrt-nss-edma` — Low-memory profile reference (NSS tagger currently incompatible with YT9215)
-- WireGuard Target Engine: `BoringTun Rust` (Target ABI: `aarch64-unknown-linux-musl`; sole engine)
+- WireGuard Target Engine: `BoringTun Rust 0.7.1` (Target ABI: `aarch64-unknown-linux-musl`; sole engine, statically linked 1.4 MB stripped)
 - Wi-Fi Target Mode: `5 GHz HE160 (160 MHz)` (Mandatory retention)
 - Git History Remediation: `DRY_RUN_VALIDATED_CLEAN` (All commits verified 100% clean)
 - Firmware build: `NOT_STARTED`
@@ -61,3 +61,4 @@
 - 2026-11-10: NSS + Motorcomm YT9215SC PC Prototype Milestone M4 completed on branch `feature/nss-cr8818-poc`. Executed real AArch64 Linux 6.18 Kbuild compilations on PC. Compiled `tag_yt921x.o` (48KB), `tag_yt921x_8021q.o` (35KB), `tag_yt921x_enhanced.o` (53KB) and `qca-dwmac-nss.ko` (167KB ELF module). Diagnosed in-tree build failures: `dwmac-ipq5018.c` (missing OpenWrt PCS patch 737-03), upstream `yt921x.c` (API drift from 6.19), `zcop_yt921x_driver` (missing port_mrouter in 6.18 dsa_switch_ops), `qca-nss-dp` (requires OpenWrt buildroot package infrastructure). Strictly separated Option A and Option B patches with standalone documentation. Audited switch hardware register `0x8000c` (proved Option B clears TAG_EN on Port 4 for untagged WAN). Audited DSA tag enum in Linux 6.18 (proved ID 36/37/38 are out-of-tree vendor extensions). Compiled and schema-validated 3 device trees (`ipq5018-cr8818-baseline.dtb`, `ipq5018-cr881x.dtb`, `ipq5018-cr881x-nss.dtb`) with zero reserved memory overlap. Expanded independent oracle unit tests to 84 assertions (84/84 PASS on host and AArch64). Maintained zero router contact (0 SSH, 0 Flash, test_wifi untouched). Authored `reports/NSS_POC_M4_REPORT.md`. Status updated to `NSS_POC_M4_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Implementer / System Operator).
 
 
+- 2026-11-10: Architecture Directive: Rust-First Userspace Strategy evaluated and completed on branch `feature/rust-userspace-strategy`. Established C + Rust hybrid division of labor: C retains kernel drivers (Qualcomm NSS, Motorcomm YT9215SC DSA, DWMAC, ath11k Wi-Fi); DTS retains hardware descriptions; Rust becomes the primary language for userspace networking services where memory safety and low footprint are proven. WireGuard: permanently eliminated `wireguard-go`; adopted Cloudflare BoringTun 0.7.1 as sole userspace WireGuard engine; integrated tested `signalfd` fallback for legacy/restricted kernel resilience; verified UAPI compatibility with `wireguard-tools`. Toolchain: audited OpenWrt Kconfig (`RUST_TOOLCHAIN_HOST` / `RUST_TOOLCHAIN_PREBUILT`), locked to Rust 1.99.1 (`aarch64-unknown-linux-musl`), enforced static linking (`-Ctarget-feature=+crt-static`) yielding a self-contained 1.4 MB stripped executable; mandated `CONFIG_KERNEL_RUST=n`. Build verification: successfully cross-compiled `boringtun-cli 0.7.1` on PC and verified under QEMU-AArch64 emulation (code 0). Independent testing: implemented Rust verification crate (`tests/rust_verification/`) with 28/28 unit and fuzz tests passing (0 failures), and standalone CLI test runner passing 15/15 tests natively and on AArch64. Authored 4 authoritative deliverables: `docs/RUST_ARCHITECTURE.md`, `docs/RUST_TOOLCHAIN_INTEGRATION.md`, `docs/BORINGTUN_INTEGRATION.md`, and `reports/RUST_EVALUATION_REPORT.md`. Maintained zero router contact (0 SSH, 0 Flash, test_wifi untouched). Status updated to `RUST_STRATEGY_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Implementer / System Operator).

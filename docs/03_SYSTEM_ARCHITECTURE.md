@@ -55,3 +55,55 @@ Preserve 5 GHz HE160. Verify radio, driver, firmware, board data/calibration, an
 
 ## Performance architecture
 Track CPU per core, softirq, NSS counters, throughput, loaded latency percentiles, packet loss, RAM pressure, slab, OOM/allocstall, temperature, Wi-Fi retries/airtime and WireGuard resources. No blanket sysctl/RPS/RFS/IRQ/backlog changes without measurement.
+
+
+## Hybrid Language Architecture (C + Rust + DTS)
+
+Refer to [`docs/RUST_ARCHITECTURE.md`](RUST_ARCHITECTURE.md) for the complete architectural strategy.
+
+```mermaid
+graph TD
+    subgraph Userspace ["Userspace Subsystems (Rust & Shell)"]
+        BORINGTUN["BoringTun Rust Daemon (boringtun-cli)<br/>*Sole WireGuard Engine (AArch64 musl static, 1.4 MB)*<br/>*ChaCha20-Poly1305 (ARM NEON)*"]
+        WG_TOOLS["wireguard-tools (wg / wg-quick)"]
+        MONITOR["cr8818-monitor System Daemon (Rust)<br/>*Telemetry, Watchdog & Recovery*"]
+        NETIFD["netifd (OpenWrt Network Daemon)"]
+        PROCD["procd (Init & Process Supervisor)"]
+    end
+
+    subgraph Kernel ["Linux Kernel 6.18 Subsystems (C)"]
+        TUN["Virtual TUN Driver (/dev/net/tun)"]
+        NETFILTER["Netfilter / nftables Firewall"]
+        ECM["Qualcomm ECM (Flow Acceleration Engine)"]
+        NSS_DRV["Qualcomm NSS Drivers (qca-nss-drv / qca-nss-dp)"]
+        DSA_CORE["Linux DSA Core (Distributed Switch Architecture)"]
+        YT921X["Motorcomm YT9215SC Driver (yt921x_8021q.c)"]
+        DWMAC["Synopsys DWMAC (dwmac-ipq5018.c)"]
+        ATH11K["ath11k Wi-Fi Driver (mac80211)"]
+    end
+
+    subgraph Hardware ["Hardware Description & Silicon (DTS & Silicon)"]
+        DTS["Device Tree (ipq5018-cr8818.dts / ipq5018-cr881x-nss.dts)"]
+        SOC["Qualcomm IPQ5018 (Dual Cortex-A53 @ 1.0 GHz)"]
+        NPU["Qualcomm NSS NPU Engine (@ 1.0 GHz)"]
+        SWITCH["Motorcomm YT9215SC 5-Port Switch (MDIO 0x00)"]
+        WIFI_SILICON["QCN6102 5 GHz (HE160) + IPQ5018 2.4 GHz"]
+    end
+
+    BORINGTUN <-->|"/var/run/wireguard/wg0.sock (UAPI)"| WG_TOOLS
+    PROCD -->|Supervises (auto-respawn)| BORINGTUN
+    PROCD -->|Supervises| MONITOR
+    NETIFD -->|Configures IP & Routing| TUN
+    BORINGTUN <-->|Plaintext Packets| TUN
+    TUN <--> NETFILTER
+    NETFILTER <--> ECM
+    ECM <--> NSS_DRV
+    NSS_DRV <--> NPU
+    NETFILTER <--> DSA_CORE
+    DSA_CORE <--> YT921X
+    DSA_CORE <--> DWMAC
+    DWMAC <--> SWITCH
+    DTS -.->|Configures Pinmux & Clocks| SOC
+    DTS -.->|Declares Ports & MDIO| SWITCH
+    ATH11K <--> WIFI_SILICON
+```

@@ -29,22 +29,22 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P2-002 | Finalize feature parity inventory against on-device baseline | P2 | NOT_STARTED | Gemini | P2-001 |
 | P2-003 | Select base and integration strategy | P2 | IN_PROGRESS | ChatGPT + User | Architecture Proposal under review |
 | P3-001 | Implement approved clean DSA target and YT9215 driver changes | P3 | NOT_STARTED | Gemini | P2-003, P1-CLN |
-| P3-002 | Integrate Rust BoringTun package and procd service | P3 | NOT_STARTED | Gemini | P2-003 |
+| P3-RUST-STRAT | Architecture Directive: Rust-First Userspace Strategy & BoringTun Evaluation | P3 | DONE | Gemini | P2-NSS-POC-M4 |
+| P3-002 | Integrate Rust BoringTun package and procd service | P3 | IN_PROGRESS | Gemini | P3-RUST-STRAT |
 | P4-001 | Setup WSL2 build toolchain & reproducible PC compilation | P4 | NOT_STARTED | Gemini | P3 |
 | P5-001 | Non-persistent RAM initramfs netboot hardware validation | P5 | BLOCKED | ChatGPT + User | P4 + safe recovery design |
 | P6-001 | Release candidate and deployment decision | P6 | BLOCKED | User | All gates |
 
 ## Current instruction
-NSS + YT9215SC PC Prototype Milestone M4 completed (`P2-NSS-POC-M4`). Branch `feature/nss-cr8818-poc` updated. Deliverables authored & verified:
-- Real Linux 6.18 Kbuild compilations: `tag_yt921x.o` (48KB), `tag_yt921x_8021q.o` (35KB), `tag_yt921x_enhanced.o` (53KB), and `qca-dwmac-nss.ko` (167KB ELF module).
-- Compiler diagnostic logs collected under `artifacts/m4_logs/` for `dwmac-ipq5018.c`, upstream `yt921x.c`, `qca-nss-dp`, and `zcop_yt921x_driver`.
-- Strict separation of patches: `patches/nss-cr8818/option-a/` (stmmac + qca-dwmac-nss + tag_8021q) and `patches/nss-cr8818/option-b/` (qcom,nss-dp + enhanced YT921x dual-conduit).
-- Audited switch hardware register `0x8000c` (`YT921X_EXT_CPU_PORT`) proving untagged WAN frames bypass CPU tag parsing on Port 4.
-- Audited DSA tag enum in Linux 6.18 (proved IDs 36/37/38 are vendor extensions).
-- Compiled 3 Device Trees to `.dtb` via DTC 1.6.1 and verified schema and zero reserved memory overlap.
-- Expanded independent oracle test suite from 61 to 84 assertions (84/84 PASS on host and cross-compiled AArch64 ELF).
-- Authored Milestone M4 report `reports/NSS_POC_M4_REPORT.md` answering the 6 mandatory architecture review questions.
-- Verified workspace preservation: `D:\vibecode\test_wifi` confirmed clean, zero edits.
+Rust-First Userspace Strategy & BoringTun Evaluation completed (`P3-RUST-STRAT`). Branch `feature/rust-userspace-strategy` updated. Deliverables authored & verified:
+- Formulated strict C + Rust hybrid division of labor: C retains kernel drivers (Qualcomm NSS, DSA YT9215SC, DWMAC, ath11k); DTS retains hardware descriptions; Rust becomes primary for userspace networking daemons.
+- Permanently eliminated `wireguard-go`; adopted Cloudflare BoringTun 0.7.1 as sole WireGuard engine; integrated tested `signalfd` fallback for legacy/restricted kernel resilience; verified UAPI compatibility with `wireguard-tools`.
+- Audited OpenWrt Rust toolchain Kconfig, established `aarch64-unknown-linux-musl` static linking policy (1.4 MB stripped binary with zero external dynamic dependencies), and mandated `CONFIG_KERNEL_RUST=n`.
+- Successfully cross-compiled `boringtun-cli 0.7.1` on PC and verified under QEMU-AArch64 emulation (code 0).
+- Implemented independent Rust verification crate `tests/rust_verification/` with 28/28 unit and fuzz tests passed (0 failures), and standalone CLI runner passing 15/15 tests natively and under QEMU-AArch64.
+- Authored 4 authoritative documentation deliverables: `docs/RUST_ARCHITECTURE.md`, `docs/RUST_TOOLCHAIN_INTEGRATION.md`, `docs/BORINGTUN_INTEGRATION.md`, and `reports/RUST_EVALUATION_REPORT.md`.
+- Authored OpenWrt package recipe and service files in `package/network/services/boringtun/`.
+- Workspace preservation verified: `D:\vibecode\test_wifi` confirmed clean, zero edits.
 
-M4 deliverables are ready for review by ChatGPT and Product Owner. Gemini execution halted at M4 gate per instruction. Task `P2-NSS-POC-M5` remains BLOCKED awaiting review approval. Router untouched (NO SSH, NO FLASH).
+Rust strategy deliverables are ready for review by ChatGPT Architecture Lead and Product Owner before merging into develop. Task P3-002 is IN_PROGRESS awaiting review approval. Router untouched (NO SSH, NO FLASH).
 
