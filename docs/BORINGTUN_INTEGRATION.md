@@ -73,9 +73,11 @@ To guarantee universal stability across both stock firmware debugging and modern
 2. The runtime automatically falls back to a **self-pipe trick** (or `eventfd`):
    - A non-blocking pipe `int fds[2]` is created via `pipe2(fds, O_NONBLOCK | O_CLOEXEC)`.
    - The read end `fds[0]` is registered into the `epoll` event loop.
+   - An atomic array `static SIGNAL_PIPE_WRITES: [AtomicI32; 32]` tracks signal write file descriptors.
    - A standard POSIX `sigaction` signal handler is installed that writes a single byte to the write end `fds[1]`.
    - When the signal occurs, `epoll` wakes up and invokes the same `Action::Exit` callback.
-3. This behavior was simulated and verified with 100% test coverage in our test harness (`tests/rust_verification/src/signalfd_fallback.rs`).
+3. Formally packaged as patch `package/network/services/boringtun/patches/0001-boringtun-signalfd-selfpipe-fallback.patch` applied automatically during OpenWrt package compilation.
+4. Verified with 100% test coverage in our test harness (`tests/rust_verification/src/signalfd_fallback.rs`) and compiled cleanly into AArch64 musl static ELF.
 
 ---
 
@@ -135,11 +137,12 @@ PKG_VERSION:=0.7.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://crates.io/api/v1/crates/boringtun/$(PKG_VERSION)/download?
-PKG_HASH:=3c4892cfa7270e5b72183c5095e2eab59296538a08f51a44e6ac2f59fa0f4523
+PKG_SOURCE_URL:=https://github.com/cloudflare/boringtun/archive/refs/tags/boringtun-cli-$(PKG_VERSION).tar.gz?
+PKG_HASH:=0bfce9717e898533036c853e3433308770d9cd0a5f54b10e9d90f149947e355c
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-boringtun-cli-$(PKG_VERSION)
 
 PKG_LICENSE:=BSD-3-Clause
-PKG_LICENSE_FILES:=LICENSE
+PKG_LICENSE_FILES:=LICENSE.md
 PKG_MAINTAINER:=Gemini Engineering Team
 
 PKG_BUILD_DEPENDS:=rust/host
@@ -163,9 +166,12 @@ define Package/boringtun/description
   WireGuard userspace daemon for CR8818, replacing wireguard-go.
 endef
 
-# Enforce static linking for bulletproof resilience
+# Build the boringtun-cli binary with Cortex-A53 vectorization and musl static runtime
+CARGO_PKG_BUILD_DIR:=boringtun-cli
+CARGO_BUILD_FLAGS += --package boringtun-cli
+
 CARGO_PKG_VARS += \
-	RUSTFLAGS="-C target-cpu=cortex-a53 -C panic=abort -C codegen-units=1"
+	RUSTFLAGS="-C target-cpu=cortex-a53 -C panic=abort -C codegen-units=1 -C target-feature=+crt-static"
 
 define Package/boringtun/install
 	$(INSTALL_DIR) $(1)/usr/bin

@@ -1,0 +1,119 @@
+diff --git a/boringtun/src/device/epoll.rs b/boringtun/src/device/epoll.rs
+index b6ecaf0..ddc9238 100644
+--- a/boringtun/src/device/epoll.rs
++++ b/boringtun/src/device/epoll.rs
+@@ -9,6 +9,30 @@ use std::ops::Deref;
+ use std::os::unix::io::RawFd;
+ use std::ptr::null_mut;
+ use std::time::Duration;
++use std::sync::atomic::{AtomicI32, Ordering};
++
++static SIGNAL_PIPE_WRITES: [AtomicI32; 32] = [
++    AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1),
++    AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1),
++    AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1),
++    AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1),
++    AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1),
++    AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1),
++    AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1),
++    AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1),
++];
++
++extern "C" fn selfpipe_sig_handler(sig: libc::c_int) {
++    if sig >= 0 && (sig as usize) < SIGNAL_PIPE_WRITES.len() {
++        let write_fd = SIGNAL_PIPE_WRITES[sig as usize].load(Ordering::Relaxed);
++        if write_fd >= 0 {
++            let byte = [1u8];
++            unsafe {
++                libc::write(write_fd, byte.as_ptr() as _, 1);
++            }
++        }
++    }
++}
+ 
+ /// A return type for the EventPoll::wait() function
+ pub enum WaitResult<'a, H> {
+@@ -190,31 +214,67 @@ impl<H: Sync + Send> EventPoll<H> {
+         self.register_event(ev)
+     }
+ 
+-    /// Add and enable a new signal handler
++    /// Add and enable a new signal handler with signalfd, falling back to self-pipe trick on ENOSYS/EINVAL
+     pub fn new_signal_event(&self, signal: c_int, handler: H) -> Result<EventRef, Error> {
+-        let sfd = match unsafe {
++        let sfd = unsafe {
+             let mut sigset = std::mem::zeroed();
+             sigemptyset(&mut sigset);
+             sigaddset(&mut sigset, signal);
+             sigprocmask(SIG_BLOCK, &sigset, null_mut());
+             signalfd(-1, &sigset, SFD_NONBLOCK)
+-        } {
+-            -1 => return Err(Error::EventQueue(io::Error::last_os_error())),
+-            sfd => sfd,
+         };
+ 
+-        let ev = Event {
+-            event: epoll_event {
+-                events: (EPOLLIN | EPOLLONESHOT) as _,
+-                u64: 0,
+-            },
+-            fd: sfd,
+-            handler,
+-            notifier: false,
+-            needs_read: true,
+-        };
++        if sfd != -1 {
++            let ev = Event {
++                event: epoll_event {
++                    events: (EPOLLIN | EPOLLONESHOT) as _,
++                    u64: 0,
++                },
++                fd: sfd,
++                handler,
++                notifier: false,
++                needs_read: true,
++            };
++            return self.register_event(ev);
++        }
+ 
+-        self.register_event(ev)
++        let err = io::Error::last_os_error();
++        if err.raw_os_error() == Some(libc::ENOSYS) || err.raw_os_error() == Some(libc::EINVAL) {
++            let mut pipe_fds = [-1 as c_int; 2];
++            let res = unsafe { libc::pipe2(pipe_fds.as_mut_ptr(), libc::O_NONBLOCK | libc::O_CLOEXEC) };
++            if res == -1 {
++                return Err(Error::EventQueue(io::Error::last_os_error()));
++            }
++
++            if (signal as usize) < SIGNAL_PIPE_WRITES.len() {
++                SIGNAL_PIPE_WRITES[signal as usize].store(pipe_fds[1], Ordering::Relaxed);
++            }
++            unsafe {
++                let mut act: libc::sigaction = std::mem::zeroed();
++                act.sa_sigaction = selfpipe_sig_handler as *const () as usize;
++                act.sa_flags = libc::SA_RESTART;
++                libc::sigaction(signal, &act, null_mut());
++
++                let mut sigset = std::mem::zeroed();
++                sigemptyset(&mut sigset);
++                sigaddset(&mut sigset, signal);
++                sigprocmask(libc::SIG_UNBLOCK, &sigset, null_mut());
++            }
++
++            let ev = Event {
++                event: epoll_event {
++                    events: (EPOLLIN | EPOLLONESHOT) as _,
++                    u64: 0,
++                },
++                fd: pipe_fds[0],
++                handler,
++                notifier: false,
++                needs_read: true,
++            };
++            return self.register_event(ev);
++        }
++
++        Err(Error::EventQueue(err))
+     }
+ 
+     /// Wait until one of the registered events becomes triggered. Once an event

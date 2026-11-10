@@ -38,12 +38,12 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 ## Current instruction
 Rust-First Userspace Strategy & BoringTun Evaluation completed (`P3-RUST-STRAT`). Branch `feature/rust-userspace-strategy` updated. Deliverables authored & verified:
 - Formulated strict C + Rust hybrid division of labor: C retains kernel drivers (Qualcomm NSS, DSA YT9215SC, DWMAC, ath11k); DTS retains hardware descriptions; Rust becomes primary for userspace networking daemons.
-- Permanently eliminated `wireguard-go`; adopted Cloudflare BoringTun 0.7.1 as sole WireGuard engine; integrated tested `signalfd` fallback for legacy/restricted kernel resilience; verified UAPI compatibility with `wireguard-tools`.
-- Audited OpenWrt Rust toolchain Kconfig, established `aarch64-unknown-linux-musl` static linking policy (1.4 MB stripped binary with zero external dynamic dependencies), and mandated `CONFIG_KERNEL_RUST=n`.
-- Successfully cross-compiled `boringtun-cli 0.7.1` on PC and verified under QEMU-AArch64 emulation (code 0).
-- Implemented independent Rust verification crate `tests/rust_verification/` with 28/28 unit and fuzz tests passed (0 failures), and standalone CLI runner passing 15/15 tests natively and under QEMU-AArch64.
+- Permanently eliminated `wireguard-go`; adopted Cloudflare BoringTun 0.7.1 as sole WireGuard engine; integrated real `signalfd` self-pipe fallback patch (`package/network/services/boringtun/patches/0001-boringtun-signalfd-selfpipe-fallback.patch`) for legacy/restricted kernel resilience; verified UAPI compatibility with `wireguard-tools`.
+- Audited OpenWrt Rust toolchain Kconfig, established `aarch64-unknown-linux-musl` static linking policy (1.08 MB stripped binary with zero external dynamic dependencies), and mandated `CONFIG_KERNEL_RUST=n`.
+- Successfully cross-compiled `boringtun-cli 0.7.1` on PC with the signalfd patch and verified under QEMU-AArch64 emulation (code 0).
+- Implemented independent Rust verification crate `tests/rust_verification/` with 30/30 unit and fuzz tests passed (0 failures), and standalone CLI runner passing 17/17 tests natively and under QEMU-AArch64.
 - Authored 4 authoritative documentation deliverables: `docs/RUST_ARCHITECTURE.md`, `docs/RUST_TOOLCHAIN_INTEGRATION.md`, `docs/BORINGTUN_INTEGRATION.md`, and `reports/RUST_EVALUATION_REPORT.md`.
-- Authored OpenWrt package recipe and service files in `package/network/services/boringtun/`.
+- Authored OpenWrt package recipe, real fallback patch, and hardened service files in `package/network/services/boringtun/` (fixed pipeline subshell bug in watchdog, added peer parsing, IPv6, and host route dependencies in netifd script).
 - Workspace preservation verified: `D:\vibecode\test_wifi` confirmed clean, zero edits.
 
 Rust strategy deliverables are ready for review by ChatGPT Architecture Lead and Product Owner before merging into develop. Task P3-002 is IN_PROGRESS awaiting review approval. Router untouched (NO SSH, NO FLASH).

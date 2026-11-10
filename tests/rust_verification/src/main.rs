@@ -64,6 +64,12 @@ fn main() {
     bad_reserved[2] = 0x01;
     run_test!("Reserved bytes violation rejected", matches!(parse_wireguard_packet(&bad_reserved), Err(PacketError::ReservedNonZero(_))));
 
+    let mut wg_cookie = [0u8; WG_COOKIE_REPLY_LEN];
+    wg_cookie[0] = 3;
+    wg_cookie[4..8].copy_from_slice(&0xAABBCCDDu32.to_le_bytes());
+    let parsed_cookie = parse_wireguard_packet(&wg_cookie);
+    run_test!("Cookie Reply (Type 3, 64B) parsed", matches!(parsed_cookie, Ok(WireGuardPacket::CookieReply { receiver_index: 0xAABBCCDD, .. })));
+
     println!("\n=== Group 3: WireGuard Userspace UAPI Parser ===");
     run_test!("UAPI 'get=1' request parsed", parse_uapi_request("get=1\n\n") == Ok(UapiCommand::Get));
 
@@ -80,6 +86,10 @@ fn main() {
 
     eng_fallback.dispatch_signal(UnixSignal::SigTerm).unwrap();
     run_test!("Fallback engine handles SIGTERM cleanly", eng_fallback.termination_requested && !eng_fallback.is_active);
+
+    let sig_table = SignalPipeTable::new();
+    sig_table.register(UnixSignal::SigTerm as usize, 12).unwrap();
+    run_test!("Atomic signal pipe table registers & resolves fd", sig_table.lookup(UnixSignal::SigTerm as usize) == Some(12));
 
     println!("\n=== Group 5: CR8818 256MB System Telemetry & Process Budget ===");
     let meminfo = "MemTotal: 186368 kB\nMemFree: 45000 kB\nMemAvailable: 52000 kB\nBuffers: 4000 kB\nCached: 20000 kB\n";

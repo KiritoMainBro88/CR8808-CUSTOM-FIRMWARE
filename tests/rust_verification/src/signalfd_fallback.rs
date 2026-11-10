@@ -3,6 +3,47 @@
 //! Evaluates signalfd vs. fallback self-pipe behavior required for
 //! cross-kernel compatibility (Linux 4.4 legacy vs Linux 6.18 modern).
 
+use std::sync::atomic::{AtomicI32, Ordering};
+
+pub struct SignalPipeTable {
+    pub fds: [AtomicI32; 32],
+}
+
+impl SignalPipeTable {
+    pub const fn new() -> Self {
+        Self {
+            fds: [
+                AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1),
+                AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1),
+                AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1),
+                AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1),
+                AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1),
+                AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1),
+                AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1),
+                AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1), AtomicI32::new(-1),
+            ],
+        }
+    }
+
+    pub fn register(&self, sig: usize, fd: i32) -> Result<(), &'static str> {
+        if sig >= self.fds.len() {
+            return Err("Signal index out of bounds");
+        }
+        self.fds[sig].store(fd, Ordering::SeqCst);
+        Ok(())
+    }
+
+    pub fn lookup(&self, sig: usize) -> Option<i32> {
+        if sig < self.fds.len() {
+            let fd = self.fds[sig].load(Ordering::SeqCst);
+            if fd >= 0 {
+                return Some(fd);
+            }
+        }
+        None
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SignalMechanism {
     Signalfd,
@@ -132,5 +173,21 @@ mod tests {
             engine.dispatch_signal(UnixSignal::SigInt),
             Err(SignalEngineError::AlreadyTerminated)
         );
+    }
+
+    #[test]
+    fn test_signal_pipe_table_registration_and_lookup() {
+        let table = SignalPipeTable::new();
+        assert_eq!(table.lookup(UnixSignal::SigTerm as usize), None);
+
+        table.register(UnixSignal::SigTerm as usize, 42).unwrap();
+        assert_eq!(table.lookup(UnixSignal::SigTerm as usize), Some(42));
+
+        table.register(UnixSignal::SigInt as usize, 10).unwrap();
+        assert_eq!(table.lookup(UnixSignal::SigInt as usize), Some(10));
+        assert_eq!(table.lookup(UnixSignal::SigTerm as usize), Some(42));
+
+        assert_eq!(table.register(32, 99), Err("Signal index out of bounds"));
+        assert_eq!(table.lookup(32), None);
     }
 }

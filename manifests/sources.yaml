@@ -94,9 +94,9 @@ sources:
     url: https://github.com/cloudflare/boringtun
     role: primary_wireguard_userspace_engine
     branch: master
-    audited_commit: 0.7.1
-    commit_date: "2024-05-01T00:00:00Z"
+    audited_commit: 253f7afb2b3df9e952065d10bf2af19913cb176b
+    commit_date: "2024-05-02T05:49:00Z"
     license: BSD-3-Clause
     kernel_version: N/A (Userspace)
     approved_for_integration: true
-    notes: Sole WireGuard userspace implementation for CR8818. Statically linked AArch64 musl binary (1.4 MB).
+    notes: Sole WireGuard userspace implementation for CR8818. Statically linked AArch64 musl binary (1.08 MB stripped). Pinned tag boringtun-cli-0.7.1.

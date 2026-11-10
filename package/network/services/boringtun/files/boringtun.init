@@ -20,7 +20,7 @@ start_service() {
     config_get log_level global log_level "error"
 
     # Ensure /dev/net/tun is loaded
-    [ -c /dev/net/tun ] || modprobe tun
+    [ -c /dev/net/tun ] || modprobe tun 2>/dev/null || true
 
     # Ensure socket directory exists
     mkdir -p /var/run/wireguard
@@ -47,4 +47,8 @@ stop_service() {
     config_get ifname global interface "wg0"
     ip link del dev "$ifname" 2>/dev/null || true
     rm -f "/var/run/wireguard/${ifname}.sock" 2>/dev/null || true
+}
+
+service_triggers() {
+    procd_add_reload_trigger "boringtun"
 }

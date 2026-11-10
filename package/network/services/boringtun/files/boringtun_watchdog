@@ -13,18 +13,34 @@ fi
 NOW=$(date +%s)
 STALE_FOUND=0
 
-# Iterate through latest handshakes
-wg show "$IFACE" latest-handshakes | while read -r peer handshake; do
+# Query latest handshakes
+HANDSHAKES=$(wg show "$IFACE" latest-handshakes 2>/dev/null)
+[ -n "$HANDSHAKES" ] || exit 0
+
+# Process line by line without pipeline subshell to preserve STALE_FOUND across loop termination
+while read -r peer handshake; do
+    [ -n "$peer" ] || continue
     if [ -n "$handshake" ] && [ "$handshake" -gt 0 ]; then
-        AGE=$((NOW - handshake))
+        if [ "$NOW" -ge "$handshake" ]; then
+            AGE=$((NOW - handshake))
+        else
+            # Clock stepped back (e.g. NTP synchronization during early boot)
+            AGE=0
+        fi
         if [ "$AGE" -gt "$TIMEOUT" ]; then
             logger -t boringtun-watchdog "Peer $peer handshake is stale ($AGE seconds old > $TIMEOUT threshold)."
             STALE_FOUND=1
         fi
     fi
-done
+done <<EOF
+$HANDSHAKES
+EOF
 
 if [ "$STALE_FOUND" -eq 1 ]; then
     logger -t boringtun-watchdog "Stale peers detected on $IFACE. Triggering interface refresh."
-    /etc/init.d/boringtun restart
+    if [ -x /sbin/ifup ]; then
+        ifup "$IFACE"
+    elif [ -x /etc/init.d/boringtun ]; then
+        /etc/init.d/boringtun restart
+    fi
 fi

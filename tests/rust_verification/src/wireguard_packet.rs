@@ -213,6 +213,29 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_valid_cookie_reply() {
+        let mut pkt = [0u8; WG_COOKIE_REPLY_LEN];
+        pkt[0] = 3; // Cookie reply
+        pkt[4..8].copy_from_slice(&0x55AA55AAu32.to_le_bytes()); // receiver index
+        pkt[8..32].fill(0x11); // nonce
+        pkt[32..64].fill(0x22); // encrypted cookie
+
+        let parsed = parse_wireguard_packet(&pkt).expect("parse cookie reply failed");
+        match parsed {
+            WireGuardPacket::CookieReply {
+                receiver_index,
+                nonce,
+                encrypted_cookie,
+            } => {
+                assert_eq!(receiver_index, 0x55AA55AA);
+                assert_eq!(nonce[0], 0x11);
+                assert_eq!(encrypted_cookie[0], 0x22);
+            }
+            _ => panic!("wrong variant"),
+        }
+    }
+
+    #[test]
     fn test_reject_reserved_nonzero() {
         let mut pkt = [0u8; WG_INITIATION_LEN];
         pkt[0] = 1;

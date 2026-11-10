@@ -106,19 +106,19 @@ Both C and Rust test suites were executed cleanly:
 - Result: **84 Passed, 0 Failed (100% PASS)**.
 
 ### 4.2 Rust Verification Test Suite (`tests/rust_verification/`)
-- Command: `cargo test` in WSL2.
+- Command: `cargo test` in WSL2 / Windows.
 - Compiler: `rustc 1.99.1` (native host & cross-compiled).
 - Test Groups:
   - `yt921x_tag`: Byte-for-byte matching against C Oracle vectors 1-6 (Pass); boundary checks (Pass); 10,000-iteration random fuzzing panic-free (Pass).
-  - `wireguard_packet`: WireGuard Types 1, 2, 3, 4 packet parser (Pass); reserved zeroing enforcement (Pass); truncated packet rejection (Pass); 10,000-iteration fuzzing panic-free (Pass).
+  - `wireguard_packet`: WireGuard Types 1, 2, 3, 4 packet parser (Pass); Cookie Reply Type 3 parser (Pass); reserved zeroing enforcement (Pass); truncated packet rejection (Pass); 10,000-iteration fuzzing panic-free (Pass).
   - `wireguard_uapi`: `get=1` and `set=1` request parsing, key hex validation, round-trip serialization (Pass).
-  - `signalfd_fallback`: Native signalfd vs fallback self-pipe simulation under simulated `ENOSYS`/`EINVAL` (Pass).
+  - `signalfd_fallback`: Native signalfd vs fallback self-pipe simulation under simulated `ENOSYS`/`EINVAL` (Pass); Atomic SignalPipeTable registration and lookup (Pass).
   - `telemetry`: `/proc/meminfo` CR8818 256MB health evaluation and BoringTun `< 15 MB` VmRSS compliance check (Pass).
-- Result: **28 Passed, 0 Failed (100% PASS)**.
+- Result: **30 Passed, 0 Failed (100% PASS)**.
 
 ### 4.3 Target Architecture Emulation Suite (`rust_verification_cli`)
 - Target: `aarch64-unknown-linux-musl` static ELF under `qemu-aarch64-static`.
-- Result: **15 Passed, 0 Failed (100% PASS)**.
+- Result: **17 Passed, 0 Failed (100% PASS)**.
 
 ```text
 ====================================================================
@@ -136,23 +136,25 @@ Architecture Directive: C + Rust Hybrid Strategy Validation
   [TEST 05] Handshake Initiation (Type 1, 148B) parsed ... PASS
   [TEST 06] Transport Data (Type 4, >=32B) parsed with counter ... PASS
   [TEST 07] Reserved bytes violation rejected ... PASS
+  [TEST 08] Cookie Reply (Type 3, 64B) parsed ... PASS
 
 === Group 3: WireGuard Userspace UAPI Parser ===
-  [TEST 08] UAPI 'get=1' request parsed ... PASS
-  [TEST 09] UAPI 'set=1' listen_port parsed ... PASS
+  [TEST 09] UAPI 'get=1' request parsed ... PASS
+  [TEST 10] UAPI 'set=1' listen_port parsed ... PASS
 
 === Group 4: Signal Handling Fallback Simulation ===
-  [TEST 10] Signalfd native mechanism selected on errno 0 ... PASS
-  [TEST 11] Fallback pipe mechanism activated on ENOSYS (38) ... PASS
-  [TEST 12] Fallback engine handles SIGTERM cleanly ... PASS
+  [TEST 11] Signalfd native mechanism selected on errno 0 ... PASS
+  [TEST 12] Fallback pipe mechanism activated on ENOSYS (38) ... PASS
+  [TEST 13] Fallback engine handles SIGTERM cleanly ... PASS
+  [TEST 14] Atomic signal pipe table registers & resolves fd ... PASS
 
 === Group 5: CR8818 256MB System Telemetry & Process Budget ===
-  [TEST 13] CR8818 MemTotal correctly parsed (~182 MB) ... PASS
-  [TEST 14] CR8818 memory health status optimal ... PASS
-  [TEST 15] BoringTun VmRSS 3.8 MB complies with <15 MB budget ... PASS
+  [TEST 15] CR8818 MemTotal correctly parsed (~182 MB) ... PASS
+  [TEST 16] CR8818 memory health status optimal ... PASS
+  [TEST 17] BoringTun VmRSS 3.8 MB complies with <15 MB budget ... PASS
 
 ====================================================================
-Test Summary: 15 Passed, 0 Failed (Total: 15)
+Test Summary: 17 Passed, 0 Failed (Total: 17)
 ====================================================================
 ```
 
