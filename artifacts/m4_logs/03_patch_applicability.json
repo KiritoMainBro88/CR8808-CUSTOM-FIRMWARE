@@ -1,0 +1,30 @@
+{
+  "patch_0001_linux_618": {
+    "patch": "0001-net-dsa-tag_yt921x-8021q-nss-compat.patch",
+    "target": "Linux 6.18.0",
+    "exit_code": 1,
+    "status": "FAIL",
+    "error": "error: patch failed: net/dsa/Kconfig:190\nerror: net/dsa/Kconfig: patch does not apply\nerror: patch failed: net/dsa/Makefile:42\nerror: net/dsa/Makefile: patch does not apply\nerror: net/dsa/tag_yt921x_8021q.c: already exists in working directory"
+  },
+  "patch_0002_yangfl": {
+    "patch": "0002-arm64-dts-ipq5018-cr8818-dual-conduit-nss.patch",
+    "target": "yangfl/openwrt (cr8818 branch)",
+    "exit_code": 0,
+    "status": "PASS",
+    "error": ""
+  },
+  "patch_0002_on_linux_618": {
+    "patch": "0002-arm64-dts-ipq5018-cr8818-dual-conduit-nss.patch",
+    "target": "Linux 6.18.0 (Same tree as 0001)",
+    "exit_code": 1,
+    "status": "FAIL",
+    "error": "error: target/linux/qualcommax/dts/ipq5018-cr8818.dts: No such file or directory"
+  },
+  "patch_968_zcop_on_linux_618": {
+    "patch": "968-net-dsa-add-enhanced-YT921x-driver-and-taggers.patch",
+    "target": "Linux 6.18.0",
+    "exit_code": 1,
+    "status": "FAIL",
+    "error": "error: patch failed: drivers/net/dsa/Kconfig:165\nerror: drivers/net/dsa/Kconfig: patch does not apply\nerror: patch failed: net/dsa/Kconfig:216\nerror: net/dsa/Kconfig: patch does not apply\nerror: patch failed: net/dsa/Makefile:46\nerror: net/dsa/Makefile: patch does not apply"
+  }
+}

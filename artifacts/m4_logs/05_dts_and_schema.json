@@ -1,0 +1,27 @@
+{
+  "option_b_base": {
+    "dtc_status": "DTC_BUILD_PASS",
+    "size_bytes": 26136,
+    "sha256": "248834dfbc02e85c6e7b11111bcf41e24eec0ff563c0b1d06dfbde304b3f3c61",
+    "validate_code": 0,
+    "validate_log": "/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_logs/05_dt_validate_option_b_base.log",
+    "schema_status": "DT_SCHEMA_PASS"
+  },
+  "option_b_nss": {
+    "dtc_status": "DTC_BUILD_PASS",
+    "size_bytes": 27326,
+    "sha256": "ba57078f3fe79f20cc44c0bd8131f4fb0b4071d223dd86ab6acd861240390c37",
+    "validate_code": 0,
+    "validate_log": "/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_logs/05_dt_validate_option_b_nss.log",
+    "schema_status": "DT_SCHEMA_PASS"
+  },
+  "option_a_baseline": {
+    "dtc_status": "DTC_BUILD_PASS",
+    "size_bytes": 26752,
+    "sha256": "f7c8d462ea10b4a98a18785074fcfd4f60557ca7bf849400fa337e99ce739c41",
+    "validate_code": 0,
+    "validate_log": "/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_logs/05_dt_validate_option_a_baseline.log",
+    "schema_status": "DT_SCHEMA_PASS"
+  },
+  "reserved_memory_overlap": false
+}

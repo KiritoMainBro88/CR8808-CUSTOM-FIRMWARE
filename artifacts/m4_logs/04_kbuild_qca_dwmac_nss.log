@@ -1,0 +1,30 @@
+TARGET: package/kernel/qca-dwmac-nss
+STATUS: NSS_MODULE_BUILD_PASS
+EXIT CODE: 0
+=== STDOUT ===
+make: Entering directory '/root/linux-dts'
+make[1]: Entering directory '/root/sources/kuncy7_openwrt_nss_edma/package/kernel/qca-dwmac-nss/src'
+  CC [M]  qca_dwmac_nss.o
+  LD [M]  qca-dwmac-nss.o
+  MODPOST Module.symvers
+  LD [M]  qca-dwmac-nss.ko
+make[1]: Leaving directory '/root/sources/kuncy7_openwrt_nss_edma/package/kernel/qca-dwmac-nss/src'
+make: Leaving directory '/root/linux-dts'
+
+=== STDERR ===
+WARNING: /root/linux-dts/Module.symvers is missing.
+         Modules may not have dependencies or modversions.
+         You may get many unresolved symbol errors.
+         You can set KBUILD_MODPOST_WARN=1 to turn errors into warning
+         if you want to proceed at your own risk.
+WARNING: modpost: "rtnl_unlock" [qca-dwmac-nss.ko] undefined!
+WARNING: modpost: "qca_dwmac_dp_dma_stop" [qca-dwmac-nss.ko] undefined!
+WARNING: modpost: "strim" [qca-dwmac-nss.ko] undefined!
+WARNING: modpost: "rtnl_is_locked" [qca-dwmac-nss.ko] undefined!
+WARNING: modpost: "netdev_update_features" [qca-dwmac-nss.ko] undefined!
+WARNING: modpost: "qca_dwmac_dp_rings_set" [qca-dwmac-nss.ko] undefined!
+WARNING: modpost: "scnprintf" [qca-dwmac-nss.ko] undefined!
+WARNING: modpost: "kfree" [qca-dwmac-nss.ko] undefined!
+WARNING: modpost: "seq_lseek" [qca-dwmac-nss.ko] undefined!
+WARNING: modpost: "netdev_warn" [qca-dwmac-nss.ko] undefined!
+WARNING: modpost: suppressed 58 unresolved symbol warnings because there were too many)

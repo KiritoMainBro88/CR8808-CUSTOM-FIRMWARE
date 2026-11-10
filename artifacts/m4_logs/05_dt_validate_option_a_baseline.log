@@ -1,0 +1,1171 @@
+DT-VALIDATE LOG FOR: option_a_baseline
+EXIT CODE: 0
+=== STDERR / WARNINGS ===
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ref-96mhz-clk (fixed-factor-clock): clock-div: b'\x00\x00\x00\x01' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['clock-div']:
+    b'\x00\x00\x00\x01'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ref-96mhz-clk (fixed-factor-clock): clock-mult: b'\x00\x00\x00\x02' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['clock-mult']:
+    b'\x00\x00\x00\x02'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: xo-board-clk (fixed-factor-clock): clock-div: b'\x00\x00\x00\x04' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['clock-div']:
+    b'\x00\x00\x00\x04'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: xo-board-clk (fixed-factor-clock): clock-mult: b'\x00\x00\x00\x01' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['clock-mult']:
+    b'\x00\x00\x00\x01'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: scm (qcom,scm-ipq5018): qcom,dload-mode: b'\x00\x00\x00\x07\x00\x00a\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,dload-mode']:
+    b'\x00\x00\x00\x07\x00\x00a\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: psci (arm,psci-1.0): method: b'smc\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['method']:
+    b'smc\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: phy@5d000 (qcom,ipq5018-uniphy-usb3-phy): qcom,phy-usb-mux-sel: b'\x00\x00\x00\x07\x00\x01\x05@' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,phy-usb-mux-sel']:
+    b'\x00\x00\x00\x07\x00\x01\x05@'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet-port@0: phy-mode: b'internal\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['phy-mode']:
+    b'internal\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet-port@0: phy-handle: b'\x00\x00\x00\x0c' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['phy-handle']:
+    b'\x00\x00\x00\x0c'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet-port@1: phy-mode: b'internal\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['phy-mode']:
+    b'internal\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet-port@1: phy-handle: b'\x00\x00\x00\r' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['phy-handle']:
+    b'\x00\x00\x00\r'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet-port@2: phy-mode: b'internal\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['phy-mode']:
+    b'internal\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet-port@2: phy-handle: b'\x00\x00\x00\x0e' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['phy-handle']:
+    b'\x00\x00\x00\x0e'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet-port@3: phy-mode: b'internal\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['phy-mode']:
+    b'internal\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet-port@3: phy-handle: b'\x00\x00\x00\x0f' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['phy-handle']:
+    b'\x00\x00\x00\x0f'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet-port@4: phy-mode: b'internal\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['phy-mode']:
+    b'internal\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet-port@4: phy-handle: b'\x00\x00\x00\x10' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['phy-handle']:
+    b'\x00\x00\x00\x10'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet-port@8: phy-mode: b'2500base-x\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['phy-mode']:
+    b'2500base-x\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet-port@8: ethernet: b'\x00\x00\x00\x11' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['ethernet']:
+    b'\x00\x00\x00\x11'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: fixed-link: speed: b'\x00\x00\t\xc4' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['speed']:
+    b'\x00\x00\t\xc4'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: mode@249: bits: b'\x00\x00\x00\x00\x00\x00\x00\x03' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['bits']:
+    b'\x00\x00\x00\x00\x00\x00\x00\x03'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: base1@249: bits: b'\x00\x00\x00\x03\x00\x00\x00\x08' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['bits']:
+    b'\x00\x00\x00\x03\x00\x00\x00\x08'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: base2@24a: bits: b'\x00\x00\x00\x03\x00\x00\x00\x08' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['bits']:
+    b'\x00\x00\x00\x03\x00\x00\x00\x08'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: s0-p1@24b: bits: b'\x00\x00\x00\x02\x00\x00\x00\x06' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['bits']:
+    b'\x00\x00\x00\x02\x00\x00\x00\x06'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: s0-p2@24c: bits: b'\x00\x00\x00\x01\x00\x00\x00\x06' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['bits']:
+    b'\x00\x00\x00\x01\x00\x00\x00\x06'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: s1-p1@24c: bits: b'\x00\x00\x00\x07\x00\x00\x00\x06' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['bits']:
+    b'\x00\x00\x00\x07\x00\x00\x00\x06'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: s1-p2@24d: bits: b'\x00\x00\x00\x05\x00\x00\x00\x06' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['bits']:
+    b'\x00\x00\x00\x05\x00\x00\x00\x06'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: s2-p1@24e: bits: b'\x00\x00\x00\x03\x00\x00\x00\x06' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['bits']:
+    b'\x00\x00\x00\x03\x00\x00\x00\x06'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: s2-p2@24f: bits: b'\x00\x00\x00\x01\x00\x00\x00\x06' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['bits']:
+    b'\x00\x00\x00\x01\x00\x00\x00\x06'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: s3-p1@24f: bits: b'\x00\x00\x00\x07\x00\x00\x00\x06' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['bits']:
+    b'\x00\x00\x00\x07\x00\x00\x00\x06'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: s3-p2@250: bits: b'\x00\x00\x00\x05\x00\x00\x00\x06' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['bits']:
+    b'\x00\x00\x00\x05\x00\x00\x00\x06'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: s4-p1@251: bits: b'\x00\x00\x00\x03\x00\x00\x00\x06' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['bits']:
+    b'\x00\x00\x00\x03\x00\x00\x00\x06'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: s4-p2@254: bits: b'\x00\x00\x00\x00\x00\x00\x00\x06' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['bits']:
+    b'\x00\x00\x00\x00\x00\x00\x00\x06'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: thermal-sensor@4a9000 (qcom,ipq5018-tsens): nvmem-cells: b'\x00\x00\x00\x14\x00\x00\x00\x15\x00\x00\x00\x16\x00\x00\x00\x17\x00\x00\x00\x18\x00\x00\x00\x19\x00\x00\x00\x1a\x00\x00\x00\x1b\x00\x00\x00\x1c\x00\x00\x00\x1d\x00\x00\x00\x1e\x00\x00\x00\x1f\x00\x00\x00 ' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['nvmem-cells']:
+    (b'\x00\x00\x00\x14\x00\x00\x00\x15\x00\x00\x00\x16\x00\x00\x00\x17'
+     b'\x00\x00\x00\x18\x00\x00\x00\x19\x00\x00\x00\x1a\x00\x00\x00\x1b'
+     b'\x00\x00\x00\x1c\x00\x00\x00\x1d\x00\x00\x00\x1e\x00\x00\x00\x1f'
+     b'\x00\x00\x00 ')
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: dma-controller@704000 (qcom,bam-v1.7.4): qcom,ee: b'\x00\x00\x00\x01' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,ee']:
+    b'\x00\x00\x00\x01'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: uart1-state: pins: b'gpio31\x00gpio32\x00gpio33\x00gpio34\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['pins']:
+    b'gpio31\x00gpio32\x00gpio33\x00gpio34\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: uart1-state: function: b'blsp1_uart1\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['function']:
+    b'blsp1_uart1\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: uart1-state: drive-strength: b'\x00\x00\x00\x08' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['drive-strength']:
+    b'\x00\x00\x00\x08'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: mdc-pins: pins: b'gpio36\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['pins']:
+    b'gpio36\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: mdc-pins: function: b'mdc\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['function']:
+    b'mdc\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: mdc-pins: drive-strength: b'\x00\x00\x00\x08' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['drive-strength']:
+    b'\x00\x00\x00\x08'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: mdio-pins: pins: b'gpio37\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['pins']:
+    b'gpio37\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: mdio-pins: function: b'mdio\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['function']:
+    b'mdio\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: mdio-pins: drive-strength: b'\x00\x00\x00\x08' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['drive-strength']:
+    b'\x00\x00\x00\x08'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: clock-pins: pins: b'gpio9\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['pins']:
+    b'gpio9\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: clock-pins: function: b'qspi_clk\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['function']:
+    b'qspi_clk\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: clock-pins: drive-strength: b'\x00\x00\x00\x08' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['drive-strength']:
+    b'\x00\x00\x00\x08'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: cs-pins: pins: b'gpio8\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['pins']:
+    b'gpio8\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: cs-pins: function: b'qspi_cs\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['function']:
+    b'qspi_cs\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: cs-pins: drive-strength: b'\x00\x00\x00\x08' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['drive-strength']:
+    b'\x00\x00\x00\x08'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: data-pins: pins: b'gpio4\x00gpio5\x00gpio6\x00gpio7\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['pins']:
+    b'gpio4\x00gpio5\x00gpio6\x00gpio7\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: data-pins: function: b'qspi_data\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['function']:
+    b'qspi_data\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: data-pins: drive-strength: b'\x00\x00\x00\x08' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['drive-strength']:
+    b'\x00\x00\x00\x08'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: uart0-state: pins: b'gpio20\x00gpio21\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['pins']:
+    b'gpio20\x00gpio21\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: uart0-state: function: b'blsp0_uart0\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['function']:
+    b'blsp0_uart0\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: button-state: pins: b'gpio38\x00gpio28\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['pins']:
+    b'gpio38\x00gpio28\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: button-state: function: b'gpio\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['function']:
+    b'gpio\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: button-state: drive-strength: b'\x00\x00\x00\x08' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['drive-strength']:
+    b'\x00\x00\x00\x08'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: leds-state: pins: b'gpio24\x00gpio25\x00gpio26\x00gpio27\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['pins']:
+    b'gpio24\x00gpio25\x00gpio26\x00gpio27\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: leds-state: function: b'gpio\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['function']:
+    b'gpio\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: leds-state: drive-strength: b'\x00\x00\x00\x08' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['drive-strength']:
+    b'\x00\x00\x00\x08'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: dma-controller@7884000 (qcom,bam-v1.7.0): qcom,ee: b'\x00\x00\x00\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,ee']:
+    b'\x00\x00\x00\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: dma-controller@7984000 (qcom,bam-v1.7.4): qcom,ee: b'\x00\x00\x00\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,ee']:
+    b'\x00\x00\x00\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: nand@0 (spi-nand): nand-ecc-engine: b'\x00\x00\x00-' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['nand-ecc-engine']:
+    b'\x00\x00\x00-'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: nand@0 (spi-nand): nand-bus-width: b'\x00\x00\x00\x08' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['nand-bus-width']:
+    b'\x00\x00\x00\x08'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: usb@8a00000 (qcom,ipq5018-dwc3): snps,hird-threshold: b'\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['snps,hird-threshold']:
+    b'\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: frame@b120000: frame-number: b'\x00\x00\x00\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['frame-number']:
+    b'\x00\x00\x00\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: frame@b123000: frame-number: b'\x00\x00\x00\x01' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['frame-number']:
+    b'\x00\x00\x00\x01'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: frame@b124000: frame-number: b'\x00\x00\x00\x02' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['frame-number']:
+    b'\x00\x00\x00\x02'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: frame@b125000: frame-number: b'\x00\x00\x00\x03' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['frame-number']:
+    b'\x00\x00\x00\x03'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: frame@b126000: frame-number: b'\x00\x00\x00\x04' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['frame-number']:
+    b'\x00\x00\x00\x04'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: frame@b127000: frame-number: b'\x00\x00\x00\x05' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['frame-number']:
+    b'\x00\x00\x00\x05'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: frame@b128000: frame-number: b'\x00\x00\x00\x06' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['frame-number']:
+    b'\x00\x00\x00\x06'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: wifi@c000000 (qcom,ipq5018-wifi): qcom,rproc: b'\x00\x00\x000' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,rproc']:
+    b'\x00\x00\x000'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: wifi@c000000 (qcom,ipq5018-wifi): qcom,ath11k-calibration-variant: b'Xiaomi-CR8818\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,ath11k-calibration-variant']:
+    b'Xiaomi-CR8818\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: wifi@c000000 (qcom,ipq5018-wifi): qcom,ath11k-fw-memory-mode: b'\x00\x00\x00\x01' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,ath11k-fw-memory-mode']:
+    b'\x00\x00\x00\x01'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: wifi@c000000 (qcom,ipq5018-wifi): qcom,bdf-addr: b'L@\x00\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,bdf-addr']:
+    b'L@\x00\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: remoteproc@cd00000 (qcom,ipq5018-q6-mpd): qcom,smem-states: b'\x00\x00\x002\x00\x00\x00\x00\x00\x00\x002\x00\x00\x00\x01' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,smem-states']:
+    b'\x00\x00\x002\x00\x00\x00\x00\x00\x00\x002\x00\x00\x00\x01'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: glink-edge: qcom,remote-pid: b'\x00\x00\x00\x01' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,remote-pid']:
+    b'\x00\x00\x00\x01'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: pd-1: qcom,smem-states: b'\x00\x00\x002\x00\x00\x00\x08\x00\x00\x002\x00\x00\x00\t\x00\x00\x002\x00\x00\x00\n' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,smem-states']:
+    (b'\x00\x00\x002\x00\x00\x00\x08\x00\x00\x002\x00\x00\x00\t'
+     b'\x00\x00\x002\x00\x00\x00\n')
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: pd-2: qcom,smem-states: b'\x00\x00\x002\x00\x00\x00\x10\x00\x00\x002\x00\x00\x00\x11\x00\x00\x002\x00\x00\x00\x12' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,smem-states']:
+    (b'\x00\x00\x002\x00\x00\x00\x10\x00\x00\x002\x00\x00\x00\x11'
+     b'\x00\x00\x002\x00\x00\x00\x12')
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: pd-3: qcom,smem-states: b'\x00\x00\x002\x00\x00\x00\x18\x00\x00\x002\x00\x00\x00\x19\x00\x00\x002\x00\x00\x00\x1a' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,smem-states']:
+    (b'\x00\x00\x002\x00\x00\x00\x18\x00\x00\x002\x00\x00\x00\x19'
+     b'\x00\x00\x002\x00\x00\x00\x1a')
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: pcie@80000000 (qcom,pcie-ipq5018): 1,pci-domain: b'\x00\x00\x00\x01' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['1,pci-domain']:
+    b'\x00\x00\x00\x01'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: pcie@a0000000 (qcom,pcie-ipq5018): 1,pci-domain: b'\x00\x00\x00\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['1,pci-domain']:
+    b'\x00\x00\x00\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet@39c00000 (qcom,ipq5018-gmac): phy-handle: b'\x00\x00\x005' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['phy-handle']:
+    b'\x00\x00\x005'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet@39c00000 (qcom,ipq5018-gmac): phy-mode: b'sgmii\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['phy-mode']:
+    b'sgmii\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet@39c00000 (qcom,ipq5018-gmac): nvmem-cells: b'\x00\x00\x006\x00\x00\x00\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['nvmem-cells']:
+    b'\x00\x00\x006\x00\x00\x00\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet@39d00000 (qcom,ipq5018-gmac): pcs-handle: b'\x00\x00\x00\x13' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['pcs-handle']:
+    b'\x00\x00\x00\x13'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet@39d00000 (qcom,ipq5018-gmac): phy-mode: b'2500base-x\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['phy-mode']:
+    b'2500base-x\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ethernet@39d00000 (qcom,ipq5018-gmac): nvmem-cells: b'\x00\x00\x007\x00\x00\x00\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['nvmem-cells']:
+    b'\x00\x00\x007\x00\x00\x00\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: fixed-link: speed: b'\x00\x00\t\xc4' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['speed']:
+    b'\x00\x00\t\xc4'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: wifi@b00a040 (qcom,qcn6122-wifi): qcom,rproc: b'\x00\x00\x008' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,rproc']:
+    b'\x00\x00\x008'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: wifi@b00a040 (qcom,qcn6122-wifi): qcom,userpd-subsys-name: b'q6v5_wcss_userpd2\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,userpd-subsys-name']:
+    b'q6v5_wcss_userpd2\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: wifi@b00a040 (qcom,qcn6122-wifi): qcom,ath11k-calibration-variant: b'Xiaomi-CR8818\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,ath11k-calibration-variant']:
+    b'Xiaomi-CR8818\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: wifi@b00a040 (qcom,qcn6122-wifi): qcom,ath11k-fw-memory-mode: b'\x00\x00\x00\x01' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,ath11k-fw-memory-mode']:
+    b'\x00\x00\x00\x01'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: wifi@b00a040 (qcom,qcn6122-wifi): qcom,bdf-addr: b'M\x10\x00\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,bdf-addr']:
+    b'M\x10\x00\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: wifi@b00a040 (qcom,qcn6122-wifi): qcom,m3-dump-addr: b'M\xf0\x00\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,m3-dump-addr']:
+    b'M\xf0\x00\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: cpu-thermal: thermal-sensors: b'\x00\x00\x009\x00\x00\x00\x02' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['thermal-sensors']:
+    b'\x00\x00\x009\x00\x00\x00\x02'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: cpu-critical: temperature: b'\x00\x01\xd4\xc0' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['temperature']:
+    b'\x00\x01\xd4\xc0'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: cpu-critical: hysteresis: b'\x00\x00\x03\xe8' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['hysteresis']:
+    b'\x00\x00\x03\xe8'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: cpu-critical: type: b'critical\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['type']:
+    b'critical\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: cpu-passive: temperature: b'\x00\x01\x86\xa0' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['temperature']:
+    b'\x00\x01\x86\xa0'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: cpu-passive: hysteresis: b'\x00\x00\x03\xe8' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['hysteresis']:
+    b'\x00\x00\x03\xe8'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: cpu-passive: type: b'passive\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['type']:
+    b'passive\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: map0: trip: b'\x00\x00\x00:' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['trip']:
+    b'\x00\x00\x00:'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: map0: cooling-device: b'\x00\x00\x00;\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00<\xff\xff\xff\xff\xff\xff\xff\xff' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['cooling-device']:
+    (b'\x00\x00\x00;\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00<'
+     b'\xff\xff\xff\xff\xff\xff\xff\xff')
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: gephy-thermal: thermal-sensors: b'\x00\x00\x009\x00\x00\x00\x04' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['thermal-sensors']:
+    b'\x00\x00\x009\x00\x00\x00\x04'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: gephy-critical: temperature: b'\x00\x01\xd4\xc0' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['temperature']:
+    b'\x00\x01\xd4\xc0'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: gephy-critical: hysteresis: b'\x00\x00\x03\xe8' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['hysteresis']:
+    b'\x00\x00\x03\xe8'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: gephy-critical: type: b'critical\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['type']:
+    b'critical\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: top-glue-thermal: thermal-sensors: b'\x00\x00\x009\x00\x00\x00\x03' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['thermal-sensors']:
+    b'\x00\x00\x009\x00\x00\x00\x03'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: top-glue-critical: temperature: b'\x00\x01\xd4\xc0' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['temperature']:
+    b'\x00\x01\xd4\xc0'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: top-glue-critical: hysteresis: b'\x00\x00\x03\xe8' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['hysteresis']:
+    b'\x00\x00\x03\xe8'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: top-glue-critical: type: b'critical\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['type']:
+    b'critical\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ubi32-thermal: thermal-sensors: b'\x00\x00\x009\x00\x00\x00\x01' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['thermal-sensors']:
+    b'\x00\x00\x009\x00\x00\x00\x01'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ubi32-critical: temperature: b'\x00\x01\xd4\xc0' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['temperature']:
+    b'\x00\x01\xd4\xc0'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ubi32-critical: hysteresis: b'\x00\x00\x03\xe8' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['hysteresis']:
+    b'\x00\x00\x03\xe8'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: ubi32-critical: type: b'critical\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['type']:
+    b'critical\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: smp2p-wcss (qcom,smp2p): qcom,smem: b'\x00\x00\x01\xb3\x00\x00\x01\xac' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,smem']:
+    b'\x00\x00\x01\xb3\x00\x00\x01\xac'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: smp2p-wcss (qcom,smp2p): qcom,local-pid: b'\x00\x00\x00\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,local-pid']:
+    b'\x00\x00\x00\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: smp2p-wcss (qcom,smp2p): qcom,remote-pid: b'\x00\x00\x00\x01' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,remote-pid']:
+    b'\x00\x00\x00\x01'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: master-kernel: qcom,entry-name: b'master-kernel\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,entry-name']:
+    b'master-kernel\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: slave-kernel: qcom,entry-name: b'slave-kernel\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['qcom,entry-name']:
+    b'slave-kernel\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: chosen: bootargs-append: b' ubi.mtd=rootfs root=/dev/ubiblock0_0 coherent_pool=2M\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['bootargs-append']:
+    b' ubi.mtd=rootfs root=/dev/ubiblock0_0 coherent_pool=2M\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: chosen: 'bootargs-append' does not match any of the regexes: '^framebuffer', '^pinctrl-[0-9]+$'
+
+Failed validating 'additionalProperties' in schema['then']:
+    {'$id': 'http://devicetree.org/schemas/chosen.yaml#',
+     '$schema': 'http://devicetree.org/meta-schemas/core.yaml#',
+     'title': '/chosen Node',
+     'properties': {'$nodename': {'items': [{'const': 'chosen'}],
+                                  'type': 'array',
+                                  'minItems': 1,
+                                  'maxItems': 1},
+                    '#address-cells': True,
+                    '#size-cells': True,
+                    'ranges': True,
+                    'bootargs': {'$ref': 'types.yaml#/definitions/string'},
+                    'bootsource': {'$ref': 'types.yaml#/definitions/string'},
+                    'kaslr-seed': {'$ref': 'types.yaml#/definitions/uint64'},
+                    'rng-seed': {'$ref': 'types.yaml#/definitions/uint8-array'},
+                    'linux,booted-from-kexec': {'type': 'boolean'},
+                    'linux,elfcorehdr': {'$ref': 'types.yaml#/definitions/address',
+                                         'maxItems': 1,
+                                         'minItems': 1},
+                    'linux,dmcryptkeys': {'$ref': 'types.yaml#/definitions/address',
+                                          'maxItems': 1,
+                                          'minItems': 1},
+                    'linux,usable-memory-range': {'$ref': 'types.yaml#/definitions/address',
+                                                  'maxItems': 1,
+                                                  'minItems': 1},
+                    'linux,initrd-start': {'$ref': 'types.yaml#/definitions/address',
+                                           'maxItems': 1,
+                                           'minItems': 1},
+                    'linux,initrd-end': {'$ref': 'types.yaml#/definitions/address',
+                                         'maxItems': 1,
+                                         'minItems': 1},
+                    'linux,pci-probe-only': {'$ref': 'types.yaml#/definitions/uint32',
+                                             'enum': [0, 1]},
+                    'smbios3-entrypoint': {'$ref': 'types.yaml#/definitions/address',
+                                           'maxItems': 1,
+                                           'minItems': 1},
+                    'stdout-path': {'$ref': 'types.yaml#/definitions/string',
+                                    'items': [{'pattern': '^[a-zA-Z0-9@/,+\\-._]*(:[0-9]*[noe]?[78]?[r]?)?$'}],
+                                    'type': 'array',
+                                    'minItems': 1,
+                                    'maxItems': 1},
+                    'linux,ima-kexec-buffer': {'$ref': 'types.yaml#/definitions/address',
+                                               'maxItems': 1,
+                                               'minItems': 1},
+                    'linux,uefi-system-table': {'$ref': 'types.yaml#/definitions/uint64'},
+                    'linux,uefi-mmap-start': {'$ref': 'types.yaml#/definitions/uint64'},
+                    'linux,uefi-mmap-size': {'$ref': 'types.yaml#/definitions/uint32'},
+                    'linux,uefi-mmap-desc-size': {'$ref': 'types.yaml#/definitions/uint32'},
+                    'linux,uefi-mmap-desc-ver': {'$ref': 'types.yaml#/definitions/uint32'},
+                    'linux,kho-fdt': {'$ref': 'types.yaml#/definitions/address',
+                                      'maxItems': 1,
+                                      'minItems': 1},
+                    'linux,kho-scratch': {'$ref': 'types.yaml#/definitions/address',
+                                          'maxItems': 1,
+                                          'minItems': 1},
+                    'u-boot,bootconf': {'$ref': 'types.yaml#/definitions/string'},
+                    'u-boot,version': {'$ref': 'types.yaml#/definitions/string',
+                                       'items': [{'pattern': '^20[0-9]{2}\\.[0-9]{2}.*$'}],
+                                       'type': 'array',
+                                       'minItems': 1,
+                                       'maxItems': 1},
+                    'dma-ranges': True,
+                    'phandle': True,
+                    'status': True,
+                    'secure-status': True,
+                    'bootph-pre-sram': True,
+                    'bootph-verify': True,
+                    'bootph-pre-ram': True,
+                    'bootph-some-ram': True,
+                    'bootph-all': True,
+                    'pinctrl-names': True},
+     'patternProperties': {'^framebuffer': True, '^pinctrl-[0-9]+$': True},
+     'additionalProperties': False,
+     'select': {'required': ['$nodename'],
+                'properties': {'$nodename': {'items': [{'const': 'chosen'}],
+                                             'type': 'array',
+                                             'minItems': 1,
+                                             'maxItems': 1}}},
+     'type': 'object',
+     '$filename': '/usr/local/lib/python3.10/dist-packages/dtschema/schemas/chosen.yaml'}
+
+On instance:
+    {'bootargs-append': b' ubi.mtd=rootfs root=/dev/ubiblock0_0 coherent_p'
+                        b'ool=2M\x00',
+     'stdout-path': ['serial0:115200n8'],
+     '$nodename': ['chosen']}
+	from schema $id: http://devicetree.org/schemas/chosen.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: reset-button: 1,code: b'\x00\x00\x01\x98' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['1,code']:
+    b'\x00\x00\x01\x98'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: mesh-button: 1,code: b'\x00\x00\x01\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['1,code']:
+    b'\x00\x00\x01\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: system-blue: color: b'\x00\x00\x00\x03' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['color']:
+    b'\x00\x00\x00\x03'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: system-blue: function: b'power\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['function']:
+    b'power\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: system-red: color: b'\x00\x00\x00\x01' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['color']:
+    b'\x00\x00\x00\x01'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: system-red: function: b'power\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['function']:
+    b'power\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: internet-blue: color: b'\x00\x00\x00\x03' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['color']:
+    b'\x00\x00\x00\x03'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: internet-blue: function: b'wan\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['function']:
+    b'wan\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: internet-red: color: b'\x00\x00\x00\x01' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['color']:
+    b'\x00\x00\x00\x01'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml
+/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m4_dtb/ipq5018-cr8818-baseline.dtb: internet-red: function: b'wan\x00' is not of type 'object', 'integer', 'array', 'boolean', 'null'
+
+Failed validating 'type' in schema['then']['patternProperties']['^[a-zA-Z0-9][a-zA-Z0-9#,+\\-._]{0,63}$']:
+    {'type': ['object', 'integer', 'array', 'boolean', 'null']}
+
+On instance['function']:
+    b'wan\x00'
+	from schema $id: http://devicetree.org/schemas/dt-core.yaml

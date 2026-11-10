@@ -37,3 +37,12 @@ scratch/
 *.exe
 *.o
 *.obj
+tests/poc/test_yt921x_poc
+tests/poc/test_yt921x_poc_arm64
+tests/poc/test_yt921x_poc_linux
+artifacts/m4_kbuild/
+
+# Do not ignore M4 audit logs and DTBs
+!artifacts/m4_logs/**
+!artifacts/m4_dtb/**
+

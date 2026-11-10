@@ -1,0 +1,15 @@
+TARGET: package/kernel/qca-nss-dp
+STATUS: NSS_MODULE_BUILD_FAIL
+EXIT CODE: 2
+=== STDOUT ===
+make: Entering directory '/root/linux-dts'
+make[1]: Entering directory '/root/sources/zcop_immortalwrt/package/kernel/qca-nss-dp/src'
+make[1]: Leaving directory '/root/sources/zcop_immortalwrt/package/kernel/qca-nss-dp/src'
+make: Leaving directory '/root/linux-dts'
+
+=== STDERR ===
+/root/linux-dts/scripts/Makefile.build:37: Makefile: No such file or directory
+make[3]: *** No rule to make target 'Makefile'.  Stop.
+make[2]: *** [/root/linux-dts/Makefile:2010: .] Error 2
+make[1]: *** [/root/linux-dts/Makefile:248: __sub-make] Error 2
+make: *** [Makefile:248: __sub-make] Error 2

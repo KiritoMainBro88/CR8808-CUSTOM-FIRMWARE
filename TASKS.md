@@ -22,7 +22,8 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P2-NSS-RES | Qualcomm NSS Hardware Offload Porting Research (Phase A Source Audit & Phase B Feasibility) | P2 | DONE | Gemini | P1-REV5.2 |
 | P2-NSS-POC-M1-M2 | NSS + YT9215SC PC Prototype: M1 Source Lock & M2 Tag Adapter Compile & Test | P2 | DONE | Gemini | P2-NSS-RES |
 | P2-NSS-POC-M3 | NSS + YT9215SC PC Prototype: M3 Independent Oracle Tests, Kernel Patch Validation & DTS Audit | P2 | DONE | Gemini | P2-NSS-POC-M1-M2 |
-| P2-NSS-POC-M4-M5 | NSS + YT9215SC PC Prototype: M4 NSS Integration & M5 Hardware Validation | P2 | BLOCKED | ChatGPT + User | M3 Architecture Review Approval |
+| P2-NSS-POC-M4 | NSS + YT9215SC PC Prototype: M4 Kernel Kbuild Audit, Option A/B Separation & Register Control | P2 | DONE | Gemini | P2-NSS-POC-M3 |
+| P2-NSS-POC-M5 | NSS + YT9215SC PC Prototype: M5 OpenWrt Buildroot Firmware Image Build & Package Linking | P2 | BLOCKED | ChatGPT + User | M4 Architecture Review Approval |
 | P1-CLN | Git history cleanup application (Option 1 force-push) | P1 | BLOCKED | Product Owner | P1-REV5.2 dry-run approval |
 | P2-001 | Re-audit router baseline using approved Class R0 read-only commands | P2 | BLOCKED | Gemini | R0 Manifest approval |
 | P2-002 | Finalize feature parity inventory against on-device baseline | P2 | NOT_STARTED | Gemini | P2-001 |
@@ -34,14 +35,16 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P6-001 | Release candidate and deployment decision | P6 | BLOCKED | User | All gates |
 
 ## Current instruction
-NSS + YT9215SC PC Prototype Milestone M3 completed (`P2-NSS-POC-M3`). Branch `feature/nss-cr8818-poc` updated. Deliverables authored & verified:
-- `manifests/nss-poc-sources.lock.yaml` (M3: Reconciled source lockfile, yangfl cr8818 branch 6729bbe verified via git cat-file on all 4 remotes)
-- `tests/poc/yt921x_tag_proto.h` & `yt921x_tag_proto.c` (M3: Upstream bitfield definitions, strict error codes, explicit simulation disclaimers)
-- `tests/poc/test_yt921x_poc.c` & `tests/poc/Makefile` (M3: Independent oracle unit test suite; 61/61 PASS on Windows UCRT64 GCC and Linux WSL2 GCC; cross-compiles cleanly to AArch64 ELF with aarch64-linux-gnu-gcc)
-- `patches/nss-cr8818/` (M3: Repaired Patch 0001 for Linux 6.18 and Patch 0002 for OpenWrt qualcommax; both pass `git apply --check` cleanly)
-- `scripts/compile_dts.sh` & `scripts/generate_m3_patches.py` (M3: DTC compilation suite; compiles Option B Base, Option B NSS, Option A Baseline, and Option A Patched to binary DTBs with dtc 1.6.1)
-- `reports/NSS_POC_M3_REPORT.md` (M3 Deliverable Report answering all 6 mandatory architecture review questions with exact SHA-256 table)
+NSS + YT9215SC PC Prototype Milestone M4 completed (`P2-NSS-POC-M4`). Branch `feature/nss-cr8818-poc` updated. Deliverables authored & verified:
+- Real Linux 6.18 Kbuild compilations: `tag_yt921x.o` (48KB), `tag_yt921x_8021q.o` (35KB), `tag_yt921x_enhanced.o` (53KB), and `qca-dwmac-nss.ko` (167KB ELF module).
+- Compiler diagnostic logs collected under `artifacts/m4_logs/` for `dwmac-ipq5018.c`, upstream `yt921x.c`, `qca-nss-dp`, and `zcop_yt921x_driver`.
+- Strict separation of patches: `patches/nss-cr8818/option-a/` (stmmac + qca-dwmac-nss + tag_8021q) and `patches/nss-cr8818/option-b/` (qcom,nss-dp + enhanced YT921x dual-conduit).
+- Audited switch hardware register `0x8000c` (`YT921X_EXT_CPU_PORT`) proving untagged WAN frames bypass CPU tag parsing on Port 4.
+- Audited DSA tag enum in Linux 6.18 (proved IDs 36/37/38 are vendor extensions).
+- Compiled 3 Device Trees to `.dtb` via DTC 1.6.1 and verified schema and zero reserved memory overlap.
+- Expanded independent oracle test suite from 61 to 84 assertions (84/84 PASS on host and cross-compiled AArch64 ELF).
+- Authored Milestone M4 report `reports/NSS_POC_M4_REPORT.md` answering the 6 mandatory architecture review questions.
 - Verified workspace preservation: `D:\vibecode\test_wifi` confirmed clean, zero edits.
 
-M3 deliverables are ready for review by ChatGPT and Product Owner. Gemini execution halted at M3 gate per instruction. Tasks `P2-NSS-POC-M4-M5` remain BLOCKED awaiting review approval. Router untouched (NO SSH, NO FLASH).
+M4 deliverables are ready for review by ChatGPT and Product Owner. Gemini execution halted at M4 gate per instruction. Task `P2-NSS-POC-M5` remains BLOCKED awaiting review approval. Router untouched (NO SSH, NO FLASH).
 

@@ -1,0 +1,32 @@
+TARGET: zcop enhanced yt921x driver
+STATUS: KERNEL_KBUILD_FAIL
+EXIT CODE: 2
+=== STDOUT ===
+make: Entering directory '/root/linux-dts'
+make[1]: Entering directory '/root/sources/zcop_immortalwrt/target/linux/generic/files/drivers/net/dsa'
+  CC [M]  yt921x_enhanced.o
+make[1]: Leaving directory '/root/sources/zcop_immortalwrt/target/linux/generic/files/drivers/net/dsa'
+make: Leaving directory '/root/linux-dts'
+
+=== STDERR ===
+In file included from yt921x_enhanced.c:14:
+yt921x_internal.h:251:46: warning: ‘struct flow_action_police’ declared inside parameter list will not be visible outside of this definition or declaration
+  251 |                                 const struct flow_action_police *policer,
+      |                                              ^~~~~~~~~~~~~~~~~~
+yt921x_enhanced.c:264:35: error: initialization of ‘int (*)(struct dsa_switch *, int,  struct dsa_mall_policer_tc_entry *)’ from incompatible pointer type ‘int (*)(struct dsa_switch *, int,  const struct flow_action_police *, struct netlink_ext_ack *)’ [-Werror=incompatible-pointer-types]
+  264 |         .port_policer_add       = yt921x_dsa_port_policer_add,
+      |                                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+yt921x_enhanced.c:264:35: note: (near initialization for ‘yt921x_dsa_switch_ops.port_policer_add’)
+yt921x_enhanced.c:302:10: error: ‘const struct dsa_switch_ops’ has no member named ‘port_mrouter’; did you mean ‘port_mrp_del’?
+  302 |         .port_mrouter           = yt921x_dsa_port_mrouter,
+      |          ^~~~~~~~~~~~
+      |          port_mrp_del
+yt921x_enhanced.c:302:35: error: initialization of ‘void (*)(struct dsa_switch *, int,  bool,  bool)’ {aka ‘void (*)(struct dsa_switch *, int,  _Bool,  _Bool)’} from incompatible pointer type ‘int (*)(struct dsa_switch *, int,  bool)’ {aka ‘int (*)(struct dsa_switch *, int,  _Bool)’} [-Werror=incompatible-pointer-types]
+  302 |         .port_mrouter           = yt921x_dsa_port_mrouter,
+      |                                   ^~~~~~~~~~~~~~~~~~~~~~~
+yt921x_enhanced.c:302:35: note: (near initialization for ‘yt921x_dsa_switch_ops.port_set_host_flood’)
+cc1: some warnings being treated as errors
+make[3]: *** [/root/linux-dts/scripts/Makefile.build:287: yt921x_enhanced.o] Error 1
+make[2]: *** [/root/linux-dts/Makefile:2010: .] Error 2
+make[1]: *** [/root/linux-dts/Makefile:248: __sub-make] Error 2
+make: *** [Makefile:248: __sub-make] Error 2

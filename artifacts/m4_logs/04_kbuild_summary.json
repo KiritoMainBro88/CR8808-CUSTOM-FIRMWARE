@@ -1,0 +1,42 @@
+{
+  "tag_yt921x": {
+    "target": "net/dsa/tag_yt921x.o",
+    "status": "KERNEL_KBUILD_PASS",
+    "exit_code": 0
+  },
+  "tag_yt921x_8021q": {
+    "target": "net/dsa/tag_yt921x_8021q.o",
+    "status": "KERNEL_KBUILD_PASS",
+    "exit_code": 0
+  },
+  "tag_yt921x_enhanced": {
+    "target": "net/dsa/tag_yt921x_enhanced.o",
+    "status": "KERNEL_KBUILD_PASS",
+    "exit_code": 0
+  },
+  "upstream_yt921x": {
+    "target": "drivers/net/dsa/yt921x.o",
+    "status": "KERNEL_KBUILD_FAIL",
+    "exit_code": 2
+  },
+  "dwmac_ipq5018": {
+    "target": "drivers/net/ethernet/stmicro/stmmac/dwmac-ipq5018.o",
+    "status": "KERNEL_KBUILD_FAIL",
+    "exit_code": 2
+  },
+  "qca_dwmac_nss": {
+    "target": "package/kernel/qca-dwmac-nss",
+    "status": "NSS_MODULE_BUILD_PASS",
+    "exit_code": 0
+  },
+  "qca_nss_dp": {
+    "target": "package/kernel/qca-nss-dp",
+    "status": "NSS_MODULE_BUILD_FAIL",
+    "exit_code": 2
+  },
+  "zcop_yt921x_driver": {
+    "target": "zcop enhanced yt921x driver",
+    "status": "KERNEL_KBUILD_FAIL",
+    "exit_code": 2
+  }
+}

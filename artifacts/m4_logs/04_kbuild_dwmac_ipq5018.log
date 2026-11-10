@@ -1,0 +1,22 @@
+TARGET: drivers/net/ethernet/stmicro/stmmac/dwmac-ipq5018.o
+STATUS: KERNEL_KBUILD_FAIL
+EXIT CODE: 2
+=== STDOUT ===
+make: Entering directory '/root/linux-dts'
+  CALL    scripts/checksyscalls.sh
+  CC [M]  drivers/net/ethernet/stmicro/stmmac/dwmac-ipq5018.o
+make: Leaving directory '/root/linux-dts'
+
+=== STDERR ===
+drivers/net/ethernet/stmicro/stmmac/dwmac-ipq5018.c:10:10: fatal error: linux/pcs/pcs.h: No such file or directory
+   10 | #include <linux/pcs/pcs.h>
+      |          ^~~~~~~~~~~~~~~~~
+compilation terminated.
+make[7]: *** [scripts/Makefile.build:287: drivers/net/ethernet/stmicro/stmmac/dwmac-ipq5018.o] Error 1
+make[6]: *** [scripts/Makefile.build:556: drivers/net/ethernet/stmicro/stmmac] Error 2
+make[5]: *** [scripts/Makefile.build:556: drivers/net/ethernet/stmicro] Error 2
+make[4]: *** [scripts/Makefile.build:556: drivers/net/ethernet] Error 2
+make[3]: *** [scripts/Makefile.build:556: drivers/net] Error 2
+make[2]: *** [scripts/Makefile.build:556: drivers] Error 2
+make[1]: *** [/root/linux-dts/Makefile:2010: .] Error 2
+make: *** [Makefile:248: __sub-make] Error 2

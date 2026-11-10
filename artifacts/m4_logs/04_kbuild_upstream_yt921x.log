@@ -1,0 +1,121 @@
+TARGET: drivers/net/dsa/yt921x.o
+STATUS: KERNEL_KBUILD_FAIL
+EXIT CODE: 2
+=== STDOUT ===
+make: Entering directory '/root/linux-dts'
+  CALL    scripts/checksyscalls.sh
+  CC [M]  drivers/net/dsa/yt921x.o
+make: Leaving directory '/root/linux-dts'
+
+=== STDERR ===
+drivers/net/dsa/yt921x.c:1267:39: warning: ‘struct flow_action_police’ declared inside parameter list will not be visible outside of this definition or declaration
+ 1267 |                          const struct flow_action_police *police,
+      |                                       ^~~~~~~~~~~~~~~~~~
+drivers/net/dsa/yt921x.c: In function ‘yt921x_marker_tfm_police’:
+drivers/net/dsa/yt921x.c:1271:33: error: invalid use of undefined type ‘const struct flow_action_police’
+ 1271 |         bool pkt_mode = !!police->rate_pkt_ps;
+      |                                 ^~
+drivers/net/dsa/yt921x.c:1275:33: error: invalid use of undefined type ‘const struct flow_action_police’
+ 1275 |         rate = pkt_mode ? police->rate_pkt_ps : police->rate_bytes_ps;
+      |                                 ^~
+drivers/net/dsa/yt921x.c:1275:55: error: invalid use of undefined type ‘const struct flow_action_police’
+ 1275 |         rate = pkt_mode ? police->rate_pkt_ps : police->rate_bytes_ps;
+      |                                                       ^~
+drivers/net/dsa/yt921x.c:1276:34: error: invalid use of undefined type ‘const struct flow_action_police’
+ 1276 |         burst = pkt_mode ? police->burst_pkt : police->burst;
+      |                                  ^~
+drivers/net/dsa/yt921x.c:1276:54: error: invalid use of undefined type ‘const struct flow_action_police’
+ 1276 |         burst = pkt_mode ? police->burst_pkt : police->burst;
+      |                                                      ^~
+drivers/net/dsa/yt921x.c: At top level:
+drivers/net/dsa/yt921x.c:1298:37: warning: ‘struct flow_action_police’ declared inside parameter list will not be visible outside of this definition or declaration
+ 1298 | yt921x_police_validate(const struct flow_action_police *police,
+      |                                     ^~~~~~~~~~~~~~~~~~
+drivers/net/dsa/yt921x.c: In function ‘yt921x_police_validate’:
+drivers/net/dsa/yt921x.c:1303:19: error: invalid use of undefined type ‘const struct flow_action_police’
+ 1303 |         if (police->exceed.act_id != FLOW_ACTION_DROP) {
+      |                   ^~
+drivers/net/dsa/yt921x.c:1309:19: error: invalid use of undefined type ‘const struct flow_action_police’
+ 1309 |         if (police->notexceed.act_id != FLOW_ACTION_PIPE &&
+      |                   ^~
+drivers/net/dsa/yt921x.c:1310:19: error: invalid use of undefined type ‘const struct flow_action_police’
+ 1310 |             police->notexceed.act_id != FLOW_ACTION_ACCEPT) {
+      |                   ^~
+drivers/net/dsa/yt921x.c:1316:19: error: invalid use of undefined type ‘const struct flow_action_police’
+ 1316 |         if (police->notexceed.act_id == FLOW_ACTION_ACCEPT && action && act &&
+      |                   ^~
+drivers/net/dsa/yt921x.c:1324:19: error: invalid use of undefined type ‘const struct flow_action_police’
+ 1324 |         if (police->peakrate_bytes_ps || police->avrate || police->overhead) {
+      |                   ^~
+drivers/net/dsa/yt921x.c:1324:48: error: invalid use of undefined type ‘const struct flow_action_police’
+ 1324 |         if (police->peakrate_bytes_ps || police->avrate || police->overhead) {
+      |                                                ^~
+drivers/net/dsa/yt921x.c:1324:66: error: invalid use of undefined type ‘const struct flow_action_police’
+ 1324 |         if (police->peakrate_bytes_ps || police->avrate || police->overhead) {
+      |                                                                  ^~
+drivers/net/dsa/yt921x.c: At top level:
+drivers/net/dsa/yt921x.c:1374:42: warning: ‘struct flow_action_police’ declared inside parameter list will not be visible outside of this definition or declaration
+ 1374 |                             const struct flow_action_police *police,
+      |                                          ^~~~~~~~~~~~~~~~~~
+drivers/net/dsa/yt921x.c: In function ‘yt921x_dsa_port_policer_add’:
+drivers/net/dsa/yt921x.c:1382:38: error: passing argument 1 of ‘yt921x_police_validate’ from incompatible pointer type [-Werror=incompatible-pointer-types]
+ 1382 |         res = yt921x_police_validate(police, NULL, NULL, extack);
+      |                                      ^~~~~~
+      |                                      |
+      |                                      const struct flow_action_police *
+drivers/net/dsa/yt921x.c:1298:57: note: expected ‘const struct flow_action_police *’ but argument is of type ‘const struct flow_action_police *’
+ 1298 | yt921x_police_validate(const struct flow_action_police *police,
+      |                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~
+drivers/net/dsa/yt921x.c:1386:49: error: passing argument 2 of ‘yt921x_marker_tfm_police’ from incompatible pointer type [-Werror=incompatible-pointer-types]
+ 1386 |         res = yt921x_marker_tfm_police(&marker, police, 0, priv, port, extack);
+      |                                                 ^~~~~~
+      |                                                 |
+      |                                                 const struct flow_action_police *
+drivers/net/dsa/yt921x.c:1267:59: note: expected ‘const struct flow_action_police *’ but argument is of type ‘const struct flow_action_police *’
+ 1267 |                          const struct flow_action_police *police,
+      |                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~
+drivers/net/dsa/yt921x.c: In function ‘yt921x_acl_rule_ext_parse_flow_action’:
+drivers/net/dsa/yt921x.c:2096:67: error: initialization of ‘const struct flow_action_police *’ from incompatible pointer type ‘const struct <anonymous> *’ [-Werror=incompatible-pointer-types]
+ 2096 |                         const struct flow_action_police *police = &act->police;
+      |                                                                   ^
+drivers/net/dsa/yt921x.c:2106:54: error: passing argument 1 of ‘yt921x_police_validate’ from incompatible pointer type [-Werror=incompatible-pointer-types]
+ 2106 |                         res = yt921x_police_validate(police, flow_action, act,
+      |                                                      ^~~~~~
+      |                                                      |
+      |                                                      const struct flow_action_police *
+drivers/net/dsa/yt921x.c:1298:57: note: expected ‘const struct flow_action_police *’ but argument is of type ‘const struct flow_action_police *’
+ 1298 | yt921x_police_validate(const struct flow_action_police *police,
+      |                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~
+drivers/net/dsa/yt921x.c:2111:74: error: passing argument 2 of ‘yt921x_marker_tfm_police’ from incompatible pointer type [-Werror=incompatible-pointer-types]
+ 2111 |                         res = yt921x_marker_tfm_police(&ruleext->marker, police,
+      |                                                                          ^~~~~~
+      |                                                                          |
+      |                                                                          const struct flow_action_police *
+drivers/net/dsa/yt921x.c:1267:59: note: expected ‘const struct flow_action_police *’ but argument is of type ‘const struct flow_action_police *’
+ 1267 |                          const struct flow_action_police *police,
+      |                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~
+drivers/net/dsa/yt921x.c: In function ‘yt921x_acl_add’:
+drivers/net/dsa/yt921x.c:2394:26: error: implicit declaration of function ‘kvzalloc_obj’; did you mean ‘kvzalloc_node’? [-Werror=implicit-function-declaration]
+ 2394 |                 aclblk = kvzalloc_obj(*aclblk);
+      |                          ^~~~~~~~~~~~
+      |                          kvzalloc_node
+drivers/net/dsa/yt921x.c:2394:24: warning: assignment to ‘struct yt921x_acl_blk *’ from ‘int’ makes pointer from integer without a cast [-Wint-conversion]
+ 2394 |                 aclblk = kvzalloc_obj(*aclblk);
+      |                        ^
+drivers/net/dsa/yt921x.c: In function ‘yt921x_bridge_flags’:
+drivers/net/dsa/yt921x.c:3644:38: error: implicit declaration of function ‘dsa_bridge_ports’; did you mean ‘dsa_cpu_ports’? [-Werror=implicit-function-declaration]
+ 3644 |                         ports_mask = dsa_bridge_ports(ds, bdev);
+      |                                      ^~~~~~~~~~~~~~~~
+      |                                      dsa_cpu_ports
+drivers/net/dsa/yt921x.c: At top level:
+drivers/net/dsa/yt921x.c:4816:35: error: initialization of ‘int (*)(struct dsa_switch *, int,  struct dsa_mall_policer_tc_entry *)’ from incompatible pointer type ‘int (*)(struct dsa_switch *, int,  const struct flow_action_police *, struct netlink_ext_ack *)’ [-Werror=incompatible-pointer-types]
+ 4816 |         .port_policer_add       = yt921x_dsa_port_policer_add,
+      |                                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+drivers/net/dsa/yt921x.c:4816:35: note: (near initialization for ‘yt921x_dsa_switch_ops.port_policer_add’)
+cc1: some warnings being treated as errors
+make[5]: *** [scripts/Makefile.build:287: drivers/net/dsa/yt921x.o] Error 1
+make[4]: *** [scripts/Makefile.build:556: drivers/net/dsa] Error 2
+make[3]: *** [scripts/Makefile.build:556: drivers/net] Error 2
+make[2]: *** [scripts/Makefile.build:556: drivers] Error 2
+make[1]: *** [/root/linux-dts/Makefile:2010: .] Error 2
+make: *** [Makefile:248: __sub-make] Error 2

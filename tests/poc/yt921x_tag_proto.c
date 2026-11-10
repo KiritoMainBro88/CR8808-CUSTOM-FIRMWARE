@@ -264,3 +264,74 @@ nss_classify_status_t nss_sim_classify_packet(const uint8_t *buf, size_t len,
     if (extracted_vid) *extracted_vid = 0;
     return NSS_CLASSIFY_UNRECOGNIZED_PROTO;
 }
+
+int yt921x_validate_tag_proto_id(uint32_t proto_id)
+{
+    /* Upstream Linux 6.18 allocation boundary is 0..32 */
+    if (proto_id <= 32) {
+        return YT921X_OK;
+    }
+    /* zcop out-of-tree vendor allocation range (patch 968) */
+    if (proto_id >= 36 && proto_id <= 38) {
+        return 1; /* Valid vendor extension, unallocated in upstream mainline */
+    }
+    return YT921X_ERR_INVAL;
+}
+
+int yt921x_sim_change_tag_protocol(uint32_t new_proto, uint32_t *active_proto, uint32_t *reg_ext_cpu)
+{
+    if (!active_proto || !reg_ext_cpu) {
+        return YT921X_ERR_INVAL;
+    }
+
+    if (new_proto == DSA_TAG_PROTO_YT921X_VALUE) {
+        /* Proprietary 8-byte tag mode: hardware MUST enable CPU port tag */
+        *active_proto = new_proto;
+        *reg_ext_cpu |= YT921X_EXT_CPU_PORT_TAG_EN;
+        return YT921X_OK;
+    }
+
+    if (new_proto == DSA_TAG_PROTO_YT921X_8021Q_VALUE ||
+        new_proto == DSA_TAG_PROTO_NONE_VALUE) {
+        /* 802.1Q or untagged mode: hardware CPU port tag enforcement must be CLEARED */
+        *active_proto = new_proto;
+        *reg_ext_cpu &= ~YT921X_EXT_CPU_PORT_TAG_EN;
+        return YT921X_OK;
+    }
+
+    return YT921X_ERR_INVAL;
+}
+
+bool yt921x_sim_check_port_isolation(uint8_t src_port, uint8_t dst_port)
+{
+    /* Validation of bounds */
+    if (src_port >= YT921X_MAX_PORTS || dst_port >= YT921X_MAX_PORTS) {
+        return false;
+    }
+    if (src_port == dst_port) {
+        return false; /* No hairpin unless explicit */
+    }
+
+    /* LAN ports: 0, 1, 2 */
+    bool src_is_lan = (src_port <= YT921X_PORT_LAN3);
+    bool dst_is_lan = (dst_port <= YT921X_PORT_LAN3);
+    bool src_is_wan = (src_port == YT921X_PORT_WAN);
+    bool dst_is_wan = (dst_port == YT921X_PORT_WAN);
+
+    /* Hardware Isolation Policy: LAN <-> WAN direct L2 forwarding is strictly FORBIDDEN */
+    if ((src_is_lan && dst_is_wan) || (src_is_wan && dst_is_lan)) {
+        return false;
+    }
+
+    /* CPU Conduit Access */
+    if (src_is_lan && dst_port == YT921X_PORT_CPU1) return true;  /* LAN to eth1 */
+    if (src_is_wan && dst_port == YT921X_PORT_CPU2) return true;  /* WAN to eth0 */
+    if (src_port == YT921X_PORT_CPU1 && dst_is_lan) return true;  /* eth1 to LAN */
+    if (src_port == YT921X_PORT_CPU2 && dst_is_wan) return true;  /* eth0 to WAN */
+
+    /* LAN to LAN bridging within switch */
+    if (src_is_lan && dst_is_lan) return true;
+
+    return false;
+}
+

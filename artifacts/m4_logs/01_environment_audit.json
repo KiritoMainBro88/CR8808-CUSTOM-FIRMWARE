@@ -1,0 +1,23 @@
+{
+  "host_gcc": "gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+  "target_gcc": "aarch64-linux-gnu-gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+  "dtc_version": "Version: DTC 1.6.1",
+  "dt_validate": "2026.9",
+  "linux_618_head": "91302badd0ab79d14dc73269d2728232cd017b0e",
+  "yangfl_openwrt": {
+    "commit": "6729bbe9f082dc15449f17908832447caeec5065",
+    "summary": "6729bbe qualcommax: ipq50xx: add support for Xiaomi CR8818"
+  },
+  "zcop_immortalwrt": {
+    "commit": "c5ad88b702dc2374c9d67141693cc06cce742dc8",
+    "summary": "c5ad88b docs: record scheduler controls and UART recovery"
+  },
+  "kuncy7_openwrt_nss_edma": {
+    "commit": "047ee4cea18d66189b4f7adddbac76c2373658fb",
+    "summary": "047ee4c ci: ipq50xx: keep the source archives between builds"
+  },
+  "kuncy7_nss_packages": {
+    "commit": "c94a78031ddc7695b2b7a0c5b91421f7b032ed92",
+    "summary": "c94a780 qca-nss-drv: reset truesize when reusing a tx skb as a receive buffer"
+  }
+}

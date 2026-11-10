@@ -1,0 +1,10 @@
+TARGET: net/dsa/tag_yt921x.o
+STATUS: KERNEL_KBUILD_PASS
+EXIT CODE: 0
+=== STDOUT ===
+make: Entering directory '/root/linux-dts'
+  CALL    scripts/checksyscalls.sh
+  CC [M]  net/dsa/tag_yt921x.o
+make: Leaving directory '/root/linux-dts'
+
+=== STDERR ===

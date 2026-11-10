@@ -199,6 +199,37 @@ nss_classify_status_t nss_sim_classify_packet(const uint8_t *buf, size_t len,
                                               uint16_t *parsed_l3_proto,
                                               uint16_t *extracted_vid);
 
+/* DSA Protocol Allocation IDs (M4 Kernel Enum Audit) */
+#define DSA_TAG_PROTO_NONE_VALUE        0
+#define DSA_TAG_PROTO_8021Q_VALUE       12
+#define DSA_TAG_PROTO_YT921X_VALUE      32      /* Upstream backport patch 967-02 */
+#define DSA_TAG_PROTO_YT921X_8021Q_VALUE 36     /* zcop pending patch 968 (Option B / vendor) */
+#define DSA_TAG_PROTO_YT921X_QINQ_VALUE 37      /* zcop pending patch 968 */
+#define DSA_TAG_PROTO_YT921X_ENHANCED_VALUE 38  /* zcop pending patch 968 */
+
+/* Switch Hardware Register Offsets & Bits (M4 Register Audit) */
+#define YT921X_REG_EXT_CPU_PORT         0x8000c
+#define YT921X_EXT_CPU_PORT_TAG_EN      (1U << 0)
+#define YT921X_REG_VLAN_CTRL            0x80010
+
+/**
+ * Validate DSA Tag Protocol ID against Linux 6.18 upstream allocations.
+ * Returns YT921X_OK if valid, negative error if unallocated/out-of-tree.
+ */
+int yt921x_validate_tag_proto_id(uint32_t proto_id);
+
+/**
+ * Simulate switch change_tag_protocol callback and hardware register reprogramming.
+ * Updates active_proto and clears/sets YT921X_EXT_CPU_PORT_TAG_EN in reg_ext_cpu.
+ */
+int yt921x_sim_change_tag_protocol(uint32_t new_proto, uint32_t *active_proto, uint32_t *reg_ext_cpu);
+
+/**
+ * Simulate switch L2 hardware port isolation matrix.
+ * Returns true if direct L2 hardware forwarding is permitted, false if isolated.
+ */
+bool yt921x_sim_check_port_isolation(uint8_t src_port, uint8_t dst_port);
+
 #ifdef __cplusplus
 }
 #endif

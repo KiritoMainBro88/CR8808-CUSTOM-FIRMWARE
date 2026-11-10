@@ -1,0 +1,207 @@
+From: Gemini <gemini@antigravity.internal>
+Date: Tue, 10 Nov 2026 01:00:00 +0700
+Subject: [PATCH 1/2] net: dsa: add 802.1Q tag driver for Motorcomm YT921x switches
+
+The Motorcomm YT9215SC switch driver natively injects an 8-byte proprietary
+CPU tag with hardware-default TPID 0x9988 (ETH_P_YT921X). When Qualcomm NSS
+hardware acceleration (qca-dwmac-nss / retail_router0.bin) is active on the
+IPQ5018 SoC, frames with TPID 0x9988 cannot be parsed by the NSS hardware parser,
+causing packet classification failures or slow-path punt exceptions.
+
+This patch adds tag_yt921x_8021q to the DSA tagging subsystem for Linux 6.18:
+1. Allocates DSA_TAG_PROTO_YT921X_8021Q_VALUE = 36 in include/net/dsa.h.
+2. Implements net/dsa/tag_yt921x_8021q.c using Linux 6.x DSA APIs (dsa_user_to_port,
+   dsa_tag_8021q_find_user, dsa_8021q_xmit, dsa_8021q_rcv).
+3. Connects Kconfig NET_DSA_TAG_YT921X_8021Q and Makefile wiring.
+4. Enables standard IEEE 802.1Q VLAN-based port identification on the CPU conduit,
+   allowing Qualcomm NSS parser to classify L2/L3 headers natively without proprietary
+   tag collisions.
+
+Signed-off-by: Gemini <gemini@antigravity.internal>
+---
+diff --git a/include/net/dsa.h b/include/net/dsa.h
+index d73ea088..9147885d 100644
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -38,6 +38,7 @@ struct tc_action;
+ #define DSA_TAG_PROTO_QCA_VALUE			10
+ #define DSA_TAG_PROTO_TRAILER_VALUE		11
+ #define DSA_TAG_PROTO_8021Q_VALUE		12
++#define DSA_TAG_PROTO_YT921X_8021Q_VALUE	36
+ #define DSA_TAG_PROTO_SJA1105_VALUE		13
+ #define DSA_TAG_PROTO_KSZ8795_VALUE		14
+ #define DSA_TAG_PROTO_OCELOT_VALUE		15
+@@ -72,6 +73,7 @@ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_QCA		= DSA_TAG_PROTO_QCA_VALUE,
+ 	DSA_TAG_PROTO_TRAILER		= DSA_TAG_PROTO_TRAILER_VALUE,
+ 	DSA_TAG_PROTO_8021Q		= DSA_TAG_PROTO_8021Q_VALUE,
++	DSA_TAG_PROTO_YT921X_8021Q	= DSA_TAG_PROTO_YT921X_8021Q_VALUE,
+ 	DSA_TAG_PROTO_SJA1105		= DSA_TAG_PROTO_SJA1105_VALUE,
+ 	DSA_TAG_PROTO_KSZ8795		= DSA_TAG_PROTO_KSZ8795_VALUE,
+ 	DSA_TAG_PROTO_OCELOT		= DSA_TAG_PROTO_OCELOT_VALUE,
+diff --git a/net/dsa/Kconfig b/net/dsa/Kconfig
+index 869cbe57..158d85ac 100644
+--- a/net/dsa/Kconfig
++++ b/net/dsa/Kconfig
+@@ -190,4 +190,12 @@ config NET_DSA_TAG_XRS700X
+ 	  Say Y or M if you want to enable support for tagging frames for
+ 	  Arrow SpeedChips XRS700x switches that use a single byte tag trailer.
+ 
++config NET_DSA_TAG_YT921X_8021Q
++	tristate "802.1Q tag driver for Motorcomm YT921x switches"
++	select NET_DSA_TAG_8021Q
++	help
++	  Say Y or M if you want to enable support for tagging frames for
++	  Motorcomm YT921x switches using standard 802.1Q VLAN headers for
++	  Qualcomm NSS acceleration compatibility.
++
+ endif
+diff --git a/net/dsa/Makefile b/net/dsa/Makefile
+index 555c07cf..b4e26b89 100644
+--- a/net/dsa/Makefile
++++ b/net/dsa/Makefile
+@@ -42,3 +42,4 @@ obj-$(CONFIG_NET_DSA_TAG_XRS700X) += tag_xrs700x.o
+ 
+ # for tracing framework to find trace.h
+ CFLAGS_trace.o := -I$(src)
++obj-$(CONFIG_NET_DSA_TAG_YT921X_8021Q) += tag_yt921x_8021q.o
+diff --git a/net/dsa/tag_yt921x_8021q.c b/net/dsa/tag_yt921x_8021q.c
+new file mode 100755
+index 00000000..02cc692e
+--- /dev/null
++++ b/net/dsa/tag_yt921x_8021q.c
+@@ -0,0 +1,134 @@
++// SPDX-License-Identifier: GPL-2.0
++/* 802.1Q VLAN-based tag driver for the Motorcomm YT921x switch
++ *
++ * The YT921x can either prepend its own 8-byte tag (ETH_P_YT921X) to the
++ * frames it delivers to the CPU port, or speak plain 802.1Q there: the
++ * source port then travels in a VLAN tag the switch inserts from its VLAN
++ * table (3072 + port for a standalone port, 3088 + n for bridge n), the
++ * same wire format as tag_qca_8021q, tag_rtl8365mb_8021q and
++ * tag_an8855_8021q.
++ *
++ * The switch side is in the driver (yt921x_change_tag_protocol and the
++ * tag_8021q_vlan_add/del hooks).
++ */
++#include <linux/dsa/8021q.h>
++#include <linux/if_bridge.h>
++#include <linux/if_vlan.h>
++#include <net/dsa.h>
++
++#include "tag.h"
++#include "tag_8021q.h"
++
++#define YT921X_8021Q_NAME "yt921x-8021q"
++
++static struct sk_buff *yt921x_8021q_xmit(struct sk_buff *skb,
++					 struct net_device *netdev)
++{
++	struct dsa_port *dp = dsa_user_to_port(netdev);
++	u16 queue_mapping = skb_get_queue_mapping(skb);
++	u16 tx_vid = dsa_tag_8021q_standalone_vid(dp);
++	u8 pcp;
++
++	if (skb->offload_fwd_mark) {
++		unsigned int bridge_num = dsa_port_bridge_num_get(dp);
++		struct net_device *br = dsa_port_bridge_dev_get(dp);
++
++		if (unlikely(!br))
++			return NULL;
++
++		/* A VLAN-aware bridge carries its own VID; the switch
++		 * forwards on that one.
++		 */
++		if (br_vlan_enabled(br))
++			return skb;
++
++		tx_vid = dsa_tag_8021q_bridge_vid(bridge_num);
++	}
++
++	pcp = netdev_txq_to_tc(netdev, queue_mapping);
++
++	return dsa_8021q_xmit(skb, netdev, ETH_P_8021Q,
++			      ((pcp << VLAN_PRIO_SHIFT) | tx_vid));
++}
++
++/* Inactive VLAN configuration of an unaware bridge must not select RX. */
++static struct net_device *yt921x_8021q_find_bridge_vlan(struct net_device *conduit,
++							u16 vid)
++{
++	struct dsa_port *cpu_dp = conduit->dsa_ptr;
++	struct bridge_vlan_info vinfo;
++	struct dsa_port *dp;
++
++	dsa_tree_for_each_user_port(dp, cpu_dp->dst) {
++		if (dp->cpu_dp != cpu_dp || !dp->user || !dp->bridge ||
++		    !dsa_port_is_vlan_filtering(dp))
++			continue;
++		if (dp->stp_state != BR_STATE_LEARNING &&
++		    dp->stp_state != BR_STATE_FORWARDING)
++			continue;
++		if (!br_vlan_get_info_rcu(dp->user, vid, &vinfo))
++			return dp->user;
++	}
++	return NULL;
++}
++
++static struct sk_buff *yt921x_8021q_rcv(struct sk_buff *skb,
++					struct net_device *netdev)
++{
++	int src_port = -1, switch_id = -1, vbid = -1, vid = -1;
++
++	/* The conduit is promiscuous for the sake of the tag_8021q VIDs,
++	 * and a promiscuous MAC passes MAC control frames up as well.
++	 */
++	if (unlikely(eth_hdr(skb)->h_proto == htons(ETH_P_PAUSE)))
++		return NULL;
++
++	/* The generic decoder assumes a complete VLAN header. Reject plain
++	 * Ethernet, old proprietary tags and truncated input before calling it.
++	 */
++	if (skb_vlan_tag_present(skb)) {
++		if (skb->vlan_proto != htons(ETH_P_8021Q))
++			return NULL;
++	} else if (eth_hdr(skb)->h_proto != htons(ETH_P_8021Q) ||
++		   !pskb_may_pull(skb, VLAN_HLEN)) {
++		return NULL;
++	}
++
++	dsa_8021q_rcv(skb, &src_port, &switch_id, &vbid, &vid);
++
++	/* Bridge VLAN metadata must reach a live member of that bridge,
++	 * never an unrelated direct port VLAN upper with the same VID.
++	 */
++	if (vid >= 0 && !vid_is_dsa_8021q(vid) && skb_vlan_tag_present(skb))
++		skb->dev = yt921x_8021q_find_bridge_vlan(netdev, vid);
++	else
++		skb->dev = dsa_tag_8021q_find_user(netdev, src_port, switch_id,
++						   vid, vbid);
++	if (!skb->dev ||
++	    dsa_user_to_port(skb->dev)->cpu_dp != netdev->dsa_ptr) {
++		net_warn_ratelimited("%s: dropped frame from %pM proto 0x%04x: src_port=%d switch_id=%d vid=%d vbid=%d\n",
++				     netdev->name, eth_hdr(skb)->h_source,
++				     ntohs(eth_hdr(skb)->h_proto), src_port,
++				     switch_id, vid, vbid);
++		return NULL;
++	}
++
++	dsa_default_offload_fwd_mark(skb);
++
++	return skb;
++}
++
++static const struct dsa_device_ops yt921x_8021q_netdev_ops = {
++	.name			= YT921X_8021Q_NAME,
++	.proto			= DSA_TAG_PROTO_YT921X_8021Q,
++	.xmit			= yt921x_8021q_xmit,
++	.rcv			= yt921x_8021q_rcv,
++	.needed_headroom	= VLAN_HLEN,
++	.promisc_on_conduit	= true,
++};
++
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("DSA tag driver for Motorcomm YT921x switches, using VLAN");
++MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_YT921X_8021Q, YT921X_8021Q_NAME);
++
++module_dsa_tag_driver(yt921x_8021q_netdev_ops);

@@ -438,10 +438,133 @@ static void test_group7_simulation_boundaries_and_disclaimer(void)
     TEST_ASSERT(l3_proto == ETH_P_IP, "[SIMULATION] Untagged L3 proto identified as IPv4");
 }
 
+/* =========================================================================
+ * TEST GROUP 8: DSA Tag Protocol Enum Audit & Protocol Switching Model (M4)
+ * ========================================================================= */
+static void test_group8_dsa_enum_and_tag_switching(void)
+{
+    printf("\n=== Test Group 8: DSA Tag Protocol Enum & Switching (M4 Audit) ===\n");
+
+    /* 8.1 Protocol ID Validation */
+    int rc = yt921x_validate_tag_proto_id(DSA_TAG_PROTO_YT921X_VALUE);
+    TEST_ASSERT(rc == YT921X_OK,
+                "[ENUM] DSA_TAG_PROTO_YT921X (32) within upstream Linux 6.18/6.19 allocation");
+
+    rc = yt921x_validate_tag_proto_id(DSA_TAG_PROTO_YT921X_8021Q_VALUE);
+    TEST_ASSERT(rc == 1,
+                "[ENUM] DSA_TAG_PROTO_YT921X_8021Q (36) identified as vendor extension (patch 968)");
+
+    rc = yt921x_validate_tag_proto_id(DSA_TAG_PROTO_YT921X_ENHANCED_VALUE);
+    TEST_ASSERT(rc == 1,
+                "[ENUM] DSA_TAG_PROTO_YT921X_ENHANCED (38) identified as vendor extension (patch 968)");
+
+    rc = yt921x_validate_tag_proto_id(99);
+    TEST_ASSERT(rc == YT921X_ERR_INVAL,
+                "[ENUM] Invalid protocol ID (99) rejected");
+
+    /* 8.2 Protocol Switching & Hardware Register Synchronization */
+    uint32_t active_proto = DSA_TAG_PROTO_YT921X_VALUE;
+    uint32_t reg_ext_cpu = YT921X_EXT_CPU_PORT_TAG_EN;
+
+    /* Switch from 32 (8-byte tag) to 36 (802.1Q) */
+    rc = yt921x_sim_change_tag_protocol(DSA_TAG_PROTO_YT921X_8021Q_VALUE, &active_proto, &reg_ext_cpu);
+    TEST_ASSERT(rc == YT921X_OK,
+                "[SWITCH] Transition to DSA_TAG_PROTO_YT921X_8021Q succeeds");
+    TEST_ASSERT(active_proto == DSA_TAG_PROTO_YT921X_8021Q_VALUE,
+                "[SWITCH] Active protocol updated to 36");
+    TEST_ASSERT((reg_ext_cpu & YT921X_EXT_CPU_PORT_TAG_EN) == 0,
+                "[REGISTER] Reg 0x8000c TAG_EN cleared (enables 802.1Q bypass)");
+
+    /* Switch to Untagged Mode (DSA_TAG_PROTO_NONE) */
+    rc = yt921x_sim_change_tag_protocol(DSA_TAG_PROTO_NONE_VALUE, &active_proto, &reg_ext_cpu);
+    TEST_ASSERT(rc == YT921X_OK,
+                "[SWITCH] Transition to DSA_TAG_PROTO_NONE succeeds");
+    TEST_ASSERT((reg_ext_cpu & YT921X_EXT_CPU_PORT_TAG_EN) == 0,
+                "[REGISTER] Reg 0x8000c TAG_EN remains cleared for untagged WAN");
+
+    /* Switch back to 8-byte Tag Mode */
+    rc = yt921x_sim_change_tag_protocol(DSA_TAG_PROTO_YT921X_VALUE, &active_proto, &reg_ext_cpu);
+    TEST_ASSERT(rc == YT921X_OK,
+                "[SWITCH] Transition back to DSA_TAG_PROTO_YT921X succeeds");
+    TEST_ASSERT((reg_ext_cpu & YT921X_EXT_CPU_PORT_TAG_EN) != 0,
+                "[REGISTER] Reg 0x8000c TAG_EN re-enabled for proprietary tag");
+
+    /* Reject invalid protocol transition */
+    rc = yt921x_sim_change_tag_protocol(99, &active_proto, &reg_ext_cpu);
+    TEST_ASSERT(rc == YT921X_ERR_INVAL,
+                "[SWITCH] Invalid protocol transition rejected");
+}
+
+/* =========================================================================
+ * TEST GROUP 9: Switch Register Programming & Port Isolation Matrix (M4)
+ * ========================================================================= */
+static void test_group9_switch_register_and_isolation(void)
+{
+    printf("\n=== Test Group 9: Switch Register Programming & Port Isolation (M4) ===\n");
+
+    /* 9.1 L2 Hardware Isolation Matrix */
+    bool allowed = yt921x_sim_check_port_isolation(YT921X_PORT_LAN1, YT921X_PORT_LAN2);
+    TEST_ASSERT(allowed == true,
+                "[ISOLATION] LAN1 (Port 0) -> LAN2 (Port 1) hardware bridging permitted");
+
+    allowed = yt921x_sim_check_port_isolation(YT921X_PORT_LAN1, YT921X_PORT_WAN);
+    TEST_ASSERT(allowed == false,
+                "[ISOLATION] LAN1 (Port 0) -> WAN (Port 3) direct L2 traffic BLOCKED by switch");
+
+    allowed = yt921x_sim_check_port_isolation(YT921X_PORT_WAN, YT921X_PORT_LAN1);
+    TEST_ASSERT(allowed == false,
+                "[ISOLATION] WAN (Port 3) -> LAN1 (Port 0) direct L2 traffic BLOCKED by switch");
+
+    allowed = yt921x_sim_check_port_isolation(YT921X_PORT_WAN, YT921X_PORT_CPU2);
+    TEST_ASSERT(allowed == true,
+                "[ISOLATION] WAN (Port 3) -> CPU2 (Port 4 / eth0) secondary conduit permitted");
+
+    allowed = yt921x_sim_check_port_isolation(YT921X_PORT_LAN1, YT921X_PORT_CPU1);
+    TEST_ASSERT(allowed == true,
+                "[ISOLATION] LAN1 (Port 0) -> CPU1 (Port 8 / eth1) primary conduit permitted");
+
+    allowed = yt921x_sim_check_port_isolation(YT921X_PORT_WAN, YT921X_PORT_CPU1);
+    TEST_ASSERT(allowed == false,
+                "[ISOLATION] WAN (Port 3) -> CPU1 (Port 8 / eth1) primary conduit BLOCKED");
+
+    /* 9.2 Truncated Frames & Error Handling Boundary Tests */
+    ether_frame_t out_frame;
+    rx_metadata_t meta;
+
+    uint8_t short_buf_0[1] = {0};
+    int rc = yt921x_tag_rcv(short_buf_0, 0, &out_frame, &meta);
+    TEST_ASSERT(rc == YT921X_ERR_SHORT,
+                "[BOUNDARY] 0-byte frame rejected with YT921X_ERR_SHORT");
+
+    uint8_t short_buf_13[13] = {0};
+    rc = yt921x_tag_rcv(short_buf_13, sizeof(short_buf_13), &out_frame, &meta);
+    TEST_ASSERT(rc == YT921X_ERR_SHORT,
+                "[BOUNDARY] 13-byte frame (< eth header) rejected with YT921X_ERR_SHORT");
+
+    uint8_t short_buf_21[21] = {0};
+    rc = yt921x_tag_rcv(short_buf_21, sizeof(short_buf_21), &out_frame, &meta);
+    TEST_ASSERT(rc == YT921X_ERR_SHORT,
+                "[BOUNDARY] 21-byte frame (< eth + tag + et) rejected with YT921X_ERR_SHORT");
+
+    /* 9.3 Out of Bounds Port Indices */
+    ether_frame_t tx_frame;
+    memset(&tx_frame, 0, sizeof(tx_frame));
+    uint8_t out_buf[64];
+    size_t out_len = sizeof(out_buf);
+
+    rc = yt921x_tag_xmit(&tx_frame, 10, out_buf, &out_len);
+    TEST_ASSERT(rc == YT921X_ERR_PORT,
+                "[BOUNDARY] Port 10 (>= MAX 9) rejected with YT921X_ERR_PORT");
+
+    rc = yt921x_tag_xmit(&tx_frame, 255, out_buf, &out_len);
+    TEST_ASSERT(rc == YT921X_ERR_PORT,
+                "[BOUNDARY] Port 255 rejected with YT921X_ERR_PORT");
+}
+
 int main(void)
 {
     printf("====================================================================\n");
-    printf("CR8818 NSS + Motorcomm YT9215SC Milestone M3 Test Verification Suite\n");
+    printf("CR8818 NSS + Motorcomm YT9215SC Milestone M4 Test Verification Suite\n");
     printf("Independent Oracle-Verified Testing & Rigorous Boundary Analysis\n");
     printf("====================================================================\n");
 
@@ -452,6 +575,8 @@ int main(void)
     test_group5_qinq_and_mtu();
     test_group6_dual_conduit_topology();
     test_group7_simulation_boundaries_and_disclaimer();
+    test_group8_dsa_enum_and_tag_switching();
+    test_group9_switch_register_and_isolation();
 
     printf("\n====================================================================\n");
     printf("Test Results: %d Passed, %d Failed\n", g_tests_passed, g_tests_failed);
@@ -459,3 +584,4 @@ int main(void)
 
     return (g_tests_failed == 0) ? 0 : 1;
 }
+
