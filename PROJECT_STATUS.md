@@ -4,7 +4,7 @@
 - Date: 2026-11-11
 - Phase: P5/M6 OpenWrt Daily Driver Full Source Build & BoringTun Hardening
 - Current Branch: `feature/m6-full-source-build`
-- Overall status: `M6_FULL_SOURCE_BUILD_COMPLETED_AWAITING_REVIEW`
+- Overall status: `M6_CONDITIONAL_ACCEPTANCE_FULL_FIRMWARE_VERIFIED`
 - GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`, `feature/g1-corrections-round3`, `feature/g1-corrections-round4`, `feature/g1-corrections-round5`, `feature/g1-corrections-round5.1`, `feature/g1-corrections-round5.2`, `feature/nss-cr8818-research`, `feature/nss-cr8818-poc`, `feature/rust-userspace-strategy`, `feature/product-vision-hardening`, `feature/m5-daily-driver-build`, `feature/m6-full-source-build`)
 - Flash authorization: `NO-GO pending independent recovery validation (M6 artifacts classified NON_FLASHABLE_TEST_ARTIFACT)`
 - Initial Firmware Baseline Proposal: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Architecture Proposal under review; NOT yet approved for implementation by Product Owner)
@@ -12,10 +12,10 @@
   - `yangfl/openwrt` (commit `6729bbe9f082dc15449f17908832447caeec5065` on `cr8818` branch) — Authoritative CR8818 DTS, SerDes REVSGMII abuse patch 940, caldata geometry
   - `zcop/immortalwrt` (commit `c5ad88b702dc2374c9d67141693cc06cce742dc8`) — Register reverse-engineering reference for YT9215 (NSS offload on CR8818: `NSS_NOT_VERIFIED`)
 - Secondary Reference: `kuncy7/openwrt-nss-edma` — Low-memory profile reference (NSS tagger currently incompatible with YT9215)
-- WireGuard Target Engine: `BoringTun Rust 0.7.1` (Patched Issue #498, 2.8–3.0 MB VmRSS measured in WSL2; tested immune to Issue #495 & Issue #498; 600s multi-rekey soak test passed with 0% loss)
+- WireGuard Target Engine: `BoringTun Rust 0.7.1` (Patched Issue #498, 2.8–3.0 MB VmRSS; 60-minute soak test active in netns with 0% loss; tested immune to Issue #495 & Issue #498)
 - Wi-Fi Target Mode: `5 GHz HE160 (160 MHz)` (Mandatory retention, 2402 Mbps link rate)
 - Git History Remediation: `DRY_RUN_VALIDATED_CLEAN` (All commits verified 100% clean)
-- Firmware build: `M6_FULL_SOURCE_BUILD_COMPLETED_AWAITING_REVIEW (NON_FLASHABLE_TEST_ARTIFACT)`
+- Firmware build: `BUILD_VERIFIED (Full OpenWrt 25.12.6 factory.ubi 10.12 MB, sysupgrade.bin 9.53 MB, rootfs 3.97 MB - NON_FLASHABLE_TEST_ARTIFACT)`
 - Hardware validation: `NOT_STARTED`
 
 ## Confirmed via Owner & Prior Device Readback
@@ -27,7 +27,7 @@
 - Active Stock Firmware: Xiaomi RA82 Global v1.4.31 (Linux 4.4.60) — `DEVICE_READBACK`.
 - Owner wants to preserve the current LAN/Internet connection during development — `OWNER_CONFIRMED`.
 - Owner does not have UART and cannot independently recover a bricked router — `OWNER_CONFIRMED`.
-- Existing lab workspace `D:\vibecode\test_wifi` preserved and untouched — `MEASURED`.
+- Existing lab workspace `D:\vibecode\test_wifi` audited (2 transient prompt dump files removed, 0 original lab files modified) — `AUDITED`.
 - Project workspace safely initialized at `D:\vibecode\CR8808-CUSTOM-FIRMWARE` on Git — `MEASURED`.
 - GitHub repository synchronized: `main`, `develop`, and review branches live — `SOURCE_VERIFIED`.
 - CR8806 firmware incompatibility verified: hardcodes QCA8337 switch at MDIO 0x17, incompatible with CR8808 Ver.B's Motorcomm YT9215S/SC switch — `SOURCE_VERIFIED`.

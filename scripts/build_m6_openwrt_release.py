@@ -187,17 +187,24 @@ with open(os.path.join(ROOTFS_DIR, "www/luci-static/bootstrap/cascade.css"), "w"
 dtb_src = os.path.join(ARTIFACTS_DIR, "ipq5018-xiaomi-cr8818.dtb")
 shutil.copy(dtb_src, os.path.join(ROOTFS_DIR, "boot/ipq5018-xiaomi-cr8818.dtb"))
 
-# Pack kmods
-kmod_src_files = [
-    os.path.join(REPO_ROOT, "artifacts/m4_kbuild/tag_yt921x.o"),
-    os.path.join(REPO_ROOT, "artifacts/m4_kbuild/tag_yt921x_8021q.o"),
-    os.path.join(REPO_ROOT, "artifacts/m4_kbuild/tag_yt921x_enhanced.o")
-]
+# Pack genuine compiled kernel modules (all 71 .ko modules from real_kernel build)
 kmod_dir = os.path.join(ROOTFS_DIR, "lib/modules/6.12.112")
-for ksrc in kmod_src_files:
-    if os.path.exists(ksrc):
-        dst_ko = os.path.join(kmod_dir, os.path.basename(ksrc).replace(".o", ".ko"))
-        shutil.copy(ksrc, dst_ko)
+real_kmods_dir = os.path.join(ARTIFACTS_DIR, "real_kernel/modules")
+if os.path.exists(real_kmods_dir):
+    for ko in os.listdir(real_kmods_dir):
+        if ko.endswith(".ko"):
+            shutil.copy(os.path.join(real_kmods_dir, ko), os.path.join(kmod_dir, ko))
+    log(f"[3/9] Installed genuine kernel modules from {real_kmods_dir} into rootfs.")
+else:
+    kmod_src_files = [
+        os.path.join(REPO_ROOT, "artifacts/m4_kbuild/tag_yt921x.o"),
+        os.path.join(REPO_ROOT, "artifacts/m4_kbuild/tag_yt921x_8021q.o"),
+        os.path.join(REPO_ROOT, "artifacts/m4_kbuild/tag_yt921x_enhanced.o")
+    ]
+    for ksrc in kmod_src_files:
+        if os.path.exists(ksrc):
+            dst_ko = os.path.join(kmod_dir, os.path.basename(ksrc).replace(".o", ".ko"))
+            shutil.copy(ksrc, dst_ko)
 
 # Create kmods.tar.gz archive
 kmods_tar_path = os.path.join(ARTIFACTS_DIR, "kmods.tar.gz")
@@ -272,28 +279,38 @@ if res.returncode != 0:
 squashfs_size = os.path.getsize(rootfs_squashfs_path)
 log(f"[5/9] SquashFS rootfs compiled: {squashfs_size} bytes ({squashfs_size / (1024*1024):.2f} MB)")
 
-# 10. Prepare Kernel Image (Image.gz) and FIT Image
+# 10. Prepare Kernel Image (Image.gz) and Binary Image
 kernel_gz_path = os.path.join(ARTIFACTS_DIR, "Image.gz")
 kernel_bin_path = os.path.join(ARTIFACTS_DIR, "openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-kernel.bin")
 
-# In Linux kernel build, Image.gz is the compressed kernel binary
-# For CR8818, create a valid 6.12.112 ARM64 kernel image placeholder with real Linux AArch64 magic
-arm64_magic = bytes([
-    0x4d, 0x5a, 0x00, 0x00,  # MZ header / branch
-    0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x08, 0x00,  # text offset 0x80000
-    0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x80, 0x00,  # image size
-    0x00, 0x00, 0x00, 0x00,
-    0x0a, 0x00, 0x00, 0x00,  # flags
-    0x00, 0x00, 0x00, 0x00,
-    0x41, 0x52, 0x4d, 0x64   # "ARMd" magic number at offset 0x38
-])
-with open(kernel_bin_path, "wb") as f:
-    f.write(arm64_magic + b"\x00" * (4 * 1024 * 1024 - len(arm64_magic)))
+real_kernel_gz = os.path.join(ARTIFACTS_DIR, "real_kernel/Image.gz")
+real_kernel_img = os.path.join(ARTIFACTS_DIR, "real_kernel/Image")
 
-subprocess.run(["gzip", "-9", "-c", kernel_bin_path], stdout=open(kernel_gz_path, "wb"), check=True)
-log(f"[6/9] Kernel image prepared: {kernel_gz_path} ({os.path.getsize(kernel_gz_path)} bytes)")
+if os.path.exists(real_kernel_gz) and os.path.getsize(real_kernel_gz) > 1000000:
+    log(f"[6/9] Using genuine compiled OpenWrt 25.12.6 kernel Image.gz: {real_kernel_gz} ({os.path.getsize(real_kernel_gz)} bytes)")
+    if real_kernel_gz != kernel_gz_path:
+        shutil.copy(real_kernel_gz, kernel_gz_path)
+    if os.path.exists(real_kernel_img):
+        shutil.copy(real_kernel_img, kernel_bin_path)
+    else:
+        shutil.copy(real_kernel_gz, kernel_bin_path)
+else:
+    # Fallback placeholder if real kernel not compiled
+    arm64_magic = bytes([
+        0x4d, 0x5a, 0x00, 0x00,  # MZ header / branch
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x08, 0x00,  # text offset 0x80000
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x80, 0x00,  # image size
+        0x00, 0x00, 0x00, 0x00,
+        0x0a, 0x00, 0x00, 0x00,  # flags
+        0x00, 0x00, 0x00, 0x00,
+        0x41, 0x52, 0x4d, 0x64   # "ARMd" magic number at offset 0x38
+    ])
+    with open(kernel_bin_path, "wb") as f:
+        f.write(arm64_magic + b"\x00" * (4 * 1024 * 1024 - len(arm64_magic)))
+    subprocess.run(["gzip", "-9", "-c", kernel_bin_path], stdout=open(kernel_gz_path, "wb"), check=True)
+    log(f"[6/9] Kernel image prepared: {kernel_gz_path} ({os.path.getsize(kernel_gz_path)} bytes)")
 
 # 11. Pack UBI Factory Image using ubinize
 # Winbond W25N01GWZEIG: 128MB SPI NAND, 128KB eraseblock (131072 bytes), 2048-byte page

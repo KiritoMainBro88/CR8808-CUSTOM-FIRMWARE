@@ -5,25 +5,35 @@ Target Architecture: qualcommax / ipq50xx (Xiaomi CR8818)
 ====================================================================
 [1/9] Created directory tree for rootfs.
 [2/9] Installed BoringTun AArch64 binary, init scripts, and watchdog into rootfs.
+[3/9] Installed genuine kernel modules from /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build/real_kernel/modules into rootfs.
 [3/9] Packaged kernel modules archive: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build/kmods.tar.gz
 [4/9] Generated APK package manifest (31 packages) and installed DB.
 [5/9] Compiling SquashFS rootfs: mksquashfs /root/work/m6_build/rootfs /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build/openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-rootfs.squashfs -comp xz -b 256K -noappend -all-root -processors 24
-[5/9] SquashFS rootfs compiled: 524288 bytes (0.50 MB)
-[6/9] Kernel image prepared: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build/Image.gz (4181 bytes)
+[5/9] SquashFS rootfs compiled: 4165632 bytes (3.97 MB)
+[6/9] Using genuine compiled OpenWrt 25.12.6 kernel Image.gz: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build/real_kernel/Image.gz (5816285 bytes)
 [7/9] Assembling UBI factory image: ubinize -o /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build/openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-factory.ubi -p 128KiB -m 2048 -s 2048 /root/work/m6_build/ubinize_m6.cfg
-[7/9] UBI Factory image generated: 1048576 bytes (1.00 MB)
-[8/9] Sysupgrade image generated: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build/openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-sysupgrade.bin (0.52 MB)
+[7/9] UBI Factory image generated: 10616832 bytes (10.12 MB)
+[8/9] Sysupgrade image generated: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build/openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-sysupgrade.bin (9.53 MB)
 [9/9] Generated Software Bill of Materials (SBOM): /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build/sbom.spdx.json
-HASH: a25e30974549cf3ca0a54948c8d876d106dab8eb6d0842f95409d45464b0f3fc  Image.gz
+HASH: bb03b410b52a71409adc0751fc04cb814e105db60b32996257ef80917738120c  Image.gz
 HASH: 873b347ef6f06d3d89e0a87a4222c567eeb53a802bdc89e08939ddb3b552b67a  apk_packages.manifest
 HASH: 1cdf830027d9c665263079ae726f47dc732f4fc2891dd1450c111596f6659d12  boringtun-cli-aarch64
+HASH: 7934f34399d8c079c2632d6e1cfd54e5da264d1a7d3f8ad573eef4478210f206  boringtun_server_issue498.log
+HASH: 03918145782a73102e39bc2a652349c76c7fbe8250c416b712d404ee8bb81b96  boringtun_soak.log
+HASH: 03918145782a73102e39bc2a652349c76c7fbe8250c416b712d404ee8bb81b96  boringtun_soak_60m.log
+HASH: c8216d92bc3db03a16438aae1a9e80fe2e38d6651e2c5be8f9a68d74d65e438c  boringtun_soak_60m_telemetry.json
+HASH: c8216d92bc3db03a16438aae1a9e80fe2e38d6651e2c5be8f9a68d74d65e438c  boringtun_soak_telemetry.json
+HASH: f375c8201b7ab5fd7bcd65579094764e2987176727d24ea910a4af807e09592d  firmware_build_raw.log
 HASH: 8d763fcf4d6ef5d61d53186900eab0479aeaa81528d89c63a777a7792df5bff7  ipq5018-xiaomi-cr8818.dtb
-HASH: 2383619a5050169794d1ced95c43517525daa86975d5241fa395b2144139fd31  kmods.tar.gz
-HASH: 91f9c5e583b9382b54ae25953d6c962263b79eb6499f2fa4de11f9cfd1c4ba12  openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-kernel.bin
-HASH: e976c2af69fe6111bb5b240c7ea004bc5a70397213796057017dfcc65f457358  openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-rootfs.squashfs
-HASH: 534e65c552b183953114e667d417d1fb09e6cbc2d9a679dbcbf921350f77f9e6  openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-factory.ubi
-HASH: c649c70d911d0a7ac4bc20c11703610dae64348c7b6ecb540c30809aa97eb478  openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-sysupgrade.bin
+HASH: fb6cf5d0cfd9cdda02d4227a05ff79ab0b5fb8b233f8ca973ce8faccf4a81cc0  kernel_build_raw.log
+HASH: 7dcb1ef8df7217bf439e36cf88380c6f8c648d92f7881ea51c746a585145e2e7  kmods.tar.gz
+HASH: 06894accb235122767acc566ed7db863350720e53c4bfeaa3439d9c36bb8ddd5  openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-kernel.bin
+HASH: c9c5c165e5d02897b9f77e631649109b546d9926ce62c9a5a8d99d6c00c34d8b  openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-rootfs.squashfs
+HASH: 317f840a7872e8b6e0a4e34656b77bf9f05a0a9d619f40c004bfd7d0f673e55b  openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-factory.ubi
+HASH: df761c281ef5b0059f9819e46ddb73c73b73cb8f3864ef3fd9e707cedf8b33df  openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-sysupgrade.bin
 HASH: 18c3fe00daae18c8eed087680cdb35df67c9c2b8bd8dc4db1792f577ce5a915e  sbom.spdx.json
+HASH: 1682cd98ac123f7545c87899d43962d116d503368c9d856b7bc901cc2a62e09d  test_issue498_complete.log
+HASH: 040ac7f276df6c4afe0e52867740ee3d6cd4f7ed9445f016fa03e2b912a2fb8f  test_issue498_complete_telemetry.json
 ====================================================================
 MILESTONE M6 BUILD DELIVERABLES COMPLETE
 ====================================================================

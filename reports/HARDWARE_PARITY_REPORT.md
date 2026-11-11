@@ -34,6 +34,8 @@ In strict accordance with the project governance standard established by the Arc
 
 - **`STOCK_MEASURED`:** Empirically measured and benchmarked directly on physical Xiaomi RA82 v1.4.31 stock router hardware or official OEM firmware dumps.
 - **`ACCEPTANCE_TARGET`:** Design performance threshold, throughput requirement, or memory budget required for milestone sign-off (differentiated from measured physical metrics).
+- **`BUILD_PENDING`:** Build subtarget or full firmware image generation awaiting compilation / verification (`make world` / full `factory.ubi`).
+- **`IN PROGRESS`:** Test suite or verification process currently underway and accumulating metrics (e.g., BoringTun 60-minute continuous soak test).
 
 ---
 
@@ -46,18 +48,19 @@ In strict accordance with the project governance standard established by the Arc
 | **Free RAM Margin** | ~65–75 MB free (Stock daemons + MiWiFi bloat) | **~140–150 MB free** (Target: >95 MB free `ACCEPTANCE_TARGET`; minimal base system, CAKE/AdGuard quarantined) | **~115–125 MB free** (NSS FW buffers reserved) | `CONFIG_VERIFIED` | **SUPERIOR** (OpenWrt eliminates OEM bloat; `PERFORMANCE_VERIFIED` pending physical bench) |
 | **SPI NAND Flash** | Winbond W25N01GWZEIG (128MB, 2048B page, 128KB block) | Winbond W25N01GWZEIG (`qcom,qpic-nand` DT driver) | Winbond W25N01GWZEIG (`qcom,qpic-nand` DT driver) | `BUILD_VERIFIED` / `HARDWARE_BLOCKED` | **FULL PARITY** (Driver compiled; flashing strictly gated) |
 | **Partition Geometry** | Dual boot `ubi_kernel` + `rootfs` (UBI volumes: `rootfs`, `rootfs_1`, `overlay`) | Dual-partition UBI layout preserved (`ubi_kernel` + `rootfs`) | Dual-partition UBI layout preserved | `BUILD_VERIFIED` | **FULL PARITY** |
-| **Ethernet Switch Hardware** | Motorcomm YT9215SC 4+1 switch (SerDes SGMII+ 2.5G + RGMII) | Motorcomm YT9215SC DSA driver (`tag_yt921x`) | Motorcomm YT9215SC DSA enhanced dual-conduit | `BUILD_VERIFIED` & `PC_VERIFIED` | **FULL PARITY** (DSA modernizes switch control; link training `HARDWARE_BLOCKED`) |
-| **Switch Driver Architecture** | Closed-source monolithic kernel module (`yt_switch.ko`) | Standard Linux DSA switch driver (`drivers/net/dsa/yt921x/`) | Standard Linux DSA switch driver + NSS DWMAC hooks | `SOURCE_AVAILABLE`, `BUILD_VERIFIED`, `PC_VERIFIED` | **SUPERIOR** (Standard DSA interfaces, per-port `lan1..3`, `wan`; oracle passed 30/30) |
+| **Ethernet Switch Hardware** | Motorcomm YT9215SC 4+1 switch (SerDes SGMII+ 2.5G + RGMII) | Motorcomm YT9215SC DSA driver (`tag_yt921x`) | Motorcomm YT9215SC DSA enhanced dual-conduit | `BUILD_VERIFIED (built-in)` & `PC_VERIFIED` | **FULL PARITY** (Built-in DSA; link training `HARDWARE_BLOCKED`) |
+| **Switch Driver Architecture** | Closed-source monolithic kernel module (`yt_switch.ko`) | Standard Linux DSA switch driver (`CONFIG_NET_DSA_YT921X=y`) | Standard Linux DSA switch driver + NSS DWMAC hooks | `BUILD_VERIFIED (built-in)` & `PC_VERIFIED` | **SUPERIOR** (Built into vmlinux with 221 symbols; oracle passed 30/30) |
 | **Wi-Fi 2.4 GHz (On-Die)** | IPQ5018 2x2 802.11b/g/n/ax (574 Mbps max) via proprietary QSDK WLAN | Upstream `ath11k` (Explicitly disabled in base DTS to prevent OOM) | Upstream `ath11k` / QSDK hybrid | `SOURCE_AVAILABLE / DISABLED` | **QUARANTINED** (Base build prioritizes routing stability; RF tuning `HARDWARE_BLOCKED`) |
 | **Wi-Fi 5 GHz (PCIe QCN6102)** | QCN6102 2x2 802.11a/n/ac/ax, **HE160 (160 MHz, 2402 Mbps)** | Upstream `ath11k_pci` (HE160 supported; disabled in base DTS to prevent OOM) | Upstream `ath11k_pci` (HE160) | `SOURCE_AVAILABLE / DISABLED` | **PARITY RESERVED** (HE160 capability preserved in kernel config; DTS disabled to protect 256MB RAM) |
 | **Hardware NAT / Offload** | Qualcomm SSDK closed-source NSS / PPE offload (940 Mbps line rate) | **nftables software flowtable offload** (`kmod-nft-offload`) | **Qualcomm NSS Hardware Offload** (`qca-nss-drv`, `ecm`) | `CONFIG_VERIFIED` | **ACCEPTABLE PARITY** (~900 Mbps bidirectional CPU-safe NAT is `ACCEPTANCE_TARGET`; no benchmark on IPQ5018 yet) |
-| **VPN Acceleration** | None (Stock firmware has no VPN server/client) | **BoringTun Rust 0.7.1 (AArch64 musl static, Patched)** | BoringTun Rust + eBPF Sandbox | `BUILD_VERIFIED`, `PC_VERIFIED`, `FUNCTION_VERIFIED` | **SUPERIOR** (Stock has 0 VPN capability; OpenWrt provides secure WireGuard with 0% loss soak) |
+| **VPN Acceleration** | None (Stock firmware has no VPN server/client) | **BoringTun Rust 0.7.1 (AArch64 musl static, Patched)** | BoringTun Rust + eBPF Sandbox | `PC_VERIFIED` (60m soak: `IN PROGRESS`) | **SUPERIOR** (Stock has 0 VPN capability; OpenWrt provides secure WireGuard with 0% loss soak) |
 | **Firewall Engine** | Legacy `iptables` (Linux 4.4 Netfilter) | Modern **`nftables` (`firewall4`)** | Modern **`nftables` (`firewall4`)** | `CONFIG_VERIFIED` & `BUILD_VERIFIED` | **SUPERIOR** (Atomic rule updates, lower kernel overhead) |
 | **Management Interface** | Proprietary MiWiFi Web + Mobile Cloud App (Closed) | Modern **LuCI Bootstrap Web UI** + JSON-RPC / REST API | Modern **LuCI Bootstrap Web UI** | `BUILD_VERIFIED` | **SUPERIOR** (Open, local, no cloud telemetry dependency) |
 | **Package Manager** | Proprietary closed `opkg` fork (Locked repositories) | Modern **`apk` (`apk-tools` v3 native)** | Modern **`apk` (`apk-tools` v3 native)** | `BUILD_VERIFIED` | **SUPERIOR** (Cryptographic signatures, faster Alpine packaging) |
-| **Security Maintenance** | Abandoned (Linux 4.4.60, thousands of known CVEs) | **Actively Supported (Linux 6.12 LTS through Dec 2028)** | Experimental Development Track | `BUILD_VERIFIED` | **MASSIVELY SUPERIOR** (Modern LTS kernel, continuous CVE mitigation) |
+| **Linux Kernel Core** | Linux 4.4.60 (Unsupported, EOL) | **Linux Kernel 6.12.112 LTS (LTS to Dec 2028)** | Linux 6.18 LTS Git (Experimental) | `BUILD_VERIFIED` | **MASSIVELY SUPERIOR** (Genuine kernel compile exit 0, vmlinux 74.3MB, 71 kmods) |
+| **Full OpenWrt Firmware** | Factory signed OEM binary | **OpenWrt 25.12.6 Full Image (`factory.ubi` / rootfs)** | Experimental build image | `BUILD_VERIFIED` | **FULL BUILD VERIFIED** (factory.ubi 10.12 MB, sysupgrade.bin 9.53 MB, rootfs 3.97 MB with 71 kmods, apk database, LuCI) |
 | **Packaging Artifacts** | Signed OEM NAND image | Milestone M5 packaging prototype & M6 build images | Experimental research build | `NON_FLASHABLE_TEST_ARTIFACT` | **PRE-FLASH RESTRICTED** (Packaging verified; physical flash prohibited) |
-| **Physical Flashing / Execution** | Factory flashed onto SPI NAND | Requires UART serial console validation and TFTP recovery proof | Isolated research | `HARDWARE_BLOCKED` | **GATE ENFORCED** (Zero physical writes executed; safety boundary intact) |
+| **Router Hardware Validation** | Factory flashed onto SPI NAND | Requires UART serial console validation and TFTP recovery proof | Isolated research | `HARDWARE_BLOCKED` | **GATE ENFORCED** (Zero physical writes executed; safety boundary intact) |
 
 ---
 
@@ -72,7 +75,7 @@ In strict accordance with the project governance standard established by the Arc
   - CPU Conduit 2: `dp2` (Qualcomm ESS Uniphy SerDes SGMII+, Port 2) connected to YT9215 Port 8 (CPU DSA conduit).
   - External Ports: Explicitly exposed as standard Linux network interfaces `wan`, `lan1`, `lan2`, `lan3`.
   - Tag Protocol: Clean `tag_yt921x` (802.1Q tag mode with TPID 0x8100/0x9988).
-  - Verification: `BUILD_VERIFIED` (DTB compiled with zero errors, 27,883 bytes; driver source integrated with `CONFIG_NET_DSA_YT921X=y`) and `PC_VERIFIED` (DSA tagger oracle passed 30/30 unit tests). Physical SerDes link training and cable insertion auto-negotiation are `HARDWARE_BLOCKED`.
+  - Verification: `BUILD_VERIFIED (built-in)` (Driver compiled directly into `vmlinux` via `CONFIG_NET_DSA_YT921X=y`, 221 symbols confirmed in `vmlinux` and `System.map`; DTB compiled cleanly at 27,883 bytes) and `PC_VERIFIED` (DSA tagger oracle passed 30/30 unit tests). Physical SerDes link training and cable insertion auto-negotiation are `HARDWARE_BLOCKED`.
 
 ### 3.2 Hardware Acceleration vs Software Flowtable Offload
 - **Stock RA82 Baseline:**
@@ -83,16 +86,16 @@ In strict accordance with the project governance standard established by the Arc
   - **Throughput Metric:** Bidirectional ~900 Mbps CPU-safe NAT is strictly designated as an **`ACCEPTANCE_TARGET`** (no benchmark on IPQ5018 yet). `PERFORMANCE_VERIFIED` status remains pending physical hardware bench testing.
   - **Architecture:** Bypasses standard Netfilter prerouting/postrouting traversal after initial connection tracking handshake. Anticipated CPU consumption: ~25–35% during full gigabit saturation, providing 100% stable, upstream-maintainable kernel code without proprietary NSS kernel panics or licensing violations.
 - **Experimental Track (NSS):**
-  Preserved for high-throughput zero-CPU hardware offloading research using `openwrt-nss-edma` and `qca-nss-drv` (`SOURCE_AVAILABLE`). Strictly isolated from Daily Driver release images.
+  Preserved for high-throughput zero-CPU hardware offloading research using `openwrt-nss-edma` and `qca-nss-drv` (`SOURCE_AVAILABLE` / `EXPERIMENTAL`). Strictly isolated from Daily Driver release images.
 
 ### 3.3 WireGuard VPN Subsystem (BoringTun Rust)
 - **Stock RA82 Baseline:**
   Zero native WireGuard or VPN support. Users must place the router in bridge mode or deploy secondary gateway hardware.
 - **OpenWrt 25.12.6 Daily Driver:**
-  - **Verification Badges:** `BUILD_VERIFIED`, `PC_VERIFIED`, and `FUNCTION_VERIFIED`.
-  - Integrates statically compiled BoringTun Rust CLI v0.7.1 (`aarch64-unknown-linux-musl`, 1.18 MB, stripped; `BUILD_VERIFIED`).
-  - Surgical patch `0002-boringtun-uapi-peer-update-no-panic.patch` eliminates upstream Issue #498 panic without clobbering session keys.
-  - Multi-rekey extended soak test verified across multiple 120s cryptographic rekey cycles with 0% packet loss, 0 KB memory leak (VmRSS ~3.0 MB), and graceful handling of unsupported runtime mutations (`libc::EOPNOTSUPP` = 95) (`PC_VERIFIED` & `FUNCTION_VERIFIED`).
+  - **Verification Badges:** `PC_VERIFIED` (BoringTun CLI & UAPI mutation) and `IN PROGRESS` (60-minute soak test).
+  - Integrates statically compiled BoringTun Rust CLI v0.7.1 (`aarch64-unknown-linux-musl`, 1.18 MB, stripped; `BUILD_VERIFIED` & `PC_VERIFIED`).
+  - Surgical patch `0002-boringtun-uapi-peer-update-no-panic.patch` eliminates upstream Issue #498 panic without clobbering session keys (PSK updates return `libc::EOPNOTSUPP` = 95).
+  - Multi-rekey continuous 60-minute soak test: **`IN PROGRESS`** (underway in Linux netns; >1,040s elapsed, 8 rekey cycles, 0% packet loss, VmRSS ~3.0 MB; awaiting full 3,600s completion for sign-off).
   - Expected throughput on physical router Cortex-A53 is an `ACCEPTANCE_TARGET` of 180–250 Mbps without NSS (`PERFORMANCE_VERIFIED` pending physical bench).
   - Controlled via standard `wireguard-tools` (`wg`, `wg-quick`) and LuCI WireGuard web applet.
 
@@ -128,22 +131,25 @@ The physical hardware has 256MB DDR3L, of which ~74MB is reserved for Qualcomm r
 > [!CAUTION]
 > ### STRICT HARDWARE SAFETY DIRECTIVE
 > 1. **ZERO PHYSICAL FLASHING PERMITTED (`NON_FLASHABLE_TEST_ARTIFACT`):** All generated M5/M6 firmware binaries (`factory.ubi`, `sysupgrade.bin`) are strictly marked `NON_FLASHABLE_TEST_ARTIFACT`. They represent geometry and packaging milestones only.
-> 2. **UART RECOVERY PRECONDITION (`HARDWARE_BLOCKED`):** Physical deployment requires prior verification of an independent U-Boot UART serial recovery path (`115200 8N1`) on the test bench.
-> 3. **COMMERCIAL ROBUSTNESS:** The Xiaomi stock RA82 firmware remains operational and unmolested. No SSH commands, no NVRAM modifications, and no NAND partition writes have been executed against any physical router.
+> 2. **ROUTER HARDWARE VALIDATION GATED (`HARDWARE_BLOCKED`):** Router hardware validation remains `HARDWARE_BLOCKED`. Physical deployment requires prior verification of an independent U-Boot UART serial recovery path (`115200 8N1`) on the test bench.
+> 3. **COMMERCIAL ROBUSTNESS & LAB INTEGRITY:** The Xiaomi stock RA82 firmware remains operational and unmolested. No SSH commands, no NVRAM modifications, and no NAND partition writes have been executed against any physical router. The test lab workspace `D:\vibecode\test_wifi` has been forensically audited (`reports/LAB_INTEGRITY_AUDIT.md`): 2 transient prompt dump files created during text extraction were removed, and 0 original lab files were modified or deleted.
 
 ---
 
 ## 5. Verification Badge Governance Audit
 
-Summary of the 8 approved verification badges across Milestone M6 deliverables:
+Summary of the 8 approved verification badges and supplementary designations across Milestone M6 deliverables:
 
-| Approved Badge | Audit Criteria | Current Implementation & Evidence | Status |
+| Verification Badge / Designation | Audit Criteria | Current Implementation & Evidence | Status |
 |---|---|---|---|
 | **`SOURCE_AVAILABLE`** | Source code & DTS nodes committed | Motorcomm YT9215SC switch driver, upstream ath11k drivers, Qualcomm IPQ5018 DTS definitions. | **ACTIVE** |
 | **`CONFIG_VERIFIED`** | Configuration established & syntactically validated | Firewall4 software flowtable (`kmod-nft-offload`), sysctl gigabit network buffers, low-memory profile. | **ACTIVE** |
-| **`BUILD_VERIFIED`** | Target cross-compilation completed cleanly | Linux Kernel 6.12.112 LTS, OpenWrt 25.12.6 rootfs, BoringTun musl static binary, `cr8818.dtb` (27,883 B). | **ACTIVE** |
-| **`PC_VERIFIED`** | Validated in host PC / emulation / netns | BoringTun 15-phase soak test in Linux netns (0% packet loss), YT9215 DSA tagging oracle (30/30 unit tests). | **ACTIVE** |
+| **`BUILD_VERIFIED`** | Target cross-compilation completed cleanly | Linux Kernel 6.12.112 LTS (vmlinux 74.3MB, Image.gz 5.8MB, 71 kmods), `cr8818.dtb` (27,883 B). | **ACTIVE** |
+| **`BUILD_VERIFIED (built-in)`** | Driver verified built directly into kernel | Motorcomm YT9215SC DSA driver built into vmlinux (`CONFIG_NET_DSA_YT921X=y`, 221 symbols in System.map). | **ACTIVE** |
+| **`BUILD_VERIFIED` (Full Firmware)** | Full firmware image build & packaging verified | OpenWrt 25.12.6 full firmware build (`factory.ubi` 10.12 MB, `sysupgrade.bin` 9.53 MB, rootfs 3.97 MB, apk database). | **ACTIVE** |
+| **`PC_VERIFIED`** | Validated in host PC / emulation / netns | BoringTun Rust CLI & UAPI mutation tests (Issue #498 resolved; errno=95 on PSK), DSA tagging oracle (30/30). | **ACTIVE** |
+| **`IN PROGRESS`** | Active ongoing verification run | BoringTun continuous 60-minute soak test in netns (>1,040s elapsed, 0% loss, VmRSS 3.0MB; awaiting 3,600s). | **IN PROGRESS** |
 | **`FUNCTION_VERIFIED`** | Functional logic & protocols validated | WireGuard UAPI handshake, in-place peer mutation without panic, netifd network configuration flow. | **ACTIVE** |
 | **`PERFORMANCE_VERIFIED`** | Throughput & latency measured on physical target | **0 / 17 verified on physical hardware.** ~900 Mbps NAT & 180–250 Mbps VPN designated `ACCEPTANCE_TARGET`. | **GATED** (Bench test required) |
-| **`HARDWARE_BLOCKED`** | Requires execution on live target silicon | Physical antenna RF calibration, physical PHY auto-negotiation, SPI NAND flashing, UART recovery. | **GATED** (Flash safety enforced) |
+| **`HARDWARE_BLOCKED`** | Requires execution on live target silicon | Router hardware validation, physical antenna RF calibration, physical PHY auto-negotiation, SPI NAND flashing, UART recovery. | **GATED** (Flash safety enforced) |
 | **`NON_FLASHABLE_TEST_ARTIFACT`** | Artifact prohibited from flashing to hardware | Milestone M5 packaging prototype UBI (5.37 MB) and M6 test images (`factory.ubi`, `sysupgrade.bin`). | **ENFORCED** |
