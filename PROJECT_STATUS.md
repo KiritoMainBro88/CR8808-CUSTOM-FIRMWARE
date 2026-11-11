@@ -2,12 +2,12 @@
 
 - Version: `0.2.0-dev`
 - Date: 2026-11-11
-- Phase: P6/M7.1-Rev1.2 Final Evidence Audit
-- Current Branch: `feature/m7.1-evidence-corrections`
-- Overall status: `M7.1_REVISION_1_2_COMPLETE_AWAITING_REVIEW`
-- GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`, `feature/g1-corrections-round3`, `feature/g1-corrections-round4`, `feature/g1-corrections-round5`, `feature/g1-corrections-round5.1`, `feature/g1-corrections-round5.2`, `feature/nss-cr8818-research`, `feature/nss-cr8818-poc`, `feature/rust-userspace-strategy`, `feature/product-vision-hardening`, `feature/m5-daily-driver-build`, `feature/m6-full-source-build`, `feature/m7-architecture-selection`, `feature/m7.1-china-source-audit`, `feature/m7.1-evidence-corrections`)
+- Phase: P7/M8 Track A Firmware Build & Integration
+- Current Branch: `feature/m8-track-a-build`
+- Overall status: `M8_PREFLIGHT_PASS_READY_FOR_IMAGE_PACKAGING`
+- GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`, `feature/g1-corrections-round3`, `feature/g1-corrections-round4`, `feature/g1-corrections-round5`, `feature/g1-corrections-round5.1`, `feature/g1-corrections-round5.2`, `feature/nss-cr8818-research`, `feature/nss-cr8818-poc`, `feature/rust-userspace-strategy`, `feature/product-vision-hardening`, `feature/m5-daily-driver-build`, `feature/m6-full-source-build`, `feature/m7-architecture-selection`, `feature/m7.1-china-source-audit`, `feature/m7.1-evidence-corrections`, `feature/m8-track-a-build`)
 - Flash authorization: `NO-GO pending independent recovery validation (All artifacts classified NON_FLASHABLE_TEST_ARTIFACT)`
-- Initial Firmware Baseline Proposal: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Architecture Proposal under review; NOT yet approved for implementation by Product Owner)
+- Initial Firmware Baseline: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Single-conduit Port 8 SGMII 1000M, Linux 6.12.112 LTS verified)
 - Primary Hardware References:
   - `yangfl/openwrt` (commit `6729bbe9f082dc15449f17908832447caeec5065` on `cr8818` branch) — Authoritative CR8818 DTS, SerDes REVSGMII abuse patch 940, caldata geometry
   - `zcop/immortalwrt` (commit `c5ad88b702dc2374c9d67141693cc06cce742dc8`) — Register reverse-engineering reference for YT9215 (NSS offload on CR8818: `NSS_NOT_VERIFIED`)

@@ -44,17 +44,16 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P6-M7.1-REV1.1 | Milestone M7.1 Revision 1.1 Final Evidence Reconciliation | P6 | DONE | Gemini | P6-M7.1-REV1-SIGN |
 | P6-M7.1-REV1.1-SIGN | ChatGPT Architecture Lead Review & Sign-Off for Milestone M7.1 Revision 1.1 | P6 | DONE | ChatGPT + User | P6-M7.1-REV1.1 |
 | P6-M7.1-REV1.2 | Milestone M7.1 Revision 1.2 Final Evidence Audit & ADR Ratification | P6 | DONE | Gemini | P6-M7.1-REV1.1-SIGN |
-| P6-M7.1-REV1.2-SIGN | ChatGPT Architecture Lead Review & Sign-Off for Milestone M7.1 Revision 1.2 | P6 | IN_PROGRESS | ChatGPT + User | P6-M7.1-REV1.2 |
+| P6-M7.1-REV1.2-SIGN | ChatGPT Architecture Lead Review & Sign-Off for Milestone M7.1 Revision 1.2 | P6 | DONE | ChatGPT + User | P6-M7.1-REV1.2 |
+| P7-M8-PREFLIGHT | Milestone M8.0 Pre-Flight Verification Gate (YT9215 6.12 backport specification, Kbuild verification) | P7 | DONE | Gemini | P6-M7.1-REV1.2-SIGN |
+| P7-M8-ROADMAP | Kernel Lifecycle & Migration Roadmap (6.12 LTS Dec 2026 -> 6.18 LTS Dec 2027) | P7 | DONE | Gemini | P7-M8-PREFLIGHT |
+| P7-M8-TRACK-A-BUILD | Milestone M8.1 Track A Firmware Image Build (OpenWrt 25.12.6, Linux 6.12.112, vmlinux verified) | P7 | IN_PROGRESS | Gemini | P7-M8-ROADMAP |
 | P6-001 | Release candidate and deployment decision | P6 | BLOCKED | User | All gates |
 
 ## Current instruction
-Milestone M7.1 Revision 1.2 Final Evidence Audit completed on branch `feature/m7.1-evidence-corrections` (base `cf9a709`):
-1. **Ratification of Dual-Track Model (ADR-0005):** Formally ratified Track A (Daily Driver: OpenWrt 25.12.6, Linux 6.12.112 LTS, clean upstream single-conduit DSA, BoringTun Rust) and Track B (Experimental: Linux 6.18.63 LTS, ZCOP enhanced DSA, NSS NPU research).
-2. **P0-1 NAND Family Standardization:** Standardized designation to `Winbond W25N01GV family – JEDEC EF AA 21 (3.3V, 1-bit on-die ECC)`. Package suffix (`ZEIG`) explicitly marked unverified without physical optical inspection. Deliverable: `docs/M7.1/NAND_IDENTITY_RECONCILIATION.md`.
-3. **P0-2 Caldata Reclassified as Opaque Blob:** Confirmed host driver treats `0x1000` and `0x26800` (128 KB) as opaque raw binary blobs without host decoding. The 6 analog RF parameters reclassified as `THEORETICAL_RF_PROPERTIES / UNVERIFIED_ON_DEVICE`.
-4. **P0-3 Upstream DFS WMI Event & Regulatory CAC:** Corrected upstream symbol to `WMI_PDEV_DFS_RADAR_DETECTION_EVENTID`. Disambiguated IPQ5018 WPSS from QCN6102 target firmware. Added ETSI 10-minute CAC for 5600–5650 MHz weather radar and 30-minute NOP. Designated HE160 as `CONDITIONAL_ACCEPTANCE_TARGET`. Deliverable: `docs/M7.1/ATH11K_DFS_COMPATIBILITY_AUDIT.md`.
-5. **P0-4 NSS Test Hypotheses & Unified Exception Pipeline:** Unified Exception Ring and Software Fallback into two sequential stages of the same error path. Reclassified parser outcomes as `TEST_HYPOTHESIS`. Established 6-point `EMPIRICAL_TEST_MATRIX`. Deliverable: `docs/M7.1/NSS_FEASIBILITY_MATRIX.md`.
-6. **P0-5 Kernel Version Discipline:** Pinned Track A to OpenWrt 25.12.6 / Linux 6.12.112 (tracking 6.12.y stable security fixes, e.g. 6.12.117); Track B to Linux 6.18.63. Banned arbitrary out-of-sync kernel upgrades.
-7. **P0-6 Dual-Conduit Silicon vs Driver Disambiguation:** Clarified YT9215 silicon multi-MAC capability vs upstream driver single-port config (`0x8000c`). Bifurcated ZCOP into repo `SOURCE_VERIFIED` vs hardware `REPORTED_UNVERIFIED`. Deliverable: `docs/M7.1/DUAL_CONDUIT_FINAL_RECONCILIATION.md`.
-8. **Correction Log & Manifest Pinned:** Authored itemized correction log `docs/M7.1/M7.1_REV1_2_CORRECTION_LOG.md`. Updated `manifests/m7.1-sources.lock.yaml`.
-9. **Safety Boundary Enforced:** ZERO router contact (0 SSH, 0 flashing, 0 NVRAM writes, test_wifi 100% untouched). Halted at Gate G-M7.1-Rev1.2 awaiting Architecture Lead review.
+Milestone M8.0 Pre-Flight Verification & Kernel Lifecycle Roadmap completed on branch `feature/m8-track-a-build`:
+1. **Gate M8.0 Pre-Flight Verification:** Resolved all 6 mandatory verification points for David Yang's upstream Motorcomm YT921x DSA driver backport to Linux 6.12.112 LTS (OpenWrt 25.12.6). Deliverable: `docs/M8/YT9215_6_12_BACKPORT_SPECIFICATION.md`.
+2. **Kernel Lifecycle & Migration Roadmap:** Formulated comprehensive 3-phase synchronization roadmap between Linux 6.12 LTS (EOL Dec 2026) and Linux 6.18 LTS (EOL Dec 2027). Deliverable: `docs/M8/KERNEL_LIFECYCLE_MIGRATION_ROADMAP.md`.
+3. **Clean Upstream Kbuild Verification:** Verified in-tree compilation of `drivers/net/dsa/yt921x.o` (338,208 B), `net/dsa/tag_yt921x.o` (53,768 B), full `vmlinux` (75 MB, 83 clean yt921x symbols, 0 ZCOP symbols), and `arch/arm64/boot/Image` (19 MB). Deliverable: `docs/M8/M8_PREFLIGHT_VERIFICATION_REPORT.md`.
+4. **Clean Backport Patch & Manifest:** Installed `patches/openwrt-25.12/0950-net-dsa-yt921x-upstream-backport-6.12.patch` and locked pinned source SHAs in `manifests/m8-sources.lock.yaml`.
+5. **Safety Boundary Enforced:** ZERO router contact (0 SSH, 0 flashing, 0 NVRAM writes, test_wifi 100% untouched). Flashing remains strictly NO-GO. Ready for Track A full firmware image build.

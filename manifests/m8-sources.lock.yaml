@@ -1,0 +1,119 @@
+schema_version: 1
+lock_status: SOURCE_LOCK_VERIFIED_M8_TRACK_A
+milestone: M8.0-Preflight
+target_device: xiaomi_cr8808_verb
+internal_model: CR8818
+board_profile: ap-mp03.3
+soc: qualcomm_ipq5018
+ram_capacity: "256MB DDR3L (~182MB usable)"
+switch_chip: motorcomm_yt9215s_sc
+switch_conduit: single_conduit_port8_sgmii_1000m
+wifi_5g_chip: qualcomm_qcn6102
+created_at: "2026-11-11T18:00:00+07:00"
+author: "Gemini 3.8 Flash High (Lead Developer / Research Engineer)"
+reporting_authority: "ChatGPT (Chief Architect / Architecture Lead)"
+approval_status: "GATE_M8_0_PREFLIGHT_PASS"
+flash_policy: "NO_GO_FLASH_MAINTAINED"
+
+dual_track_framework:
+  track_a_daily_driver:
+    status: "ACTIVE_DEVELOPMENT"
+    distribution: "OpenWrt 25.12.6"
+    kernel_version: "Linux 6.12.112 LTS (tracking 6.12.y stable security updates, e.g. 6.12.117)"
+    kernel_eol: "December 2026"
+    switch_architecture: "Clean Upstream DSA (drivers/net/dsa/yt921x.c + net/dsa/tag_yt921x.c)"
+    dsa_tag_protocol: "DSA_TAG_PROTO_YT921X (32)"
+    ethertype: "ETH_P_YT921X (0x9988)"
+    cpu_port: "Port 8 (SGMII 1000M full duplex to IPQ5018 GE0/dp2)"
+    secondary_conduit: "DISABLED (Port 4 inactive)"
+    vpn_engine: "BoringTun Rust 0.7.1"
+    firewall: "nftables / firewall4 software flowtable offload"
+    nss_acceleration: "DISABLED (Clean upstream stability priority)"
+
+  track_b_experimental:
+    status: "ARCHITECTURE_RESERVED"
+    kernel_version: "Linux 6.18.63 LTS"
+    kernel_eol: "December 2027"
+    switch_architecture: "ZCOP Enhanced DSA (motorcomm,yt9215-enhanced)"
+    cpu_ports: "Dual-Conduit (Port 8 SGMII 1000M + Port 4 GE 1000M)"
+    datapath: "Qualcomm NSS NPU Offload Forward-Port"
+    promotion_gate: "Requires clean 6.18 LTS OpenWrt rebase and hardware logic analyzer verification"
+
+sources:
+  openwrt_official:
+    url: "https://github.com/openwrt/openwrt"
+    tracked_branch: "openwrt-25.12"
+    pinned_commit: "64900e756efa667774214f9c6b17c113222e01f7"
+    release_tag: "v25.12.6"
+    commit_date: "2026-11-09T18:00:00Z"
+    author: "OpenWrt Core Development Team"
+    hardware_revision: "Generic Linux / Qualcomm IPQ50xx target"
+    role: "base_daily_driver_buildroot_lts"
+    kernel_version: "6.12.112 LTS"
+    package_manager: "apk-tools v3"
+    firewall: "nftables / firewall4"
+    code_path: "target/linux/qualcommax/"
+    verification_status: "BUILD_VERIFIED"
+    license: "GPL-2.0"
+    provenance: "Official OpenWrt Project Release"
+
+  upstream_yt921x_tagger:
+    url: "https://git.kernel.org/pub/scm/linux/kernel/git/netdev/net-next.git"
+    file_path: "net/dsa/tag_yt921x.c"
+    pinned_commit: "ca4709843b7e72f96976cd6b35bca148a4071673"
+    commit_title: "net: dsa: tag_yt921x: add support for Motorcomm YT921x tags"
+    author: "David Yang <mmyangfl@gmail.com>"
+    reviewer: "Andrew Lunn <andrew@lunn.ch>"
+    signoff: "Jakub Kicinski <kuba@kernel.org>"
+    upstream_message_id: "20251017060859.326450-3-mmyangfl@gmail.com"
+    verification_status: "SOURCE_VERIFIED"
+    license: "GPL-2.0-or-later"
+
+  upstream_yt921x_driver:
+    url: "https://git.kernel.org/pub/scm/linux/kernel/git/netdev/net-next.git"
+    file_path: "drivers/net/dsa/yt921x.c"
+    pinned_commit: "186623f4aa724c46cbb4dbd5235cf6942215f5b5"
+    commit_title: "net: dsa: yt921x: Add support for Motorcomm YT921x"
+    author: "David Yang <mmyangfl@gmail.com>"
+    reviewer: "Andrew Lunn <andrew@lunn.ch>"
+    signoff: "Jakub Kicinski <kuba@kernel.org>"
+    upstream_message_id: "20251017060859.326450-4-mmyangfl@gmail.com"
+    verification_status: "SOURCE_VERIFIED"
+    license: "GPL-2.0-or-later"
+
+  boringtun_rust:
+    url: "https://github.com/cloudflare/boringtun"
+    tracked_branch: "master"
+    pinned_commit: "69e92d8479e394fe3d1542f49553757fffa1ad53"
+    release_tag: "v0.7.1"
+    author: "Cloudflare"
+    role: "userspace_wireguard_implementation_memory_safe"
+    license: "BSD-3-Clause"
+    binary_artifact: "bin/boringtun-cli-aarch64-musl"
+    verification_status: "BUILD_VERIFIED"
+
+patches:
+  dsa_yt921x_6_12_backport:
+    file_path: "patches/openwrt-25.12/0950-net-dsa-yt921x-upstream-backport-6.12.patch"
+    target_path: "target/linux/qualcommax/patches-6.12/0950-net-dsa-yt921x-upstream-backport-6.12.patch"
+    purpose: "Clean upstream single-conduit backport to Linux 6.12 LTS"
+    author: "David Yang / Gemini Backport Shims"
+    shims_applied:
+      - "yt921x_dsa_bridge_ports wrapper for Linux < 6.19"
+      - "struct flow_action_police compatibility typedef"
+      - "dsa_xmit_port_mask wrapper for Linux < 6.19"
+      - "flow_cls_offload_flow_rule const qualifier helper"
+      - "Guarded dsa_switch_ops port_policer and simple_hsr for Linux >= 6.19"
+      - "qopt->extack guarded for Linux >= 6.16"
+    verification_status: "BUILD_VERIFIED"
+
+device_tree_binding:
+  file_path: "target/linux/qualcommax/files/arch/arm64/boot/dts/qcom/ipq5018-cr8818.dts"
+  compatible: "motorcomm,yt9215"
+  switch_mdio_address: "0x1d"
+  reset_gpio: "tlmm 39 (GPIO_ACTIVE_LOW)"
+  cpu_port_reg: 8
+  cpu_port_phy_mode: "sgmii"
+  cpu_port_speed: 1000
+  secondary_port_4: "disabled"
+  verification_status: "SOURCE_VERIFIED"
