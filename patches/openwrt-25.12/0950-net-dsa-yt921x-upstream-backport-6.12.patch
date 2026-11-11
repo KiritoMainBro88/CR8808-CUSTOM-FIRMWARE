@@ -48,11 +48,14 @@ Provides single-conduit tagged DSA on Port 8 (SGMII 1000M) without out-of-tree v
  endif
 --- a/net/dsa/Makefile
 +++ b/net/dsa/Makefile
-@@ -40,3 +40,4 @@ obj-$(CONFIG_NET_DSA_TAG_TRAILER) += tag
- obj-$(CONFIG_NET_DSA_TAG_VAST) += tag_vast.o
+@@ -39,6 +39,7 @@ obj-$(CONFIG_NET_DSA_TAG_SJA1105) += tag
+ obj-$(CONFIG_NET_DSA_TAG_TRAILER) += tag_trailer.o
  obj-$(CONFIG_NET_DSA_TAG_VSC73XX_8021Q) += tag_vsc73xx_8021q.o
  obj-$(CONFIG_NET_DSA_TAG_XRS700X) += tag_xrs700x.o
 +obj-$(CONFIG_NET_DSA_TAG_YT921X) += tag_yt921x.o
+ 
+ # for tracing framework to find trace.h
+ CFLAGS_trace.o := -I$(src)
 --- a/drivers/net/dsa/Kconfig
 +++ b/drivers/net/dsa/Kconfig
 @@ -160,4 +160,12 @@ config NET_DSA_VSC73XX_PLATFORM
@@ -70,8 +73,7 @@ Provides single-conduit tagged DSA on Port 8 (SGMII 1000M) without out-of-tree v
  endmenu
 --- a/drivers/net/dsa/Makefile
 +++ b/drivers/net/dsa/Makefile
-@@ -26,3 +26,4 @@ obj-$(CONFIG_NET_DSA_SMSC_LAN9303_MDIO)	
- obj-$(CONFIG_NET_DSA_VSC73XX)		+= vsc73xx.o
- obj-$(CONFIG_NET_DSA_VSC73XX_PLATFORM)	+= vsc73xx_platform.o
- obj-$(CONFIG_NET_DSA_XRS700X)		+= xrs700x.o
+@@ -32,3 +32,4 @@ obj-y				+= realtek/
+ obj-y				+= sja1105/
+ obj-y				+= xrs700x/
 +obj-$(CONFIG_NET_DSA_YT921X)		+= yt921x.o

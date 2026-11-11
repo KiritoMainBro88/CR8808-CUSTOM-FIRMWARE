@@ -42,7 +42,7 @@ A critical engineering principle established by the Chief Architect is:
 
 ## 3. Three-Phase Kernel Migration Strategy
 
-To guarantee long-term security maintenance without sacrificing production stability, the project adopts a structured three-phase migration timeline:
+To guarantee continuous security maintenance without an EOL gap or premature instability, the project adopts a strictly chronological three-phase migration timeline:
 
 ```
 +====================================================================================================+
@@ -50,24 +50,24 @@ To guarantee long-term security maintenance without sacrificing production stabi
 +====================================================================================================+
 |                                                                                                    |
 |  PHASE 1: TRACK A PRODUCTION STABILIZATION (Current Stage - OpenWrt 25.12.6 / Linux 6.12 LTS)     |
-|  - Kernel: Linux 6.12.112 LTS (tracking 6.12.y stable security updates backported by OpenWrt).     |
+|  - Kernel: Linux 6.12.112 LTS (tracking 6.12.y stable security updates, e.g. 6.12.117).            |
 |  - Switch: Clean upstream backport of David Yang's yt921x DSA driver (Single-Conduit Port 8).     |
 |  - Focus: Rock-solid daily driver stability, BoringTun WireGuard, full RA82 feature parity.       |
-|  - Duration: Q4 2026 – Q2 2027 (covers active deployment and initial field validation).             |
+|  - Duration: Q1 2026 – Q3 2026 (Active baseline production maintenance).                           |
 |                                         |                                                          |
 |                                         v                                                          |
-|  PHASE 2: UPSTREAM TARGET RE-BASE TRACKING (Preparation Stage - Mid 2027)                          |
-|  - Upstream OpenWrt Development: Monitor OpenWrt master branch as qualcommax transitions to 6.18. |
-|  - Track B Synchronization: Maintain `feature/nss-cr8818-research` on Linux 6.18.63 LTS, verifying|
-|    DTS syntax, patch 940 SerDes compatibility, and yt921x upstream driver integration.              |
-|  - Trigger: Official OpenWrt announcement of Linux 6.18 LTS as default for qualcommax target.     |
+|  PHASE 2: UPSTREAM TARGET RE-BASE PREPARATION (Evaluation Stage - Q3 2026 / Jul-Sep 2026)          |
+|  - Upstream OpenWrt Development: Monitor qualcommax target as OpenWrt begins testing 6.18 LTS.     |
+|  - Track B Verification: Complete experimental testing of Linux 6.18.63 LTS, patch 940 SerDes,    |
+|    and native yt921x in-tree driver on CR8818 architecture.                                        |
+|  - Pre-requisite Gate: OpenWrt target patches and kernel module ABI toolchain stabilized for 6.18. |
 |                                         |                                                          |
 |                                         v                                                          |
-|  PHASE 3: UNIFIED TRACK A MIGRATION TO LINUX 6.18 LTS (Convergence Stage - Late 2027)              |
+|  PHASE 3: UNIFIED TRACK A MIGRATION TO LINUX 6.18 LTS (Transition Stage - Q4 2026 / Oct-Nov 2026)  |
 |  - Synchronized Rebuild: Full rebuild of OpenWrt target, 71+ kernel modules, ABI hashes, and APKs.|
-|  - Switch Driver Mainlining: In Linux 6.18/6.19, YT921x is natively upstreamed, eliminating the    |
-|    need for custom target backport patches.                                                        |
-|  - Lifespan Extension: Extends full security maintenance and CVE patching through December 2027.   |
+|  - Migration Window: Completed in November 2026, STRICTLY PRIOR to Linux 6.12 LTS EOL (Dec 2026). |
+|  - Switch Driver Mainlining: In Linux 6.18+, YT921x is natively in-tree, eliminating target patch. |
+|  - Lifespan Extension: Guarantees active security patching through December 2027 (Linux 6.18 EOL). |
 +====================================================================================================+
 ```
 

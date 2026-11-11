@@ -51,4 +51,5 @@ target/
 !artifacts/m6_build/**
 !artifacts/m6_build/*.log
 !artifacts/m6_build/*.bin
+!artifacts/m8_images/**
 

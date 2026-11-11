@@ -47,13 +47,14 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P6-M7.1-REV1.2-SIGN | ChatGPT Architecture Lead Review & Sign-Off for Milestone M7.1 Revision 1.2 | P6 | DONE | ChatGPT + User | P6-M7.1-REV1.2 |
 | P7-M8-PREFLIGHT | Milestone M8.0 Pre-Flight Verification Gate (YT9215 6.12 backport specification, Kbuild verification) | P7 | DONE | Gemini | P6-M7.1-REV1.2-SIGN |
 | P7-M8-ROADMAP | Kernel Lifecycle & Migration Roadmap (6.12 LTS Dec 2026 -> 6.18 LTS Dec 2027) | P7 | DONE | Gemini | P7-M8-PREFLIGHT |
-| P7-M8-TRACK-A-BUILD | Milestone M8.1 Track A Firmware Image Build (OpenWrt 25.12.6, Linux 6.12.112, vmlinux verified) | P7 | IN_PROGRESS | Gemini | P7-M8-ROADMAP |
+| P7-M8-TRACK-A-BUILD | Milestone M8.1 Track A Firmware Image Build (OpenWrt 25.12.6, Linux 6.12.112, factory.ubi & sysupgrade.bin) | P7 | DONE | Gemini | P7-M8-ROADMAP |
+| P8-M9-IMAGE-VALIDATION | Milestone M9 Image Validation, FIT Inspection & Recovery Strategy | P8 | NOT_STARTED | Gemini | P7-M8-TRACK-A-BUILD |
 | P6-001 | Release candidate and deployment decision | P6 | BLOCKED | User | All gates |
 
 ## Current instruction
-Milestone M8.0 Pre-Flight Verification & Kernel Lifecycle Roadmap completed on branch `feature/m8-track-a-build`:
-1. **Gate M8.0 Pre-Flight Verification:** Resolved all 6 mandatory verification points for David Yang's upstream Motorcomm YT921x DSA driver backport to Linux 6.12.112 LTS (OpenWrt 25.12.6). Deliverable: `docs/M8/YT9215_6_12_BACKPORT_SPECIFICATION.md`.
-2. **Kernel Lifecycle & Migration Roadmap:** Formulated comprehensive 3-phase synchronization roadmap between Linux 6.12 LTS (EOL Dec 2026) and Linux 6.18 LTS (EOL Dec 2027). Deliverable: `docs/M8/KERNEL_LIFECYCLE_MIGRATION_ROADMAP.md`.
-3. **Clean Upstream Kbuild Verification:** Verified in-tree compilation of `drivers/net/dsa/yt921x.o` (338,208 B), `net/dsa/tag_yt921x.o` (53,768 B), full `vmlinux` (75 MB, 83 clean yt921x symbols, 0 ZCOP symbols), and `arch/arm64/boot/Image` (19 MB). Deliverable: `docs/M8/M8_PREFLIGHT_VERIFICATION_REPORT.md`.
-4. **Clean Backport Patch & Manifest:** Installed `patches/openwrt-25.12/0950-net-dsa-yt921x-upstream-backport-6.12.patch` and locked pinned source SHAs in `manifests/m8-sources.lock.yaml`.
-5. **Safety Boundary Enforced:** ZERO router contact (0 SSH, 0 flashing, 0 NVRAM writes, test_wifi 100% untouched). Flashing remains strictly NO-GO. Ready for Track A full firmware image build.
+Milestone M8.1 Full Firmware Build completed on branch `feature/m8-track-a-build`:
+1. **Full OpenWrt 25.12.6 Firmware Build:** Generated full target images (`openwrt-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-factory.ubi`, `openwrt-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-sysupgrade.bin`, `openwrt-qualcommax-ipq50xx-xiaomi_cr8818-initramfs-factory.ubi`, `openwrt-qualcommax-ipq50xx-xiaomi_cr8818-initramfs-uImage.itb`).
+2. **NAND Storage Budget & Headroom:** Verified factory.ubi (15.25 MB) and sysupgrade.bin (14.40 MB) fit inside 36 MB UBI partition with 20.75 MB headroom (57.6% free space).
+3. **Subsystems Verified in RootFS:** Verified BoringTun Rust 0.7.1, procd init script, netifd protocol handler, watchdog daemon, LuCI web interface, ath11k Wi-Fi 6 firmware, and nft_flow_offload.
+4. **Deliverables Authored:** Authored `docs/M8/FEATURE_PARITY_MATRIX.md` (27 items) and `docs/M8/M8_1_FULL_FIRMWARE_BUILD_REPORT.md`.
+5. **Safety Boundary Enforced:** ZERO router contact (0 SSH, 0 flashing, 0 NVRAM writes, test_wifi 100% untouched). Flashing remains strictly NO-GO. Halted and awaiting Chief Architect review and instructions for Milestone M9.

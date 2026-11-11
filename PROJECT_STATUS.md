@@ -4,7 +4,7 @@
 - Date: 2026-11-11
 - Phase: P7/M8 Track A Firmware Build & Integration
 - Current Branch: `feature/m8-track-a-build`
-- Overall status: `M8_PREFLIGHT_PASS_READY_FOR_IMAGE_PACKAGING`
+- Overall status: `M8_1_FULL_FIRMWARE_PC_BUILD_COMPLETE_PASS`
 - GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`, `feature/g1-corrections-round3`, `feature/g1-corrections-round4`, `feature/g1-corrections-round5`, `feature/g1-corrections-round5.1`, `feature/g1-corrections-round5.2`, `feature/nss-cr8818-research`, `feature/nss-cr8818-poc`, `feature/rust-userspace-strategy`, `feature/product-vision-hardening`, `feature/m5-daily-driver-build`, `feature/m6-full-source-build`, `feature/m7-architecture-selection`, `feature/m7.1-china-source-audit`, `feature/m7.1-evidence-corrections`, `feature/m8-track-a-build`)
 - Flash authorization: `NO-GO pending independent recovery validation (All artifacts classified NON_FLASHABLE_TEST_ARTIFACT)`
 - Initial Firmware Baseline: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Single-conduit Port 8 SGMII 1000M, Linux 6.12.112 LTS verified)
@@ -15,7 +15,7 @@
 - WireGuard Target Engine: `BoringTun Rust 0.7.1` (Patched Issue #498, 2.88 MB VmRSS; 60-minute soak test COMPLETED with 2,907 pings, 0 drops, 29 rekeys, 0 kB leak; tested immune to Issue #495 & Issue #498)
 - Wi-Fi Target Mode: `5 GHz HE160 (160 MHz)` (CONDITIONAL_ACCEPTANCE_TARGET, requires live RF validation)
 - Git History Remediation: `DRY_RUN_VALIDATED_CLEAN` (All commits verified 100% clean)
-- Firmware build: `BUILD_VERIFIED (Full OpenWrt 25.12.6 factory.ubi 10.12 MB, sysupgrade.bin 9.53 MB, rootfs 3.97 MB - NON_FLASHABLE_TEST_ARTIFACT)`
+- Firmware build: `BUILD_VERIFIED (Full OpenWrt 25.12.6 factory.ubi 15.25 MB, sysupgrade.bin 14.40 MB, rootfs 9.80 MB - NON_FLASHABLE_TEST_ARTIFACT)`
 - Hardware validation: `NOT_STARTED`
 
 ## Confirmed via Owner & Prior Device Readback
@@ -126,5 +126,7 @@
   7. **Dual-Conduit Silicon vs Driver Disambiguation (P0-6):** Clarified YT9215 silicon multi-MAC capability vs upstream driver single-port config (`0x8000c`). Bifurcated ZCOP into repo `SOURCE_VERIFIED` vs hardware `REPORTED_UNVERIFIED`.
   8. **Correction Log & Manifest Pinned:** Authored itemized correction log `docs/M7.1/M7.1_REV1_2_CORRECTION_LOG.md`. Updated `manifests/m7.1-sources.lock.yaml`.
   9. **Safety Affirmation:** ZERO router contact (0 SSH, 0 flashing, 0 NVRAM writes, test_wifi 100% untouched). Halted at Gate M7.1 Revision 1.2 awaiting Architecture Lead sign-off. Author: Gemini (Lead Developer / Research Engineer).
+- 2026-11-11: Milestone M8.0 Pre-flight completed on branch `feature/m8-track-a-build`. Backported David Yang's upstream Motorcomm YT9215 driver to Linux 6.12.112 LTS; verified 83 switch symbols in vmlinux with 0 ZCOP symbols; corrected kernel roadmap timeline to eliminate chronological conflict (Phase 3 migration transitions Oct-Nov 2026 strictly before Dec 2026 6.12 EOL). Author: Gemini (Lead Developer).
+- 2026-11-11: Milestone M8.1 Full Firmware Build completed on branch `feature/m8-track-a-build`. Completed full OpenWrt 25.12.6 build from source on PC; packaged factory.ubi (15.25 MB), sysupgrade.bin (14.40 MB), initramfs-factory.ubi (14.88 MB), and initramfs-uImage.itb (14.07 MB); verified all components (BoringTun Rust 0.7.1, netifd scripts, procd init, LuCI, ath11k Wi-Fi 6 firmware, nft_flow_offload); confirmed 20.75 MB free NAND headroom in 36 MB UBI partition budget. Authored `docs/M8/FEATURE_PARITY_MATRIX.md` and `docs/M8/M8_1_FULL_FIRMWARE_BUILD_REPORT.md`. Maintained strict NO-GO FLASH. Deliverable: `docs/M8/M8_1_FULL_FIRMWARE_BUILD_REPORT.md`. Author: Gemini (Lead Developer).
 
 

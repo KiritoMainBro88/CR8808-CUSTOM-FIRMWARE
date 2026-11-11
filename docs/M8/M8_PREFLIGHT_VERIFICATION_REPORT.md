@@ -70,13 +70,13 @@ $ aarch64-linux-gnu-nm vmlinux | grep -E 'secondary_cpu|yt921x_enhanced'
 
 ## 3. Kernel Lifecycle & Migration Roadmap Summary
 
-As detailed in `docs/M8/KERNEL_LIFECYCLE_MIGRATION_ROADMAP.md`:
+As detailed in `docs/M8/KERNEL_LIFECYCLE_MIGRATION_ROADMAP.md` (corrected timeline):
 - **Current Base (Track A):** Linux 6.12.112 LTS (projected EOL: **December 2026**). Actively tracks upstream stable `6.12.y` security updates (e.g., 6.12.117).
 - **Target Upgrade (Track B / Future Track A):** Linux 6.18.63 LTS (projected EOL: **December 2027**).
 - **Synchronized Rebase Plan:**
-  - *Phase 1 (Now – Q4 2026):* Track A production deployment on 6.12 LTS. Track B research on 6.18 LTS in isolated worktree.
-  - *Phase 2 (Q1 2027):* Dual-track convergence test when upstream OpenWrt master introduces Linux 6.18 LTS target support for qualcommax.
-  - *Phase 3 (Mid 2027):* Formal deprecation of 6.12 LTS and promotion of 6.18 LTS as new Daily Driver baseline prior to December 2026 EOL.
+  - *Phase 1 (Q1 2026 – Q3 2026):* Track A production deployment on Linux 6.12 LTS. Track B forward-porting research on Linux 6.18 LTS in isolated worktree.
+  - *Phase 2 (Q3 2026 / Jul-Sep 2026):* Pre-migration stabilization tracking OpenWrt qualcommax 6.18 toolchain and driver testing.
+  - *Phase 3 (Q4 2026 / Oct-Nov 2026):* Formal cutover and synchronized promotion of Linux 6.18 LTS as Daily Driver baseline in November 2026, **STRICTLY PRIOR to Linux 6.12 LTS EOL (December 2026)**, extending firmware maintenance through December 2027.
 
 ---
 
