@@ -14,7 +14,7 @@ TAG="M11_1_TRIAL_SSH_BLOCK"
 PORT="56789"
 HELPER="scripts/firewall_manager.sh"
 
-echo "=== M11.1.0.3 FIREWALL OWNERSHIP & PRODUCTION HELPER TEST ==="
+echo "=== M11.1.0.4 FIREWALL OWNERSHIP & PRODUCTION HELPER TEST ==="
 echo "Dynamic Test Chains: $CHAIN_V4 (IPv4), $CHAIN_V6 (IPv6)"
 
 # Selective cleanup function: ONLY removes chains created by this run
@@ -81,9 +81,55 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# TEST 2: Targeted Rollback Preserves Pre-Existing Un-Commented Rules
+# TEST 2: Duplicate Apply Rejection
 # -----------------------------------------------------------------------------
-echo "--- [TEST 2] Production Helper Rollback & Rule Preservation ---"
+echo "--- [TEST 2] Duplicate Apply Rejection ---"
+if IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+   sh "$HELPER" apply "$CHAIN_V4" "$CHAIN_V6" "$PORT" "$TAG" 2>/dev/null; then
+    echo "FAIL: Helper allowed duplicate apply with the same tag!"
+    exit 1
+else
+    echo "PASS: Duplicate apply correctly rejected."
+fi
+
+# Confirm rule counts have not increased
+DUP_COUNT_V4=$(sudo iptables -S "$CHAIN_V4" | grep -c '^-A')
+DUP_COUNT_V6=$(sudo ip6tables -S "$CHAIN_V6" | grep -c '^-A')
+if [ "$DUP_COUNT_V4" -eq "$CURRENT_COUNT_V4" ] && [ "$DUP_COUNT_V6" -eq "$CURRENT_COUNT_V6" ]; then
+    echo "PASS: Rule counts unchanged after duplicate apply rejection."
+else
+    echo "FAIL: Rule counts drifted after duplicate apply rejection!"
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+# TEST 3: CLI check_position Functionality
+# -----------------------------------------------------------------------------
+echo "--- [TEST 3] CLI check_position Functionality ---"
+# Position 1 should pass
+if IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+   sh "$HELPER" check_position ipv4 "$CHAIN_V4" "$TAG" 1 && \
+   IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+   sh "$HELPER" check_position ipv6 "$CHAIN_V6" "$TAG" 1; then
+    echo "PASS: check_position succeeded for position 1."
+else
+    echo "FAIL: check_position failed for position 1!"
+    exit 1
+fi
+
+# Position 2 should fail
+if IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+   sh "$HELPER" check_position ipv4 "$CHAIN_V4" "$TAG" 2 2>/dev/null; then
+    echo "FAIL: check_position falsely succeeded for position 2!"
+    exit 1
+else
+    echo "PASS: check_position correctly rejected wrong position 2."
+fi
+
+# -----------------------------------------------------------------------------
+# TEST 4: Targeted Rollback Preserves Pre-Existing Un-Commented Rules
+# -----------------------------------------------------------------------------
+echo "--- [TEST 4] Production Helper Rollback & Rule Preservation ---"
 IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
   sh "$HELPER" rollback "$CHAIN_V4" "$CHAIN_V6" "$PORT" "$TAG"
 
@@ -123,9 +169,30 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# TEST 3: Atomic Transactional Rollback on Simulated IPv6 Failure
+# TEST 5: Idempotent Rollback Execution
 # -----------------------------------------------------------------------------
-echo "--- [TEST 3] Atomic Rollback on Partial (IPv6) Failure ---"
+echo "--- [TEST 5] Idempotent Rollback Execution (Second Call) ---"
+if IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+   sh "$HELPER" rollback "$CHAIN_V4" "$CHAIN_V6" "$PORT" "$TAG"; then
+    echo "PASS: Second rollback call succeeded cleanly without error."
+else
+    echo "FAIL: Second rollback call failed!"
+    exit 1
+fi
+
+# Verify baseline rules still preserved
+if sudo iptables -C "$CHAIN_V4" -p tcp --dport "$PORT" -j DROP 2>/dev/null && \
+   sudo ip6tables -C "$CHAIN_V6" -p tcp --dport "$PORT" -j DROP 2>/dev/null; then
+    echo "PASS: Baseline rules still intact after second rollback."
+else
+    echo "FAIL: Baseline rules damaged during second rollback!"
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+# TEST 6: Atomic Transactional Rollback on Simulated IPv6 Failure
+# -----------------------------------------------------------------------------
+echo "--- [TEST 6] Atomic Rollback on Partial (IPv6) Failure ---"
 # We simulate IPv6 failure by directing IPv6 to a non-existent chain
 INVALID_CHAIN="NON_EXISTENT_CHAIN_$$"
 
@@ -153,4 +220,4 @@ else
     exit 1
 fi
 
-echo "=== ALL 3 FIREWALL OWNERSHIP & HELPER TESTS PASSED ==="
+echo "=== ALL 6 FIREWALL OWNERSHIP & HELPER TESTS PASSED ==="

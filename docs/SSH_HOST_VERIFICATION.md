@@ -41,15 +41,15 @@ In strict adherence to Chief Architect Directive M11.1.0.3, the provenance of th
 
 1. **Origin of Key Baseline:** The host key and fingerprint were extracted from the operator workstation's historical SSH cache (`%USERPROFILE%\.ssh\known_hosts` entry bound to port `56789`), created during prior management sessions of this physical unit.
 2. **What Key Pinning Guarantees:** 
-   - Pinning prevents dynamic Trust-On-First-Use (`ssh-keyscan`) vulnerability.
-   - It strictly guarantees that no future SSH connection will proceed if the server presents any key other than this pinned RSA key, immunizing against newly injected Man-in-the-Middle (MitM) attacks or ARP spoofing on the LAN.
+   - Pinning eliminates dynamic Trust-On-First-Use (`ssh-keyscan`) vulnerability.
+   - It strictly guarantees that no future SSH connection will proceed if the server presents any key other than this pinned RSA key. Under the condition that the historical cached key is authentic, this reliably detects and rejects newly injected Man-in-the-Middle (MitM) attacks or ARP spoofing on the local segment.
 3. **What Key Pinning Does NOT Guarantee:**
-   - It does NOT constitute an independent hardware-level mathematical proof of silicon authenticity. If the historical connection was somehow intercepted at the moment of first initialization, the cache would have preserved the interceptor's key.
-   - Independent verification requires direct out-of-band physical extraction on the router:
+   - It does NOT constitute an independent hardware-level mathematical proof of silicon authenticity. If the historical connection was intercepted at the moment of first initialization, the cache would have preserved the interceptor's key.
+   - Independent verification requires direct out-of-band physical extraction on the router (e.g. via UART or local console):
      ```sh
      dropbearkey -y -f /etc/dropbear/dropbear_rsa_host_key | ssh-keygen -l -f -
      ```
-   - Until verified against physical storage or serial console, this key is classified as **`PINNED_HISTORICAL_CACHE`**, NOT absolute hardware root-of-trust.
+   - Until verified against physical storage or serial console, this key is classified as **`PINNED_HISTORICAL_CACHE`**, providing conditional session continuity protection rather than an absolute hardware root-of-trust.
 
 ---
 
@@ -85,11 +85,13 @@ sshpass -e ssh -p "$ROUTER_PORT" \
   -o UserKnownHostsFile="$KNOWN_HOSTS_FILE" \
   -o GlobalKnownHostsFile=/dev/null \
   -o CheckHostIP=no \
+  -o HostKeyAlgorithms=+ssh-rsa \
+  -o PubkeyAcceptedKeyTypes=+ssh-rsa \
   -o ConnectTimeout=5 \
   "${ROUTER_USER}@${ROUTER_IP}" "$COMMAND"
 ```
 
 ### Security Properties:
-1. **Zero Network Trust:** No keys are downloaded over the network.
-2. **MitM Immunity:** If an ARP-spoofing or DNS/IP hijack is attempted, SSH immediately terminates because the server's presented host key will not match the pinned public key.
+1. **Zero Network Trust:** No keys are downloaded dynamically over the network.
+2. **Conditional MitM Protection:** If an ARP-spoofing or DNS/IP hijack is attempted, SSH immediately terminates because the server's presented host key will not match the pinned public key (conditional upon historical cache authenticity).
 3. **No Secret Leakage:** Only public key cryptographic hashes are committed. No router passwords or private keys are stored in Git.

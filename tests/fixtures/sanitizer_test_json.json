@@ -16,10 +16,20 @@
       "server_ip_2": "172.217.16.206",
       "ipv6_gua_2xxx": "2402:800:63a5:4432:e639:dfff:fe04:6cfd",
       "ipv6_gua_3xxx": "3ffe:1200:2001:1:200:f8ff:fe21:67cf",
+      "ipv6_gua_db8": "2001:db8::",
+      "ipv6_gua_cidr": "2001:db8::/32",
       "ipv6_ula_fc": "fc00:1234:5678:9abc::1",
       "ipv6_ula_fd": "fd00:dead:beef::1",
+      "ipv6_ula_short_fc": "fc00::",
+      "ipv6_ula_short_fd": "fd00::",
       "ipv6_ll_fe80": "fe80::e639:dfff:fe04:6cfd",
-      "ipv6_ll_fe90": "fe90::1234:5678:9abc:def0"
+      "ipv6_ll_fe90": "fe90::1234:5678:9abc:def0",
+      "ipv6_ll_short": "fe80::",
+      "ipv6_ll_cidr": "fe80::/64",
+      "ipv6_ll_zone": "fe80::1%eth0",
+      "mask_host": "255.255.255.255",
+      "mask_subnet": "255.255.255.128",
+      "mask_class_c": "255.255.255.0"
     }
   },
   "wireless": {

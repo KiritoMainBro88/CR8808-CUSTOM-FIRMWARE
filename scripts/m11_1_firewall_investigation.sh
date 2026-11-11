@@ -44,7 +44,8 @@ fi
 KNOWN_HOSTS_DIR="$(mktemp -d /tmp/cr8818_ssh.XXXXXX)"
 KNOWN_HOSTS_FILE="${KNOWN_HOSTS_DIR}/known_hosts"
 TEMP_RAW_OUTPUT="$(mktemp /tmp/cr8818_fw_raw.XXXXXX)"
-trap 'rm -rf "$KNOWN_HOSTS_DIR" "$TEMP_RAW_OUTPUT"' EXIT
+TEMP_SANITIZED="$(mktemp /tmp/cr8818_fw_san.XXXXXX)"
+trap 'rm -rf "$KNOWN_HOSTS_DIR" "$TEMP_RAW_OUTPUT" "$TEMP_SANITIZED"' EXIT
 
 PUB_KEY_DATA=$(awk '{print $1, $2}' "$PINNED_KEY_FILE")
 echo "[$ROUTER_IP]:$ROUTER_PORT $PUB_KEY_DATA" > "$KNOWN_HOSTS_FILE"
@@ -53,7 +54,7 @@ chmod 600 "$KNOWN_HOSTS_FILE"
 echo "Host key verified ($EXPECTED_FINGERPRINT). Connecting to CR8808 Ver.B..."
 
 # Step 3: Execute SSH and capture raw output into temporary file first
-# Using Bash set -e to ensure SSH failure aborts before sanitization
+# Using Bash set -e to ensure SSH failure aborts before touching destination report
 if ! sshpass -e ssh -p "$ROUTER_PORT" \
   -o StrictHostKeyChecking=yes \
   -o UserKnownHostsFile="$KNOWN_HOSTS_FILE" \
@@ -63,68 +64,74 @@ if ! sshpass -e ssh -p "$ROUTER_PORT" \
   -o PubkeyAcceptedKeyTypes=+ssh-rsa \
   -o ConnectTimeout=5 \
   "${ROUTER_USER}@${ROUTER_IP}" "sh -s" << 'EOF' > "$TEMP_RAW_OUTPUT"
-echo "================================================================================"
-echo "FW-01: IPv4 Address & Routing Table"
-echo "================================================================================"
-ip -4 addr show
-ip -4 route show table all
+TOTAL_SECTIONS=9
+SECTION_FAILURES=0
+
+run_cmd() {
+    SEC_ID="$1"
+    SEC_NAME="$2"
+    shift 2
+    echo "================================================================================"
+    echo "[$SEC_ID] $SEC_NAME"
+    echo "================================================================================"
+    if "$@"; then
+        echo "[$SEC_ID STATUS: SUCCESS]"
+    else
+        echo "[$SEC_ID STATUS: FAILED - exit code $?]"
+        SECTION_FAILURES=$((SECTION_FAILURES + 1))
+    fi
+}
+
+# FW-01: IPv4 Address & Routing Table
+run_cmd "FW-01" "IPv4 Address & Routing Table" sh -c "ip -4 addr show && ip -4 route show table all"
+
+# FW-02: IPv6 Address, Routing Table & Interface Counters
+run_cmd "FW-02" "IPv6 Address, Routing Table & Interface Counters" sh -c "ip -6 addr show && ip -6 route show table all && cat /proc/net/if_inet6"
+
+# FW-03: Full iptables Filter Table Rules
+run_cmd "FW-03" "Full iptables Filter Table Rules (-S and -nvL)" sh -c "iptables -S && iptables -t filter -nvL"
+
+# FW-04: Full ip6tables Filter Table Rules
+run_cmd "FW-04" "Full ip6tables Filter Table Rules (-S and -nvL)" sh -c "ip6tables -S && ip6tables -t filter -nvL"
+
+# FW-05: IPv4 WAN Ingress Chains
+run_cmd "FW-05" "IPv4 WAN Ingress Chains (zone_wan_input & input_wan_rule)" sh -c "iptables -nvL zone_wan_input && iptables -nvL input_wan_rule"
+
+# FW-06: IPv6 WAN Ingress Chains
+run_cmd "FW-06" "IPv6 WAN Ingress Chains (zone_wan_input & input_wan_rule)" sh -c "ip6tables -nvL zone_wan_input && ip6tables -nvL input_wan_rule"
+
+# FW-07: UCI Firewall Zone Configuration
+run_cmd "FW-07" "UCI Firewall Zone Configuration" sh -c "uci show firewall | grep -E 'zone|wan|input|dropbear'"
+
+# FW-08: Dropbear Sockets & UCI Settings
+run_cmd "FW-08" "Dropbear Sockets & UCI Settings" sh -c "netstat -tlpn | grep dropbear && uci show dropbear"
+
+# FW-09: Kernel TCP Sockets
+run_cmd "FW-09" "Kernel TCP Sockets (/proc/net/tcp & tcp6)" sh -c "head -n 25 /proc/net/tcp && head -n 25 /proc/net/tcp6"
 
 echo "================================================================================"
-echo "FW-02: IPv6 Address, Routing Table & Interface Counters"
+if [ "$SECTION_FAILURES" -eq 0 ]; then
+    echo "[OVERALL INVESTIGATION STATUS: COMPLETE (0/$TOTAL_SECTIONS failures)]"
+elif [ "$SECTION_FAILURES" -lt "$TOTAL_SECTIONS" ]; then
+    echo "[OVERALL INVESTIGATION STATUS: PARTIAL ($SECTION_FAILURES/$TOTAL_SECTIONS failures)]"
+else
+    echo "[OVERALL INVESTIGATION STATUS: FAILED ($SECTION_FAILURES/$TOTAL_SECTIONS failures)]"
+fi
 echo "================================================================================"
-ip -6 addr show 2>/dev/null || echo "IPv6 addr show not supported"
-ip -6 route show table all 2>/dev/null || echo "IPv6 route show not supported"
-cat /proc/net/if_inet6 2>/dev/null || echo "/proc/net/if_inet6 not present"
-
-echo "================================================================================"
-echo "FW-03: Full iptables Filter Table Rules (-S and -nvL)"
-echo "================================================================================"
-iptables -S 2>/dev/null || echo "iptables -S not supported"
-iptables -t filter -nvL 2>/dev/null || echo "iptables -t filter -nvL failed"
-
-echo "================================================================================"
-echo "FW-04: Full ip6tables Filter Table Rules (-S and -nvL)"
-echo "================================================================================"
-ip6tables -S 2>/dev/null || echo "ip6tables -S not supported"
-ip6tables -t filter -nvL 2>/dev/null || echo "ip6tables -t filter -nvL failed"
-
-echo "================================================================================"
-echo "FW-05: IPv4 WAN Ingress Chains (zone_wan_input & input_wan_rule)"
-echo "================================================================================"
-iptables -nvL zone_wan_input 2>/dev/null || echo "IPv4 zone_wan_input not present"
-iptables -nvL input_wan_rule 2>/dev/null || echo "IPv4 input_wan_rule not present"
-
-echo "================================================================================"
-echo "FW-06: IPv6 WAN Ingress Chains (zone_wan_input & input_wan_rule)"
-echo "================================================================================"
-ip6tables -nvL zone_wan_input 2>/dev/null || echo "IPv6 zone_wan_input not present"
-ip6tables -nvL input_wan_rule 2>/dev/null || echo "IPv6 input_wan_rule not present"
-
-echo "================================================================================"
-echo "FW-07: UCI Firewall Zone Configuration"
-echo "================================================================================"
-uci show firewall | grep -E "zone|wan|input|dropbear" || echo "UCI firewall read failed"
-
-echo "================================================================================"
-echo "FW-08: Dropbear Sockets & UCI Settings"
-echo "================================================================================"
-netstat -tlpn 2>/dev/null | grep dropbear || echo "No dropbear socket in netstat"
-uci show dropbear 2>/dev/null || echo "UCI dropbear read failed"
-
-echo "================================================================================"
-echo "FW-09: Kernel TCP Sockets (/proc/net/tcp & tcp6)"
-echo "================================================================================"
-cat /proc/net/tcp 2>/dev/null | head -n 25 || echo "/proc/net/tcp not present"
-cat /proc/net/tcp6 2>/dev/null | head -n 25 || echo "/proc/net/tcp6 not present"
 EOF
 then
-    echo "[PIPELINE ERROR] SSH command failed or timed out! Aborting without generating report." >&2
-    rm -f "$OUTPUT_FILE"
+    echo "[PIPELINE ERROR] SSH command failed or timed out! Aborting without modifying existing report." >&2
     exit 1
 fi
 
-# Step 4: Stream sanitized output to persistent destination
-mkdir -p "$(dirname "$OUTPUT_FILE")"
-bash "$SANITIZER" < "$TEMP_RAW_OUTPUT" > "$OUTPUT_FILE"
+# Step 4: Stream sanitized output to temporary destination and verify exit status
+if ! bash "$SANITIZER" < "$TEMP_RAW_OUTPUT" > "$TEMP_SANITIZED"; then
+    echo "[PIPELINE ERROR] Sanitization failed! Existing report preserved." >&2
+    exit 1
+fi
 
-echo "Class R0 Firewall Investigation complete. Sanitized report saved to: $OUTPUT_FILE"
+# Step 5: Atomic move to destination report (never leaves partial/corrupt files)
+mkdir -p "$(dirname "$OUTPUT_FILE")"
+mv -f "$TEMP_SANITIZED" "$OUTPUT_FILE"
+
+echo "Class R0 Firewall Investigation complete. Sanitized report atomically saved to: $OUTPUT_FILE"

@@ -13,15 +13,22 @@ eth1      Link encap:Ethernet  HWaddr E4-39-DF-04-6C-FE
           UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
 
 # Diverse IPv6 Formats:
-# GUA 3xxx prefix (expanded & compressed)
+# GUA 3xxx & 2xxx prefix (expanded, compressed, CIDR, trailing ::)
 3ffe:1200:2001:1:200:f8ff:fe21:67cf
 3ffe::1
-# ULA fc00::/7 (fcxx and fdxx)
+2001:db8::
+2001:db8::/32
+# ULA fc00::/7 (fcxx and fdxx, compressed, trailing ::)
 fc00:1234:5678:9abc::1
 fd00:dead:beef::1
-# Link-Local fe80::/10 (fe80 and fe90)
+fc00::
+fd00::
+# Link-Local fe80::/10 (fe80 and fe90, trailing ::, CIDR, Zone ID)
 fe80::1
 fe90::1234:5678:9abc:def0
+fe80::
+fe80::/64
+fe80::1%eth0
 
 # Diverse Public IPv4 Addresses
 Public DNS 1: 8.8.8.8
@@ -29,6 +36,11 @@ Public DNS 2: 1.1.1.1
 Server IP A: 45.33.32.156
 Server IP B: 172.217.16.206
 Documentation IP: 203.0.113.195
+
+# Preserved Netmasks (must remain exact values)
+Netmask Host: 255.255.255.255
+Netmask Subnet: 255.255.255.128
+Netmask Class C: 255.255.255.0
 
 # Hex Socket Tables:
 # /proc/net/tcp6 format
