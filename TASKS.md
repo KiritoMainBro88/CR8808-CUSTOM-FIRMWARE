@@ -48,13 +48,16 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P7-M8-PREFLIGHT | Milestone M8.0 Pre-Flight Verification Gate (YT9215 6.12 backport specification, Kbuild verification) | P7 | DONE | Gemini | P6-M7.1-REV1.2-SIGN |
 | P7-M8-ROADMAP | Kernel Lifecycle & Migration Roadmap (6.12 LTS Dec 2026 -> 6.18 LTS Dec 2027) | P7 | DONE | Gemini | P7-M8-PREFLIGHT |
 | P7-M8-TRACK-A-BUILD | Milestone M8.1 Track A Firmware Image Build (OpenWrt 25.12.6, Linux 6.12.112, factory.ubi & sysupgrade.bin) | P7 | DONE | Gemini | P7-M8-ROADMAP |
-| P8-M9-IMAGE-VALIDATION | Milestone M9 Image Validation, FIT Inspection & Recovery Strategy | P8 | NOT_STARTED | Gemini | P7-M8-TRACK-A-BUILD |
+| P8-M9-IMAGE-VALIDATION | Milestone M9 Image Validation, FIT Inspection, UBI Partition Audit & Recovery Strategy | P8 | DONE | Gemini | P7-M8-TRACK-A-BUILD |
+| P9-M10-HARDWARE-VALIDATION | Milestone M10 Hardware Validation (RAM Boot via TFTP, YT9215 link, RF calibration test) | P9 | NOT_STARTED | Gemini | P8-M9-IMAGE-VALIDATION |
 | P6-001 | Release candidate and deployment decision | P6 | BLOCKED | User | All gates |
 
 ## Current instruction
-Milestone M8.1 Full Firmware Build completed on branch `feature/m8-track-a-build`:
-1. **Full OpenWrt 25.12.6 Firmware Build:** Generated full target images (`openwrt-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-factory.ubi`, `openwrt-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-sysupgrade.bin`, `openwrt-qualcommax-ipq50xx-xiaomi_cr8818-initramfs-factory.ubi`, `openwrt-qualcommax-ipq50xx-xiaomi_cr8818-initramfs-uImage.itb`).
-2. **NAND Storage Budget & Headroom:** Verified factory.ubi (15.25 MB) and sysupgrade.bin (14.40 MB) fit inside 36 MB UBI partition with 20.75 MB headroom (57.6% free space).
-3. **Subsystems Verified in RootFS:** Verified BoringTun Rust 0.7.1, procd init script, netifd protocol handler, watchdog daemon, LuCI web interface, ath11k Wi-Fi 6 firmware, and nft_flow_offload.
-4. **Deliverables Authored:** Authored `docs/M8/FEATURE_PARITY_MATRIX.md` (27 items) and `docs/M8/M8_1_FULL_FIRMWARE_BUILD_REPORT.md`.
-5. **Safety Boundary Enforced:** ZERO router contact (0 SSH, 0 flashing, 0 NVRAM writes, test_wifi 100% untouched). Flashing remains strictly NO-GO. Halted and awaiting Chief Architect review and instructions for Milestone M9.
+Milestone M9 Image Validation & Static Recovery Audit completed on branch `feature/m9-image-validation-audit`:
+1. **Debunked Optical Illusion on `sysupgrade.bin`:** Verified standard POSIX GNU tar format containing `CONTROL`, `kernel` (FIT uImage.itb 5.28 MB), `root` (SquashFS 9.11 MB) and `fwtool` JSON metadata trailer. Disproved the raw `sysu` magic bytes illusion.
+2. **FIT Container Architecture Verified:** Verified FIT images target AArch64, `load = 0x41000000`, Linux 6.12.112 + FDT blob (27,293 B) matched to `config@mp03.3` (Qualcomm reference board ap-mp03.3).
+3. **UBI Physical Eraseblock & NAND Geometry Audit:** Mapped Winbond W25N01GV 128 MB SPI NAND (1024 PEBs, 128K PEB, 124K LEB, 2048 page). Audited all 18 MTD partitions from `ipq5018-xiaomi-base.dtsi`. Proved `KERNEL_SIZE := 36864k` is strictly an OpenWrt build-time assertion gate, not a partition generator. Mathematically derived dynamic `rootfs_data` capacity (160 LEBs = 19.38 MiB). Reconciled 20.75 MB vs 20.90 MB headroom figures.
+4. **Wi-Fi Calibration & DTS Status Identified:** Identified root causes for inactive Wi-Fi: DTS sets `status = "disabled"` on `&wifi` and `&wifi1` (upstream David Yang OOM precaution), and `11-ath11k-caldata` completely omits `xiaomi,cr8818`. Verified physical calibration offsets in 1 MiB `0:art`: 2.4 GHz @ `0x1000` (128K), 5 GHz @ `0x26800` (128K). Reconciled Q6 WCSS 48 MB memory carveout (`0x4b000000`) impact on 256 MB RAM.
+5. **Recovery Runbook Authored:** Established non-UART Xiaomi recovery protocol and interactive UART TFTP RAM boot sequence (`bootm 0x44000000#config@mp03.3`) strictly distinguishing zero-risk RAM boot from permanent NAND flashing.
+6. **27-Row Feature Parity Matrix Hardened:** Applied strict 5-tier taxonomy (`BUILD_VERIFIED`, `STATIC_VERIFIED`, `RUNTIME_VERIFIED_PC`, `UNVERIFIED_ESTIMATE`, `DISABLED`). Explicitly reclassified 1 Gbps wire-speed NAT as unverified estimate (no NSS hardware acceleration in Track A).
+7. **Safety Boundary Enforced:** STRICT `NO-GO FLASH`. 0 SSH, 0 TFTP to router, 0 flashing, 0 NAND/NVRAM writes, 0 reboots. `D:\vibecode\test_wifi` remains 100% untouched. Ready for Chief Architect review.
