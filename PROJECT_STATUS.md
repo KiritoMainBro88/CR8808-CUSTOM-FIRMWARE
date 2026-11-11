@@ -2,9 +2,9 @@
 
 - Version: `0.2.0-dev`
 - Date: 2026-11-12
-- Phase: P10/M11.1.0.1 Evidence Correction & Firewall Preflight (Track A Primary)
-- Current Branch: `fix/m11-1-r0-audit-corrections`
-- Overall status: `M11_1_0_1_CORRECTIONS_COMPLETE_AWAITING_REVIEW`
+- Phase: P10/M11.1.0.2 Watchdog Hardening & Firewall Verification (Track A Primary)
+- Current Branch: `fix/m11-1-0-2-watchdog-hardening`
+- Overall status: `M11_1_0_2_WATCHDOG_HARDENING_COMPLETE_AWAITING_REVIEW`
 - GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE`
 - Flash authorization: `STRICT NO-GO FLASH (Live read-only device audit, static partition verification & optimization analysis only)`
 - Initial Firmware Baseline: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Single-conduit Port 8 SGMII 1000M, Linux 6.12.112 LTS verified)
@@ -178,13 +178,14 @@
   5. **Kernel Security & Userspace Boundaries (Task E):** Audited Linux 4.4.60 CVE exposure vs Qualcomm 2023 QSDK build. Separated kernel binary replacement (`NO-GO` under strict safety rules) from non-destructive static userspace enhancements in `/data`.
   6. **Master Optimization Matrix Produced:** Authored 13-item master matrix classifying proposals into `GO` (OPT-SEC-01), `HOLD` (VPN, RPS, Daemons, Wi-Fi tuning, DNS), and `REJECT` (QoS, Conntrack, TCP buffers, live kernel upgrade).
   7. **Deliverables & Strict Safety Affirmation:** Authored `reports/M11_0_2_RA82_OPTIMIZATION_REPORT.md`, `docs/RA82_OPTIMIZATION_MATRIX.md`, `tests/test_measure_cpu_deltas.sh`, synthetic fixtures `tests/fixtures/`, and updated `docs/R0_READONLY_AUDIT_MANIFEST.md`. Maintained workstation-only execution (0 router SSH, 0 uploads, 0 router commands, 0 NAND writes). Lab directory `D:\vibecode\test_wifi` 100% untouched. Status: `M11_0_2_PREFLIGHT_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Systems Engineer).
-- 2026-11-12: Milestone M11.1.0.1 Evidence Correction & WAN SSH Firewall Preflight completed on branch `fix/m11-1-r0-audit-corrections`.
-  1. **Storage Boundary Clarification:** Explicitly distinguished persistent storage (NAND MTD/NVRAM: strictly zero writes) from volatile RAM storage (`/tmp` tmpfs). Re-engineered `scripts/m11_1_r0_baseline_audit.sh` to stream differential `/proc/stat` and `/proc/softirqs` directly through an in-memory subshell AWK pipeline, guaranteeing ZERO temporary files created on any filesystem. Validated via `tests/test_inmemory_delta.sh` (PASS).
-  2. **Data Sanitization & Privacy Compliance:** Scrubbed all MAC addresses, BSSIDs, SSIDs, WAN IPs, serial numbers, and keys across documentation, manifests, and reports. Formalized 7-point regex filter specification in `docs/R0_READONLY_AUDIT_MANIFEST.md`.
-  3. **Dual-Stack Firewall Preflight & Rule Ordering:** Identified critical exposure: Dropbear listens on both `0.0.0.0:56789` (IPv4) and `:::56789` (IPv6). Established that both `iptables` and `ip6tables` must be locked down simultaneously at Position 1 (`-I zone_wan_input 1`) to override preceding accept rules in `input_wan_rule`. Authored `reports/M11_1_0_1_FIREWALL_PREFLIGHT.md`.
-  4. **Watchdog SIGHUP Resilience Tested:** Identified SIGHUP termination risk of background subshells upon SSH disconnection. Re-engineered watchdog with `trap '' HUP` and detached FDs (`</dev/null >/dev/null 2>&1`). Implemented and passed test harness `tests/test_watchdog_rollback.sh` (3/3 tests PASS: SIGHUP simulation, clean disarming, idempotent deletion).
-  5. **WireGuard Memory Reclassification:** Formally reclassified ~17.1 MB RAM savings projection from BoringTun Rust as `TEST_HYPOTHESIS / ENGINEERING_PROJECTION` pending physical on-device measurement. Preserved production `wg0` and WireGuard Go untouched.
-  6. **Deliverables & Strict Safety Boundary:** Authored `reports/M11_1_0_1_FIREWALL_PREFLIGHT.md`, `tests/test_watchdog_rollback.sh`, `tests/test_inmemory_delta.sh`; updated `docs/R0_READONLY_AUDIT_MANIFEST.md`, `reports/M11_1_R0_LIVE_BASELINE_REPORT.md`. Workstation-only execution (0 router SSH, 0 firewall edits, 0 router commands). Lab directory `D:\vibecode\test_wifi` 100% untouched. Status: `M11_1_0_1_CORRECTIONS_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Systems Engineer).
+- 2026-11-12: Milestone M11.1.0.2 Watchdog Hardening & Firewall Verification completed on branch `fix/m11-1-0-2-watchdog-hardening`.
+  1. **Hardened Watchdog Implementation:** Rebuilt watchdog with double-barrier suppression (`scripts/watchdog_service.sh`), immune to SIGHUP and cleanly terminating on SIGTERM. Implemented 6-phase test suite (`tests/test_watchdog_hardened.sh`): verified direct SIGHUP delivery to watchdog process, orphaned survival on SSH disconnect, full-timeout disarm expiry, dual-stack rollback, command error handling, and post-disarm quiescence (6/6 PASS). Avoided claims of "100% reliability".
+  2. **Firewall Rule Ownership & Transactional Safety:** Replaced bulk deletion with explicit comment matching (`-m comment --comment "M11_1_TRIAL_SSH_BLOCK"`). Built `tests/test_firewall_ownership.sh` against real WSL2 netfilter; empirically proved pre-existing un-commented DROP rules on port 56789 are 100% preserved. Verified atomic rollback on partial (IPv6) failure and pre-flight chain validation (5/5 PASS).
+  3. **Cryptographic SSH Host Key Pinning:** Eliminated dynamic `ssh-keyscan` (TOFU vulnerability). Pinned Dropbear RSA 2048-bit host key in `config/cr8818_host_key.pub` (`SHA256:feZ+NfroyCIlYrC74Z1ZazUSby+WqxRxZM63Q6Q9HmM`). Mandated fingerprint verification and out-of-band `known_hosts` synthesis in `docs/SSH_HOST_VERIFICATION.md` and `scripts/m11_1_r0_baseline_audit.sh`.
+  4. **Multi-Layer Sanitizer Engine & Test Suite:** Developed reusable stream sanitizer (`scripts/sanitize_telemetry.sh`) and automated test harness (`tests/test_sanitizer.sh`) against multiline text and JSON fixtures (`tests/fixtures/`). Verified 100% scrubbing of MACs, BSSIDs, SSIDs, Wi-Fi keys, serial numbers, public/WAN IPv4, IPv6 (Global/Link-Local/ULA), and WireGuard keys (30/30 assertions PASS).
+  5. **Class R0 Firewall Investigation Prepared:** Authored `docs/R0_FIREWALL_AUDIT_MANIFEST.md` and PC-side draft `scripts/m11_1_firewall_investigation.sh` gated behind `AUTHORIZE_R0_FIREWALL_EXECUTION=1` to investigate IPv6 GUA routing and `ip6tables` chains before any rule injection.
+  6. **Technical Assertions Rectified:** Decoupled `SUnreclaim` from DMA buffers pending slab analysis; decoupled `NET_RX` softirqs from packet counts; decoupled socket binding from Internet exposure; decoupled NSS rule match ratio from global offload ratio across all reports.
+  7. **Deliverables & Strict Safety Boundary:** Authored `reports/M11_1_0_2_WATCHDOG_FIREWALL_REPORT.md`. Workstation-only execution (0 router SSH, 0 firewall edits, 0 router commands). Lab directory `D:\vibecode\test_wifi` 100% untouched. Status: `M11_1_0_2_WATCHDOG_HARDENING_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Systems Engineer).
 
 
 

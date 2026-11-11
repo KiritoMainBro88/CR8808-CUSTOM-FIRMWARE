@@ -1,0 +1,30 @@
+{
+  "system": {
+    "model": "Xiaomi CR8808",
+    "serial": "35123/240019283",
+    "sn": "CR8818-SN-998877",
+    "mac": "e4:39:df:04:6c:fd"
+  },
+  "network": {
+    "wan": {
+      "proto": "dhcp",
+      "ip": "192.168.100.75",
+      "public_ip": "118.68.195.158",
+      "gateway": "192.168.100.1",
+      "ipv6_addr": "2402:800:63a5:4432:e639:dfff:fe04:6cfd",
+      "ipv6_ll": "fe80::e639:dfff:fe04:6cfd",
+      "ipv6_ula": "fd00:dead:beef::1"
+    }
+  },
+  "wireless": {
+    "ssid": "Xiaomi_8808_Fast",
+    "bssid": "e4:39:df:04:6c:fe",
+    "key": "SuperSecretWifiPass123!",
+    "sae_password": "WPA3SecretPassWord999"
+  },
+  "vpn": {
+    "srvkey": "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=",
+    "clientkey": "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=",
+    "private_key": "c29tZXJhbmRvbXdpcmVndWFyZHByaXZhdGVrZXkxMjM0NTY="
+  }
+}

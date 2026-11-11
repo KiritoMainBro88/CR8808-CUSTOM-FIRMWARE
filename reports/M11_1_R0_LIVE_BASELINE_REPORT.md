@@ -37,7 +37,7 @@ Pursuant to the User / Chief Architect Directives M11.1 and M11.1.0.1:
 - **`Slab`:** 60,896 kB (~59.4 MB), consisting of:
   - `SReclaimable`: 2,668 kB (~2.6 MB).
   - **`SUnreclaim`:** **58,228 kB (~56.8 MB)**.
-- **Finding:** Memory pressure is high (`MemAvailable` is ~10.4 MB). `SUnreclaim` represents 56.8 MB of essential network ring buffers and Wi-Fi DMA descriptors that cannot be freed.
+- **Finding:** Memory pressure is high (`MemAvailable` is ~10.4 MB). `SUnreclaim` represents 56.8 MB of unevictable kernel slab caches. In accordance with Directive M11.1.0.2, this cannot be strictly equated to network DMA ring buffers without granular `/proc/slabinfo` parsing, as it encompasses general kernel slab allocations (dentries, inodes, skbuff heads, driver structures).
 
 ### R0-03: SPI NAND Partition Layout (`/proc/mtd`)
 - **Total Physical Flash:** 128 MB SPI NAND (Winbond W25N01GV family).
@@ -142,7 +142,7 @@ Current Window Distribution: CPU0 = 99.6%, CPU1 = 0.4%
 
 > [!NOTE]
 > **CPU BALANCE TAKEAWAY:**
-> - 99.6% of software `NET_RX` softirqs are processed by CPU0.
+> - 99.6% of software `NET_RX` softirq events hit CPU0. In accordance with Directive M11.1.0.2, these represent softirq scheduler cycles and NAPI polling invocations, not a 1:1 packet count (as NAPI processes batches of up to 64 packets per poll).
 > - **However, CPU0 is currently 81.44% IDLE (Total utilization is only 18.56%)!**
 > - CPU0 is NOT experiencing bottleneck or saturation under normal operation.
 > - This empirically proves that **enabling RPS immediately would be a mistake**: it would introduce cross-core IPI latency and L1 cache line bouncing without relieving any actual bottleneck.
@@ -155,7 +155,7 @@ Current Window Distribution: CPU0 = 99.6%, CPU1 = 0.4%
 - **WireGuard:** Listening on UDP 51820.
 - **dnsmasq:** Listening on port 53 across local IP addresses.
 - **Firewall Nuance & Dual-Stack Preflight:**
-  * While Dropbear is bound to `0.0.0.0` and `:::`, socket listening alone does NOT prove WAN penetration without checking netfilter firewall chains (`iptables` and `ip6tables`).
+  * While Dropbear is bound to `0.0.0.0` and `:::`, socket binding alone does NOT prove direct Internet reachability. The WAN interface holds private IP `[REDACTED_WAN_IP]` behind an upstream ONT. Reachability from the public Internet requires upstream ONT port-forwarding/DMZ and permissive netfilter firewall chains (`iptables` and `ip6tables`).
   * In OpenWrt fw3, incoming WAN packets traverse `INPUT -> delegate_input -> zone_wan_input`.
   * **Crucial Dual-Stack Finding:** An `iptables` rule dropping port 56789 on `zone_wan_input` only affects **IPv4** traffic. It does NOT protect against **IPv6** connections arriving at `:::56789`! Both `iptables` AND `ip6tables` must be configured symmetrically.
 

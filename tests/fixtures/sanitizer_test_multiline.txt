@@ -1,0 +1,29 @@
+# Raw Router Audit Output Simulation (Multiline Text)
+Hardware        : Qualcomm IPQ5018
+Revision        : 0000
+Serial          : 35123/240019283
+
+eth0      Link encap:Ethernet  HWaddr E4:39:DF:04:6C:FD
+          inet addr:192.168.100.75  Bcast:192.168.100.255  Mask:255.255.255.0
+          inet6 addr: fe80::e639:dfff:fe04:6cfd/64 Scope:Link
+          inet6 addr: 2402:800:63a5:4432:e639:dfff:fe04:6cfd/64 Scope:Global
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+
+eth1      Link encap:Ethernet  HWaddr E4-39-DF-04-6C-FE
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+
+wl0       IEEE 802.11ax  ESSID:"Xiaomi_8808_5G_Home"  Nickname:""
+          Mode:Master  Frequency:5.2 GHz  Access Point: E4:39:DF:04:6C:FE
+          Bit Rate:2.4019 Gb/s   Tx-Power:23 dBm
+
+wireless.@wifi-iface[0].ssid='Xiaomi_8808_5G_Home'
+wireless.@wifi-iface[0].key='SuperSecretWifiPass123!'
+wireless.@wifi-iface[0].sae_password='WPA3SecretPassWord999'
+
+# WireGuard Process Telemetry
+1420 root      1420 S    /data/wg_server -srvkey YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY= -clientkey MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI= -port 51820
+wg set wg0 private-key YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY= peer abc= preshared-key MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=
+
+# Remote WAN Observation
+Public WAN IP connection from: 118.68.195.158
+Internal ULA prefix: fd00:dead:beef::1/64

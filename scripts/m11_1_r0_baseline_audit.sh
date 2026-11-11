@@ -19,26 +19,39 @@ if [ -z "${SSHPASS:-}" ]; then
     exit 1
 fi
 
-echo "Verifying host key for ${ROUTER_IP}:${ROUTER_PORT}..."
+PINNED_KEY_FILE="${PINNED_KEY_FILE:-config/cr8818_host_key.pub}"
+EXPECTED_FINGERPRINT="SHA256:feZ+NfroyCIlYrC74Z1ZazUSby+WqxRxZM63Q6Q9HmM"
+SANITIZER="scripts/sanitize_telemetry.sh"
+
+if [ ! -f "$PINNED_KEY_FILE" ]; then
+    echo "ERROR: Pinned host key file $PINNED_KEY_FILE not found." >&2
+    exit 1
+fi
+
+echo "Verifying pinned host key fingerprint for ${ROUTER_IP}:${ROUTER_PORT}..."
+ACTUAL_FINGERPRINT=$(ssh-keygen -l -f "$PINNED_KEY_FILE" 2>/dev/null | awk '{print $2}')
+if [ "$ACTUAL_FINGERPRINT" != "$EXPECTED_FINGERPRINT" ]; then
+    echo "[SECURITY ERROR] Pinned host key fingerprint mismatch! Aborting." >&2
+    echo "  Expected: $EXPECTED_FINGERPRINT" >&2
+    echo "  Actual:   $ACTUAL_FINGERPRINT" >&2
+    exit 1
+fi
+
 mkdir -p "$(dirname "$KNOWN_HOSTS_FILE")"
-ssh-keyscan -p "$ROUTER_PORT" -t rsa "$ROUTER_IP" 2>/dev/null > "$KNOWN_HOSTS_FILE"
+PUB_KEY_DATA=$(awk '{print $1, $2}' "$PINNED_KEY_FILE")
+echo "[$ROUTER_IP]:$ROUTER_PORT $PUB_KEY_DATA" > "$KNOWN_HOSTS_FILE"
+chmod 600 "$KNOWN_HOSTS_FILE"
 
 echo "Connecting to Xiaomi CR8808 Ver.B (RA82) and executing pure in-memory Class R0 manifest..."
 
 sshpass -e ssh -p "$ROUTER_PORT" \
   -o StrictHostKeyChecking=yes \
   -o UserKnownHostsFile="$KNOWN_HOSTS_FILE" \
+  -o GlobalKnownHostsFile=/dev/null \
+  -o CheckHostIP=no \
   -o HostKeyAlgorithms=+ssh-rsa \
   -o PubkeyAcceptedKeyTypes=+ssh-rsa \
-  "${ROUTER_USER}@${ROUTER_IP}" "sh -s" << 'EOF' | sed -E \
-    -e "s/(-srvkey|-clientkey) [^ ]+/\1 [REDACTED_WG_KEY]/g" \
-    -e "s/(key|sae_password)=['\"][^'\"]*['\"]/\1='[REDACTED_WIFI_KEY]'/g" \
-    -e "s/ESSID:\"[^\"]*\"/ESSID:\"[REDACTED_SSID]\"/g" \
-    -e "s/ssid='[^']*'/ssid='[REDACTED_SSID]'/g" \
-    -e "s/([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})/[REDACTED_MAC]/g" \
-    -e "s/192\.168\.100\.[0-9]+/[REDACTED_WAN_IP]/g" \
-    -e "s/Serial\s*:\s*[0-9a-zA-Z]+/Serial\t\t: [REDACTED_SERIAL]/g" \
-    > "$OUTPUT_FILE"
+  "${ROUTER_USER}@${ROUTER_IP}" "sh -s" << 'EOF' | sh "$SANITIZER" > "$OUTPUT_FILE"
 echo "================================================================================"
 echo "R0-01: /proc/cpuinfo"
 echo "================================================================================"
