@@ -1,0 +1,132 @@
+  [2m2026-11-11T03:33:55.735412Z[0m [32m INFO[0m [1;32mboringtun_cli[0m[32m: [32mBoringTun started successfully[0m
+    [2;3mat[0m boringtun-cli/src/main.rs:200
+
+  [2m2026-11-11T03:33:56.551578Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mPeer added[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:398
+
+  [2m2026-11-11T03:33:56.551665Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mPeer added[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:398
+
+  [2m2026-11-11T03:33:56.592685Z[0m [34mDEBUG[0m [1;34mboringtun::noise[0m[34m: [34mReceived handshake_initiation, [1;34mremote_idx[0m[34m: 3356547585[0m
+    [2;3mat[0m boringtun/src/noise/mod.rs:323
+
+  [2m2026-11-11T03:33:56.592809Z[0m [34mDEBUG[0m [1;34mboringtun::noise[0m[34m: [34mSending handshake_response, [1;34mlocal_idx[0m[34m: 2096257025[0m
+    [2;3mat[0m boringtun/src/noise/mod.rs:338
+
+  [2m2026-11-11T03:33:56.592853Z[0m [32m INFO[0m [1;32mboringtun::device::peer[0m[32m: [32mConnected endpoint, [1;32mport[0m[32m: 51820, [1;32mendpoint[0m[32m: 192.168.10.2:51821[0m
+    [2;3mat[0m boringtun/src/device/peer.rs:136
+
+  [2m2026-11-11T03:33:56.592978Z[0m [34mDEBUG[0m [1;34mboringtun::noise[0m[34m: [34mNew session, [1;34msession[0m[34m: 2096257025[0m
+    [2;3mat[0m boringtun/src/noise/mod.rs:401
+
+  [2m2026-11-11T03:33:59.297867Z[0m [34mDEBUG[0m [1;34mboringtun::noise[0m[34m: [34mReceived handshake_initiation, [1;34mremote_idx[0m[34m: 1229612545[0m
+    [2;3mat[0m boringtun/src/noise/mod.rs:323
+
+  [2m2026-11-11T03:33:59.297994Z[0m [34mDEBUG[0m [1;34mboringtun::noise[0m[34m: [34mSending handshake_response, [1;34mlocal_idx[0m[34m: 3625865985[0m
+    [2;3mat[0m boringtun/src/noise/mod.rs:338
+
+  [2m2026-11-11T03:33:59.298034Z[0m [32m INFO[0m [1;32mboringtun::device::peer[0m[32m: [32mConnected endpoint, [1;32mport[0m[32m: 51820, [1;32mendpoint[0m[32m: 192.168.20.2:51822[0m
+    [2;3mat[0m boringtun/src/device/peer.rs:136
+
+  [2m2026-11-11T03:33:59.298125Z[0m [34mDEBUG[0m [1;34mboringtun::noise[0m[34m: [34mNew session, [1;34msession[0m[34m: 3625865985[0m
+    [2;3mat[0m boringtun/src/noise/mod.rs:401
+
+  [2m2026-11-11T03:34:01.356845Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:01.388949Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:01.421147Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:01.453280Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:01.485485Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:01.517559Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:01.549652Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:01.581644Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:01.613653Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:01.645633Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:01.677833Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:01.710030Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:01.742203Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:01.774510Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:01.806616Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:08.101116Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:08.614936Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:08.620982Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mExisting peer updated in-place without resetting session keys[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:365
+
+  [2m2026-11-11T03:34:08.629160Z[0m [33m WARN[0m [1;33mboringtun::device[0m[33m: [33mIn-place mutation of preshared_key is not supported; remove and re-add peer instead[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:324
+
+  [2m2026-11-11T03:34:10.689158Z[0m [32m INFO[0m [1;32mboringtun::device::peer[0m[32m: [32mDisconnecting from endpoint[0m
+    [2;3mat[0m boringtun/src/device/peer.rs:87
+
+  [2m2026-11-11T03:34:10.689175Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mPeer removed[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:298
+
+  [2m2026-11-11T03:34:10.690890Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mPeer added[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:398
+
+  [2m2026-11-11T03:34:16.235771Z[0m [34mDEBUG[0m [1;34mboringtun::noise[0m[34m: [34mReceived handshake_initiation, [1;34mremote_idx[0m[34m: 3517305601[0m
+    [2;3mat[0m boringtun/src/noise/mod.rs:323
+
+  [2m2026-11-11T03:34:16.235895Z[0m [34mDEBUG[0m [1;34mboringtun::noise[0m[34m: [34mSending handshake_response, [1;34mlocal_idx[0m[34m: 1382569729[0m
+    [2;3mat[0m boringtun/src/noise/mod.rs:338
+
+  [2m2026-11-11T03:34:16.235929Z[0m [32m INFO[0m [1;32mboringtun::device::peer[0m[32m: [32mConnected endpoint, [1;32mport[0m[32m: 51820, [1;32mendpoint[0m[32m: 192.168.30.2:51823[0m
+    [2;3mat[0m boringtun/src/device/peer.rs:136
+
+  [2m2026-11-11T03:34:16.236014Z[0m [34mDEBUG[0m [1;34mboringtun::noise[0m[34m: [34mNew session, [1;34msession[0m[34m: 1382569729[0m
+    [2;3mat[0m boringtun/src/noise/mod.rs:401
+
+  [2m2026-11-11T03:34:18.273265Z[0m [32m INFO[0m [1;32mboringtun::device[0m[32m: [32mPeer added[0m
+    [2;3mat[0m boringtun/src/device/mod.rs:398
+
+  [2m2026-11-11T03:34:18.277765Z[0m [34mDEBUG[0m [1;34mboringtun::noise[0m[34m: [34mSending handshake_initiation[0m
+    [2;3mat[0m boringtun/src/noise/mod.rs:450
+
+  [2m2026-11-11T03:34:18.277999Z[0m [34mDEBUG[0m [1;34mboringtun::noise[0m[34m: [34mReceived handshake_response, [1;34mlocal_idx[0m[34m: 391337217, [1;34mremote_idx[0m[34m: 1229612546[0m
+    [2;3mat[0m boringtun/src/noise/mod.rs:348
+
+  [2m2026-11-11T03:34:18.278067Z[0m [34mDEBUG[0m [1;34mboringtun::noise[0m[34m: [34mNew session, [1;34msession[0m[34m: 391337217[0m
+    [2;3mat[0m boringtun/src/noise/mod.rs:401
+
+  [2m2026-11-11T03:34:18.278077Z[0m [34mDEBUG[0m [1;34mboringtun::noise[0m[34m: [34mSending keepalive[0m
+    [2;3mat[0m boringtun/src/noise/mod.rs:366
+
+  [2m2026-11-11T03:34:18.278110Z[0m [32m INFO[0m [1;32mboringtun::device::peer[0m[32m: [32mConnected endpoint, [1;32mport[0m[32m: 51820, [1;32mendpoint[0m[32m: 192.168.20.2:51822[0m
+    [2;3mat[0m boringtun/src/device/peer.rs:136
+
+  [2m2026-11-11T03:34:22.394167Z[0m [34mDEBUG[0m [1;34mboringtun::noise::timers[0m[34m: [34mKEEPALIVE(PERSISTENT_KEEPALIVE)[0m
+    [2;3mat[0m boringtun/src/noise/timers.rs:295
+

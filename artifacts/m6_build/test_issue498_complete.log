@@ -1,0 +1,65 @@
+====================================================================
+BoringTun Issue #498 Complete Verification Matrix Suite
+Target: CR8818 Dual Cortex-A53 Firmware Stability Validation
+Script: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/tests/integration/test_issue498_complete.sh
+Binary: /root/work/boringtun-boringtun-cli-0.7.1/target/release/boringtun-cli
+Binary SHA256: 53ad424c781cb724c2d03736a77826c0aa109ef9cd77f5bd5344da3b631b6f2f
+Started At: 2026-11-11T03:33:55Z
+====================================================================
+
+[CLEANUP] Stopping background processes and cleaning namespaces...
+[CLEANUP] Complete.
+
+>>> Phase 1: Creating namespaces and interconnect topology...
+[PASS] 4 Namespaces and 3 underlay links configured.
+
+>>> Starting BoringTun daemons (Server with full debug tracing)...
+BoringTun started successfully
+BoringTun started successfully
+BoringTun started successfully
+[PASS] All 4 BoringTun instances active (Server PID: 2682).
+
+>>> Phase 2: Multi-Peer Setup & Handshake...
+[PASS] Initial handshakes established: CLI1 age=4s, CLI2 age=2s
+
+>>> Phase 3: In-Place Peer Mutation During Live Transmitting Traffic...
+Packet loss during 15 live endpoint mutations: 0%
+[PASS] 120/120 packets transmitted with 0% loss during continuous live UAPI mutations.
+
+>>> Phase 4: Cryptographic Session Key & State Preservation Verification...
+[PASS] Cryptographic session preserved: handshake age=11 s (prior=10 s), tx bytes=10416 (prior=10332).
+[PASS] Server log explicitly confirms: 'Existing peer updated in-place without resetting session keys'.
+
+>>> Phase 5: Testing AllowedIPs Append and Replace Semantics...
+errno=0
+
+AllowedIPs after append: Un5T9uuwQVf12VVxr8FDkgDxiHdFxfNnIOTlxi0qNjk=	10.99.0.2/32 10.99.100.2/32
+[PASS] AllowedIP append verified: both original and new IPs preserved.
+errno=0
+
+AllowedIPs after replace: Un5T9uuwQVf12VVxr8FDkgDxiHdFxfNnIOTlxi0qNjk=	10.99.0.2/32
+[PASS] AllowedIP replace verified: secondary IP purged, primary IP retained.
+
+>>> Phase 6: Preshared Key Mid-Session Mutation Security Audit...
+UAPI Raw Response: errno=95
+[PASS] UAPI cleanly returned errno=95 (EOPNOTSUPP).
+Inspecting server log for EOPNOTSUPP audit trail:
+Raw Server Log: '  [2m2026-11-11T03:34:08.629160Z[0m [33m WARN[0m [1;33mboringtun::device[0m[33m: [33mIn-place mutation of preshared_key is not supported; remove and re-add peer instead[0m'
+[PASS] Daemon logged expected security warning: '  [2m2026-11-11T03:34:08.629160Z[0m [33m WARN[0m [1;33mboringtun::device[0m[33m: [33mIn-place mutation of preshared_key is not supported; remove and re-add peer instead[0m'.
+[PASS] Server daemon remained 100% operational; CLI1 traffic continues with 0 loss.
+
+>>> Phase 7: Simultaneous Multiple Peers Dynamic Mutation...
+CLI2 removed from server.
+CLI3 dynamically added to server.
+CLI1 packet loss during simultaneous peer add/remove: 0%
+[PASS] New peer CLI3 successfully established handshake and transferred traffic.
+[PASS] Peer CLI2 cleanly re-added and active.
+
+>>> Phase 8: Malformed & Erroneous UAPI Request Resilience...
+Fuzz request handled (daemon returned error code without dying).
+[PASS] Server withstood all invalid, corrupted, and malformed UAPI requests with 100% uptime and 0 panics.
+
+====================================================================
+ALL TEST MATRIX PHASES COMPLETED WITH 100% PASS RATE (Duration: 28s)
+Telemetry exported to: /tmp/bt_issue498_complete_5hXt24/test_issue498_complete_telemetry.json
+====================================================================

@@ -1,0 +1,605 @@
+{
+  "kernel_version": "6.12.112",
+  "target": "qualcommax/ipq50xx/xiaomi_cr8818",
+  "compiler": "aarch64-linux-gnu-gcc 11.4.0 (Ubuntu)",
+  "files": {
+    "vmlinux": {
+      "size": 74305984,
+      "sha256": "291389b2e4cff85d375201a5af3b62244bc68ccc6468d0a334a52bb4e21d4803",
+      "present": true
+    },
+    "System.map": {
+      "size": 2333902,
+      "sha256": "ca95c0e367c27f63722036858493b65cf0a1e7bd278175d873682008c3aae66a",
+      "present": true
+    },
+    "Image": {
+      "size": 14753800,
+      "sha256": "06894accb235122767acc566ed7db863350720e53c4bfeaa3439d9c36bb8ddd5",
+      "present": true
+    },
+    ".config": {
+      "size": 150433,
+      "sha256": "a179e2854befeffa483fcc3f5d601ee4280a70eafb42d8e04f895dcb00b9c064",
+      "present": true
+    },
+    ".vermagic": {
+      "size": 33,
+      "sha256": "e7b69659da3ec5206ce182cb93a6469d0441eceaddcaa9348831712067aa5311",
+      "present": true
+    },
+    "Image.gz": {
+      "size": 5816285,
+      "sha256": "bb03b410b52a71409adc0751fc04cb814e105db60b32996257ef80917738120c",
+      "present": true
+    }
+  },
+  "symbols": {
+    "yt921x_count": 221,
+    "yt921x_sample": [
+      "ffffffc0805873f8 t yt921x_hwmon_is_visible",
+      "ffffffc08058741c t yt921x_mdio_shutdown",
+      "ffffffc080587478 t yt921x_mdio_remove",
+      "ffffffc0805874e0 t yt921x_dsa_teardown",
+      "ffffffc08058758c t yt921x_dsa_setup",
+      "ffffffc0805877c8 t yt921x_hwmon_read",
+      "ffffffc0805878c4 t yt921x_mdio_probe",
+      "ffffffc080587f20 t yt921x_devlink_param_to_rma_flag",
+      "ffffffc080587f78 T yt921x_is_external_port",
+      "ffffffc080587f8c T yt921x_is_primary_cpu_port",
+      "ffffffc080587fa4 T yt921x_is_secondary_cpu_port",
+      "ffffffc080587fbc T yt921x_reg_read",
+      "ffffffc080588090 T yt921x_reg_write",
+      "ffffffc080588168 t yt921x_stock_rma_ctrl_set",
+      "ffffffc080588260 T yt921x_reg_wait",
+      "ffffffc0805883f8 T yt921x_reg_update_bits",
+      "ffffffc08058845c T yt921x_reg_set_bits",
+      "ffffffc0805884b8 T yt921x_reg_clear_bits",
+      "ffffffc080588514 T yt921x_reg_toggle_bits",
+      "ffffffc08058857c T yt921x_flow_stats_pkt_mode"
+    ],
+    "ess_sample": [
+      "ffffffc080012ae0 t run_init_process",
+      "ffffffc080012c70 t system_supports_address_auth",
+      "ffffffc0800174e4 t uaccess_ttbr0_disable.isra.0",
+      "ffffffc08001cd24 T return_address",
+      "ffffffc08001d628 t cpu_enable_trap_ctr_access",
+      "ffffffc08001f380 t has_address_auth_cpucap",
+      "ffffffc08001f468 t has_address_auth_metacap",
+      "ffffffc080025044 T __ptep_set_access_flags",
+      "ffffffc080025be0 T phys_mem_access_prot",
+      "ffffffc08002dbc4 t uaccess_ttbr0_disable",
+      "ffffffc08002e770 T nr_processes",
+      "ffffffc08002f130 T mm_access",
+      "ffffffc08002f2ec T __arm64_sys_set_tid_address",
+      "ffffffc08002f400 T copy_process",
+      "ffffffc080031518 T walk_process_tree",
+      "ffffffc080031c90 T panic_in_progress",
+      "ffffffc08003d144 t uaccess_ttbr0_disable",
+      "ffffffc08003d17c t __ptrace_may_access",
+      "ffffffc08003d920 T ptrace_access_vm",
+      "ffffffc08003dc44 T ptrace_may_access"
+    ],
+    "dsa_sample": [
+      "ffffffc0805874e0 t yt921x_dsa_teardown",
+      "ffffffc08058758c t yt921x_dsa_setup",
+      "ffffffc08058bcc0 T yt921x_dsa_get_strings",
+      "ffffffc08058bd94 T yt921x_dsa_get_ethtool_stats",
+      "ffffffc08058c3a4 T yt921x_dsa_get_sset_count",
+      "ffffffc08058c3fc T yt921x_dsa_get_eth_mac_stats",
+      "ffffffc08058c4f0 T yt921x_dsa_get_eth_ctrl_stats",
+      "ffffffc08058c574 T yt921x_dsa_get_rmon_stats",
+      "ffffffc08058c68c T yt921x_dsa_get_stats64",
+      "ffffffc08058c7a8 T yt921x_dsa_get_pause_stats",
+      "ffffffc08058c82c T yt921x_dsa_set_mac_eee",
+      "ffffffc08058c958 T yt921x_dsa_get_wol",
+      "ffffffc08058ca58 T yt921x_dsa_set_wol",
+      "ffffffc08058cb94 T yt921x_dsa_port_change_mtu",
+      "ffffffc08058ccac T yt921x_dsa_port_max_mtu",
+      "ffffffc08058d134 T yt921x_dsa_port_setup_tc",
+      "ffffffc08058f530 T yt921x_dsa_cls_flower_stats",
+      "ffffffc08058f778 T yt921x_dsa_cls_flower_del",
+      "ffffffc08058f86c T yt921x_dsa_cls_flower_add",
+      "ffffffc080592868 t yt921x_dsa_bridge_ports"
+    ]
+  },
+  "modules": [
+    {
+      "module": "ip_tunnel.ko",
+      "path": "net/ipv4/ip_tunnel.ko",
+      "size": 247904,
+      "sha256": "3b807e0a6b2a5fe9c065ab88bcb8cfcc37f5681d5679ec986d96672fcf4362f7",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "udp_tunnel.ko",
+      "path": "net/ipv4/udp_tunnel.ko",
+      "size": 174800,
+      "sha256": "e6cd1fcfa9b2341f3efea81b64dda11c93a758771892e4f3579cdd22c7e729f8",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_fib_ipv4.ko",
+      "path": "net/ipv4/netfilter/nft_fib_ipv4.ko",
+      "size": 62616,
+      "sha256": "8ecf1f5e5b233275f4ac6abe0082565868c44ceaf882c00ffeed7fe1f29ac448",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_reject_ipv4.ko",
+      "path": "net/ipv4/netfilter/nft_reject_ipv4.ko",
+      "size": 45672,
+      "sha256": "4b444b868f5df8fd44f32f58393ba7e475858d021aefd7407c4b75931f5a6071",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nf_reject_ipv4.ko",
+      "path": "net/ipv4/netfilter/nf_reject_ipv4.ko",
+      "size": 88616,
+      "sha256": "b098c3c07f91a70f0315577f04e5408083d32011c0a68c405d6b6f1f5a190b7a",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nf_defrag_ipv4.ko",
+      "path": "net/ipv4/netfilter/nf_defrag_ipv4.ko",
+      "size": 55336,
+      "sha256": "0964c40f4b507819fe16b777fe30ddfefa0eb9c37026bf25c70c1d91367194a8",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "ip6_udp_tunnel.ko",
+      "path": "net/ipv6/ip6_udp_tunnel.ko",
+      "size": 78512,
+      "sha256": "bf42a142f3ea1b21413695e12ecb49278b6a5300bee6767cfd602efeb7e3c775",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_fib_ipv6.ko",
+      "path": "net/ipv6/netfilter/nft_fib_ipv6.ko",
+      "size": 68000,
+      "sha256": "43dcfb04158946b9044d205d3b5b35bf00c532c8902c658c98ce7ebf0587cc81",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nf_defrag_ipv6.ko",
+      "path": "net/ipv6/netfilter/nf_defrag_ipv6.ko",
+      "size": 146896,
+      "sha256": "4ba4927ef6eabc8bce6ecda20cef9ebe2850a319e6acb59f100fadd1fc8b9a15",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_reject_ipv6.ko",
+      "path": "net/ipv6/netfilter/nft_reject_ipv6.ko",
+      "size": 44920,
+      "sha256": "6392ae276d33f8eceb33f17b1e2b97a4ea9c64dfad5ec810614aa6d39fae88dd",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nf_reject_ipv6.ko",
+      "path": "net/ipv6/netfilter/nf_reject_ipv6.ko",
+      "size": 90016,
+      "sha256": "f2a1e54adcc24275591993d040e9bb54bad7a834e8e9bd092cdbab487d44783e",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_reject.ko",
+      "path": "net/netfilter/nft_reject.ko",
+      "size": 47696,
+      "sha256": "11dbb8ffdad8dc2eafffec27b82cf9ead3957387f3ac3b3e6dc8f8fdd4d47440",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nf_log_syslog.ko",
+      "path": "net/netfilter/nf_log_syslog.ko",
+      "size": 106536,
+      "sha256": "5ef6bfcbb3f6a5488b4b5fe8d68195e7161ddb5539ce188d42eb3c008fb5ba30",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nf_flow_table_inet.ko",
+      "path": "net/netfilter/nf_flow_table_inet.ko",
+      "size": 48896,
+      "sha256": "45ee39abf5704a2ecce566f579ab8eff9d0d224c1773c2086606390d40fa8de5",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nf_flow_table.ko",
+      "path": "net/netfilter/nf_flow_table.ko",
+      "size": 390312,
+      "sha256": "400ad1cb8212645c1c8e4878b251774a373ab1782b78dc1bd3a93b5e9bb772ed",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_flow_offload.ko",
+      "path": "net/netfilter/nft_flow_offload.ko",
+      "size": 102152,
+      "sha256": "c824998801f1fa778f08044bb6d7901c1a4ea268234ba306ac984f9a0c546d43",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_fib_inet.ko",
+      "path": "net/netfilter/nft_fib_inet.ko",
+      "size": 44424,
+      "sha256": "43d9e9c7fced36264cdc63b97cb4274eaed811df0071e11946db332c77ce9ebc",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_redir.ko",
+      "path": "net/netfilter/nft_redir.ko",
+      "size": 57552,
+      "sha256": "74a9261bc09358765b211d2f85024e50fe36cc7ce288e125d03c101a1a59479a",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_nat.ko",
+      "path": "net/netfilter/nft_nat.ko",
+      "size": 65432,
+      "sha256": "16463fe803e7c05773719950690fe11d9b931603a96f3854412dea0d48a8f53c",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_quota.ko",
+      "path": "net/netfilter/nft_quota.ko",
+      "size": 70880,
+      "sha256": "ad9b5b61e65648a1b00868aed4ae66c1a668b2aa99901b91f8de661770c122f2",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_limit.ko",
+      "path": "net/netfilter/nft_limit.ko",
+      "size": 88920,
+      "sha256": "2a3fef36f6e71ea0863e479ba514016bdf8983fcc2ac1d2ce56034eeb01e9076",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_hash.ko",
+      "path": "net/netfilter/nft_hash.ko",
+      "size": 56952,
+      "sha256": "2647b67f5e77aa0920b8049e7dbab13a54ee5e682fef70b033c7c2f50f5650f3",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nf_nat.ko",
+      "path": "net/netfilter/nf_nat.ko",
+      "size": 342272,
+      "sha256": "c0a4ba6813a6ff31e2f8f3cd4990e706d9d31f948a1a3c7fb732e04be9a842e6",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_chain_nat.ko",
+      "path": "net/netfilter/nft_chain_nat.ko",
+      "size": 54032,
+      "sha256": "e7a4a8f81bb9d2dff674385090878c661c731067f260880bf552261859b2c0a1",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_numgen.ko",
+      "path": "net/netfilter/nft_numgen.ko",
+      "size": 59912,
+      "sha256": "fed00399cc9c4438151e2f3c78de5475b769ed9212765b1e22b62d9dfb43bc05",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nf_conntrack.ko",
+      "path": "net/netfilter/nf_conntrack.ko",
+      "size": 1061048,
+      "sha256": "56bff55350b58ba315e953e6811777854c5a5b7b5fcfc025be064ad63555c67e",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nf_tables.ko",
+      "path": "net/netfilter/nf_tables.ko",
+      "size": 2317776,
+      "sha256": "7556171a0e5fc08ba994028506cc8312e1a98be8b3033c5e6de0a12c31c86461",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_reject_inet.ko",
+      "path": "net/netfilter/nft_reject_inet.ko",
+      "size": 48000,
+      "sha256": "79865cdb9f9cfd57c27b1250b506ddd346634d53623400171a1279c83023d79a",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_log.ko",
+      "path": "net/netfilter/nft_log.ko",
+      "size": 62312,
+      "sha256": "a7e8d7fa0ab53643ae53edf918fb4bbf573dc526478b4e98be09086ab2790994",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_fib.ko",
+      "path": "net/netfilter/nft_fib.ko",
+      "size": 55008,
+      "sha256": "8898ce9c8c0938cce697d45e8c64efa2f70e49c4e7368dea8cf5bf487e89b781",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_ct.ko",
+      "path": "net/netfilter/nft_ct.ko",
+      "size": 148824,
+      "sha256": "1a44a4355f148a849f7dfa9a8348d90927f42a8be4cd67857c93d32e818b8bbb",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nft_masq.ko",
+      "path": "net/netfilter/nft_masq.ko",
+      "size": 56496,
+      "sha256": "de6eb1e5aa20bdd40a9c8028ad429e49a9c987bec4b5d6a8eefae1c469aab4ae",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "nfnetlink.ko",
+      "path": "net/netfilter/nfnetlink.ko",
+      "size": 106160,
+      "sha256": "f7729fce8ff3dc7d43f71151307b1e014e824465b7850a3c2342a8cbf8056425",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "qrtr-smd.ko",
+      "path": "net/qrtr/qrtr-smd.ko",
+      "size": 51320,
+      "sha256": "e5bacf579528a385b3a3a13db71b061c95344a8f70b9a4936cbc4671c9a2fda2",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "qrtr.ko",
+      "path": "net/qrtr/qrtr.ko",
+      "size": 256648,
+      "sha256": "cf959f252db0cc7ee30835b9d297fd9533b9225a1e4bd2e2929d638241d3e6e6",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "crc-ccitt.ko",
+      "path": "lib/crc-ccitt.ko",
+      "size": 35256,
+      "sha256": "6d780854438967592d2891573f910a280cf8191908dedae542eac69cc0c450f7",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "libcrc32c.ko",
+      "path": "lib/libcrc32c.ko",
+      "size": 39232,
+      "sha256": "6a40a0cb14fbfbf3eb1aca06fb8793646c9b6ee4ba024ff8495b962b74076453",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "libcurve25519.ko",
+      "path": "lib/crypto/libcurve25519.ko",
+      "size": 33912,
+      "sha256": "b4edc7b027e8fabad2671492c20fe08399ec635f5b68f7571cbb0397a2826298",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "libchacha20poly1305.ko",
+      "path": "lib/crypto/libchacha20poly1305.ko",
+      "size": 72768,
+      "sha256": "a93f56e31f889aeddf136bca0ec5c3db86517530af30baf4a754f4556b74cb00",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "libcurve25519-generic.ko",
+      "path": "lib/crypto/libcurve25519-generic.ko",
+      "size": 274656,
+      "sha256": "0ffc38bb8debe4565eaf3f88d2edd38058c191b6bd16a909958561fcbfd3c153",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "libchacha.ko",
+      "path": "lib/crypto/libchacha.ko",
+      "size": 35776,
+      "sha256": "e39f48ed1a95c2fa8d2d8d7a46e65878449735277111f20573ead29d3d76ab04",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "poly1305-neon.ko",
+      "path": "arch/arm64/crypto/poly1305-neon.ko",
+      "size": 72768,
+      "sha256": "38d435b6af96f7c4c28ccf524597bc6d337010b8056dae2d5152fed3d9b26fe4",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "sha512-arm64.ko",
+      "path": "arch/arm64/crypto/sha512-arm64.ko",
+      "size": 60248,
+      "sha256": "a5107dd24e4d3e425276332a99546060cc279ad41b0e22ecacf49b5cefdae381",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "chacha-neon.ko",
+      "path": "arch/arm64/crypto/chacha-neon.ko",
+      "size": 84624,
+      "sha256": "8a62713804c663664eae745803e4bcca5c7cf0dd171af621408898eb93b226ee",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "mbcache.ko",
+      "path": "fs/mbcache.ko",
+      "size": 111360,
+      "sha256": "3baebc2890130c90fd5e92a911d6144b5a5b6d21dd0efdf2a32d2f71e8450790",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "jbd2.ko",
+      "path": "fs/jbd2/jbd2.ko",
+      "size": 867688,
+      "sha256": "2e0b6269717614b4a7be45660dd6448ee777cf633f44138f6e82782ad3c8973a",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "ext4.ko",
+      "path": "fs/ext4/ext4.ko",
+      "size": 4352712,
+      "sha256": "fab53633de5b87fbccdb2ec97fad0fe7a1e8d4574fd51a187519cfe86057450e",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "cmac.ko",
+      "path": "crypto/cmac.ko",
+      "size": 62184,
+      "sha256": "979f668dbe60f9cbe171ab1e78f428cda125aa57b658d40f2b8f24ecae01a17b",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "crc32c_generic.ko",
+      "path": "crypto/crc32c_generic.ko",
+      "size": 42656,
+      "sha256": "4ebfbc447bf3362a7ea902bd3e32d1642527230e7db62ed465d74dbf9f0c05d5",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "jitterentropy_rng.ko",
+      "path": "crypto/jitterentropy_rng.ko",
+      "size": 80360,
+      "sha256": "1ab169b1a508a79751f7762b4e654138decaa4df0ecbbaa9713ebda98a15ca96",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "geniv.ko",
+      "path": "crypto/geniv.ko",
+      "size": 49352,
+      "sha256": "b6d293f09fe8f6987dc369c89bee300e77d92f443477a6ba44a9f27e6932df74",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "sha512_generic.ko",
+      "path": "crypto/sha512_generic.ko",
+      "size": 70792,
+      "sha256": "29f2524428b18b3a147a5a887524238ba8db06e4dfe650ce47a786ae23fa4873",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "michael_mic.ko",
+      "path": "crypto/michael_mic.ko",
+      "size": 47896,
+      "sha256": "f6af201d25f43073da493054dcb013a37588fb414ac234092490425756e78763",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "seqiv.ko",
+      "path": "crypto/seqiv.ko",
+      "size": 59200,
+      "sha256": "91edd4048e61308de8257058b442ad79e0b7682d92bb6246c1aa64e842109244",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "hmac.ko",
+      "path": "crypto/hmac.ko",
+      "size": 65288,
+      "sha256": "32edd911ee889b17aaa8dded82035853a128ec39658e2e4a95c0094e5beeb6aa",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "drbg.ko",
+      "path": "crypto/drbg.ko",
+      "size": 113496,
+      "sha256": "903c3d301522b6b6761f72fe1f5d41143bf00e071f1557f851d3cf0d3ed31083",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "sha3_generic.ko",
+      "path": "crypto/sha3_generic.ko",
+      "size": 60560,
+      "sha256": "741f3b70d081a51a47c345ac896b4d1cff308fa2b9c75c8af1c5809a5e868bd2",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "xhci-hcd.ko",
+      "path": "drivers/usb/host/xhci-hcd.ko",
+      "size": 1134968,
+      "sha256": "4125d4756907ec11c480e552cf5c2f28cf2cd85f1d3c90bf16e2ac203e54c157",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "xhci-pci.ko",
+      "path": "drivers/usb/host/xhci-pci.ko",
+      "size": 91304,
+      "sha256": "eb1e6b612b10f7d5d08132ee797658bf1f7b8b1f6c021046603043ef295dae71",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "xhci-plat-hcd.ko",
+      "path": "drivers/usb/host/xhci-plat-hcd.ko",
+      "size": 86984,
+      "sha256": "1a25431747a8570ac3b3de3d7de52a5703ebd4fdf3899bf10acfa87f92039045",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "roles.ko",
+      "path": "drivers/usb/roles/roles.ko",
+      "size": 69800,
+      "sha256": "24b95e5bb6f5eaa4cb48909556d376950b5d98e6d29e4dfcf5c7283512767237",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "dwc3-qcom.ko",
+      "path": "drivers/usb/dwc3/dwc3-qcom.ko",
+      "size": 99400,
+      "sha256": "32de4e04272e9dbdedba96d0d5044e4eeb2be5459f4b1eef3bc94a5c5887fd93",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "dwc3.ko",
+      "path": "drivers/usb/dwc3/dwc3.ko",
+      "size": 398544,
+      "sha256": "a190e5badba79b4aa955af8bfdc6d8a683bf8196fdde78ac005b357bc904f906",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "tun.ko",
+      "path": "drivers/net/tun.ko",
+      "size": 512456,
+      "sha256": "f492b7b6708ce385d911161ff0222b56aa5a53e14adee34c4590719cf27d8637",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "ppp_generic.ko",
+      "path": "drivers/net/ppp/ppp_generic.ko",
+      "size": 512832,
+      "sha256": "db2158e46ec5f60d109a8302b1b2d6c25de3ace14b3649c83648d1a2b4e586ec",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "ppp_async.ko",
+      "path": "drivers/net/ppp/ppp_async.ko",
+      "size": 175208,
+      "sha256": "b664600e256c6ec9059cd6bd8db8c3d7737858e9e0b85484ff2cde7f8ac4d091",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "pppox.ko",
+      "path": "drivers/net/ppp/pppox.ko",
+      "size": 58704,
+      "sha256": "29cb4e18da20836bf9c8361d66bb9a8eb248c61f082b41818ec719f556f59308",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "pppoe.ko",
+      "path": "drivers/net/ppp/pppoe.ko",
+      "size": 213984,
+      "sha256": "4e4d93b2e4e115af103bbc37db7d098720aac83a86d89bd58db8bdb0c9129448",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "slhc.ko",
+      "path": "drivers/net/slip/slhc.ko",
+      "size": 79328,
+      "sha256": "d2b52017276f2dd740e48afa31d1a72d630246533774e4d902ae56d34733d2e8",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "wireguard.ko",
+      "path": "drivers/net/wireguard/wireguard.ko",
+      "size": 985408,
+      "sha256": "9edab8ee16ccf3640d00bf2261887fa36723397125a109eab1c740f4f27bec3f",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    },
+    {
+      "module": "leds-gpio.ko",
+      "path": "drivers/leds/leds-gpio.ko",
+      "size": 57320,
+      "sha256": "ff71466945d6aa5c20c739db7b1079cbc737edb89bba6979e307bcbcbc9e458f",
+      "vermagic": "vermagic=6.12.112 SMP mod_unload aarch64"
+    }
+  ]
+}

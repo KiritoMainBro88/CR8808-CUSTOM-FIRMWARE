@@ -9,9 +9,10 @@ set -eo pipefail
 SOAK_DURATION="${1:-3600}" # Default: 3600 seconds (60 minutes); configurable
 START_TIME=$(date +%s)
 SCRIPT_PATH="$(realpath "$0")"
-SCRIPT_SHA256=$(sha256sum "$SCRIPT_PATH" | awk '{print $1}')
+SCRIPT_SHA256=$(sha256sum "$SCRIPT_PATH" 2>/dev/null | awk '{print $1}' || echo "N/A")
 LOG_FILE="/tmp/boringtun_soak_60m.log"
 TELEMETRY_JSON="/tmp/boringtun_soak_telemetry.json"
+exec > >(tee -a "$LOG_FILE") 2>&1
 
 echo "===================================================================="
 echo "BoringTun 60-Minute Extended Soak & Cryptographic Rekey Test Suite"
@@ -115,6 +116,8 @@ REKEY_COUNT=0
 LAST_HS=0
 START_SOAK_SEC=$(date +%s)
 MUTATION_COUNT=0
+LAST_LOG_SEC=0
+LAST_MUTATION_SEC=0
 
 INITIAL_RSS=$(grep VmRSS /proc/$PID_ROUTER/status | awk '{print $2}')
 echo "Initial Router VmRSS: ${INITIAL_RSS} kB"
@@ -126,31 +129,33 @@ while true; do
         break
     fi
 
-    # Bidirectional continuous ping probe
+    # Bidirectional continuous ping probe (Router -> Peer)
     if ! ip netns exec ns-soak-r ping -c 1 -W 1 192.168.160.2 >/dev/null 2>&1; then
         LOST_PINGS=$((LOST_PINGS + 1))
-        echo "[SOAK ALERT] Packet drop at T=${ELAPSED}s!"
+        echo "[SOAK ALERT] Packet drop (R->P) at T=${ELAPSED}s!"
     fi
     TOTAL_PINGS=$((TOTAL_PINGS + 1))
 
-    # Reverse ping probe (peer -> router) every 5 iterations to test bidirectional symmetry
+    # Reverse ping probe (Peer -> Router) every 5 iterations to test bidirectional symmetry
     if [ $((TOTAL_PINGS % 5)) -eq 0 ]; then
         if ! ip netns exec ns-soak-p ping -c 1 -W 1 192.168.160.1 >/dev/null 2>&1; then
             LOST_PINGS=$((LOST_PINGS + 1))
-            echo "[SOAK ALERT] Reverse packet drop at T=${ELAPSED}s!"
+            echo "[SOAK ALERT] Reverse packet drop (P->R) at T=${ELAPSED}s!"
         fi
         TOTAL_PINGS=$((TOTAL_PINGS + 1))
     fi
 
-    # Check latest handshake timestamp
+    # Check latest handshake timestamp for rekey detection
     CURRENT_HS=$(ip netns exec ns-soak-r wg show wg_soak0 latest-handshakes | awk '{print $2}')
     if [ -n "$CURRENT_HS" ]; then
         # When rekey occurs, BoringTun relative elapsed seconds drops back near zero
-        if [ "$ELAPSED" -gt 60 ] && [ "$CURRENT_HS" -lt 10 ] && [ "$LAST_HS" -gt 60 ]; then
+        if [ "$ELAPSED" -gt 60 ] && [ "$CURRENT_HS" -lt 15 ] && [ "$LAST_HS" -ge 60 ]; then
             REKEY_COUNT=$((REKEY_COUNT + 1))
             echo "[REKEY EVENT #$REKEY_COUNT] T=${ELAPSED}s: Cryptographic rekey succeeded (handshake age reset: ${LAST_HS}s -> ${CURRENT_HS}s)"
+            LAST_HS=0
+        else
+            LAST_HS="$CURRENT_HS"
         fi
-        LAST_HS="$CURRENT_HS"
     fi
 
     # Check daemon health
@@ -160,7 +165,8 @@ while true; do
     fi
 
     # Periodic runtime UAPI peer mutation (testing Issue #498 under continuous load every 300s)
-    if [ "$ELAPSED" -gt 0 ] && [ $((ELAPSED % 300)) -lt 3 ] && [ "$MUTATION_COUNT" -lt $((ELAPSED / 300)) ]; then
+    if [ "$ELAPSED" -gt 0 ] && [ $((ELAPSED - LAST_MUTATION_SEC)) -ge 300 ]; then
+        LAST_MUTATION_SEC=$ELAPSED
         MUTATION_COUNT=$((MUTATION_COUNT + 1))
         NEW_KA=$((20 + (MUTATION_COUNT % 15)))
         echo "[UAPI MUTATION #$MUTATION_COUNT] T=${ELAPSED}s: Mutating keepalive to ${NEW_KA}s during live traffic..."
@@ -168,10 +174,31 @@ while true; do
         echo "[UAPI MUTATION #$MUTATION_COUNT] Success without panic or packet drop."
     fi
 
-    # Periodic logging every 60s
-    if [ $((TOTAL_PINGS % 30)) -eq 0 ]; then
+    # Periodic logging and telemetry update every 30s
+    if [ $((ELAPSED - LAST_LOG_SEC)) -ge 30 ]; then
+        LAST_LOG_SEC=$ELAPSED
         CURR_RSS=$(grep VmRSS /proc/$PID_ROUTER/status | awk '{print $2}')
         echo "[SOAK PROGRESS] T=${ELAPSED}s/${SOAK_DURATION}s | Pings: $TOTAL_PINGS, Drops: $LOST_PINGS, Rekeys: $REKEY_COUNT, VmRSS: ${CURR_RSS} kB"
+        cat << EOF > "$TELEMETRY_JSON"
+{
+  "test": "boringtun_soak_60m",
+  "status": "RUNNING",
+  "soak_duration_seconds": $ELAPSED,
+  "target_duration_seconds": $SOAK_DURATION,
+  "packets_sent": $TOTAL_PINGS,
+  "packets_lost": $LOST_PINGS,
+  "rekey_cycles": $REKEY_COUNT,
+  "initial_vmrss_kb": $INITIAL_RSS,
+  "current_vmrss_kb": $CURR_RSS,
+  "vmrss_growth_kb": $((CURR_RSS - INITIAL_RSS)),
+  "uapi_mutations": $MUTATION_COUNT,
+  "exit_code": null
+}
+EOF
+        if [ -d "/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build" ]; then
+            cp "$TELEMETRY_JSON" /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build/boringtun_soak_60m_telemetry.json 2>/dev/null || true
+            cp "$TELEMETRY_JSON" /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build/boringtun_soak_telemetry.json 2>/dev/null || true
+        fi
     fi
 
     sleep 1.5
@@ -199,7 +226,9 @@ echo "Final Exit Code:     0"
 cat << EOF > "$TELEMETRY_JSON"
 {
   "test": "boringtun_soak_60m",
+  "status": "COMPLETED",
   "soak_duration_seconds": $TOTAL_SOAK_TIME,
+  "target_duration_seconds": $SOAK_DURATION,
   "packets_sent": $TOTAL_PINGS,
   "packets_lost": $LOST_PINGS,
   "rekey_cycles": $REKEY_COUNT,
@@ -212,6 +241,8 @@ cat << EOF > "$TELEMETRY_JSON"
 EOF
 echo "Telemetry exported to $TELEMETRY_JSON"
 if [ -d "/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build" ]; then
+    cp "$TELEMETRY_JSON" /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build/boringtun_soak_60m_telemetry.json
     cp "$TELEMETRY_JSON" /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build/boringtun_soak_telemetry.json
+    cp "$LOG_FILE" /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build/boringtun_soak_60m.log 2>/dev/null || true
     cp "$LOG_FILE" /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build/boringtun_soak.log 2>/dev/null || true
 fi

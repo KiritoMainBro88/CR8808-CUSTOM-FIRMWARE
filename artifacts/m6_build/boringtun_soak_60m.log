@@ -1,0 +1,45 @@
+====================================================================
+BoringTun 60-Minute Extended Soak & Cryptographic Rekey Test Suite
+Target: CR8818 Dual Cortex-A53 Architecture Stability Validation
+Script: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/tests/integration/soak_boringtun_60m.sh
+Script SHA256: 71b8a643d10e126691c44ee70e14213771928aad53e0d051c7ee63aeeee2a3ea
+Configured Soak Duration: 5 seconds (0 minutes)
+Started At: 2026-11-11T03:35:14Z
+====================================================================
+
+[SOAK CLEANUP] Tearing down namespaces and processes...
+[SOAK CLEANUP] Complete.
+
+--- Step 1: Network Namespaces & veth Interconnect ---
+
+--- Step 2: Launching BoringTun Instances ---
+
+--- Step 3: Establishing Initial Cryptographic Handshake ---
+PING 192.168.160.2 (192.168.160.2) 56(84) bytes of data.
+64 bytes from 192.168.160.2: icmp_seq=1 ttl=64 time=0.680 ms
+64 bytes from 192.168.160.2: icmp_seq=2 ttl=64 time=0.155 ms
+64 bytes from 192.168.160.2: icmp_seq=3 ttl=64 time=0.316 ms
+
+--- 192.168.160.2 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2145ms
+rtt min/avg/max/mdev = 0.155/0.383/0.680/0.219 ms
+Initial tunnel connectivity established.
+
+--- Step 4: Starting Continuous Soak Engine (5s) ---
+Tracking: ICMP continuous flow, Rekey cycles (~120s), VmRSS growth, UAPI mutations...
+Initial Router VmRSS: 2880 kB
+
+====================================================================
+BORINGTUN SOAK TEST COMPLETED
+====================================================================
+Total Soak Time:     6 seconds (0 min 6 s)
+Total Packets Sent:  4
+Packets Lost:        0
+Packet Loss Rate:    0.0000%
+Rekey Cycles:        0
+Initial VmRSS:       2880 kB
+Final VmRSS:         3072 kB
+Net Memory Growth:   192 kB
+UAPI Mutations:      0
+Final Exit Code:     0
+Telemetry exported to /tmp/boringtun_soak_telemetry.json

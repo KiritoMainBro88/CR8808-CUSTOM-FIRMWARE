@@ -1,0 +1,22 @@
+{
+  "test_suite": "boringtun_issue498_complete",
+  "status": "PASSED",
+  "total_phases": 8,
+  "phases_passed": 8,
+  "execution_duration_seconds": 28,
+  "issue498_metrics": {
+    "live_traffic_packet_loss_pct": 0,
+    "session_key_preserved": true,
+    "allowed_ips_append_verified": true,
+    "allowed_ips_replace_verified": true,
+    "psk_mid_session_errno": 95,
+    "psk_warning_logged": true,
+    "daemon_survived_psk_attempt": true,
+    "multi_peer_simultaneous_isolation": true,
+    "malformed_uapi_resilience": true,
+    "daemon_panics": 0
+  },
+  "raw_log_snippets": {
+    "psk_warning": "  [2m2026-11-11T03:34:08.629160Z[0m [33m WARN[0m [1;33mboringtun::device[0m[33m: [33mIn-place mutation of preshared_key is not supported; remove and re-add peer instead[0m"
+  }
+}
