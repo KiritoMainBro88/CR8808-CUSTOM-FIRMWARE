@@ -2,11 +2,11 @@
 
 - Version: `0.2.0-dev`
 - Date: 2026-11-11
-- Phase: P8/M9 Image Validation & Static Recovery Audit
-- Current Branch: `feature/m9-image-validation-audit`
-- Overall status: `M9_IMAGE_VALIDATION_PASS_PC_ONLY`
-- GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`, `feature/g1-corrections-round3`, `feature/g1-corrections-round4`, `feature/g1-corrections-round5`, `feature/g1-corrections-round5.1`, `feature/g1-corrections-round5.2`, `feature/nss-cr8818-research`, `feature/nss-cr8818-poc`, `feature/rust-userspace-strategy`, `feature/product-vision-hardening`, `feature/m5-daily-driver-build`, `feature/m6-full-source-build`, `feature/m7-architecture-selection`, `feature/m7.1-china-source-audit`, `feature/m7.1-evidence-corrections`, `feature/m8-track-a-build`, `feature/m9-image-validation-audit`)
-- Flash authorization: `NO-GO pending independent recovery validation (All artifacts classified NON_FLASHABLE_TEST_ARTIFACT)`
+- Phase: P9/M10 CR8818 Hardware Enablement & Recovery Feasibility
+- Current Branch: `feature/m10-hardware-enablement`
+- Overall status: `M10_HARDWARE_ENABLEMENT_PREFLIGHT_PASS`
+- GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE`
+- Flash authorization: `STRICT NO-GO FLASH (PC-side static audit, build verification & recovery analysis only)`
 - Initial Firmware Baseline: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Single-conduit Port 8 SGMII 1000M, Linux 6.12.112 LTS verified)
 - Primary Hardware References:
   - `yangfl/openwrt` (commit `6729bbe9f082dc15449f17908832447caeec5065` on `cr8818` branch) — Authoritative CR8818 DTS, SerDes REVSGMII abuse patch 940, caldata geometry

@@ -49,15 +49,16 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P7-M8-ROADMAP | Kernel Lifecycle & Migration Roadmap (6.12 LTS Dec 2026 -> 6.18 LTS Dec 2027) | P7 | DONE | Gemini | P7-M8-PREFLIGHT |
 | P7-M8-TRACK-A-BUILD | Milestone M8.1 Track A Firmware Image Build (OpenWrt 25.12.6, Linux 6.12.112, factory.ubi & sysupgrade.bin) | P7 | DONE | Gemini | P7-M8-ROADMAP |
 | P8-M9-IMAGE-VALIDATION | Milestone M9 Image Validation, FIT Inspection, UBI Partition Audit & Recovery Strategy | P8 | DONE | Gemini | P7-M8-TRACK-A-BUILD |
-| P9-M10-HARDWARE-VALIDATION | Milestone M10 Hardware Validation (RAM Boot via TFTP, YT9215 link, RF calibration test) | P9 | NOT_STARTED | Gemini | P8-M9-IMAGE-VALIDATION |
+| P9-M10-HARDWARE-ENABLEMENT | Milestone M10 Hardware Enablement (Wi-Fi DTS, Remoteproc SMEM 507, BDF, Caldata, Switch Reset Timing, RAM Budget & Recovery Feasibility) | P9 | DONE | Gemini | P8-M9-IMAGE-VALIDATION |
+| P9-M10-HARDWARE-VALIDATION | Milestone M10 Hardware Validation on Physical Unit (TFTP RAM Boot, Live Radio/Switch Tests) | P9 | BLOCKED | ChatGPT + User | M10 Architecture Review & Flash Approval |
 | P6-001 | Release candidate and deployment decision | P6 | BLOCKED | User | All gates |
 
 ## Current instruction
-Milestone M9 Image Validation & Static Recovery Audit completed on branch `feature/m9-image-validation-audit`:
-1. **Debunked Optical Illusion on `sysupgrade.bin`:** Verified standard POSIX GNU tar format containing `CONTROL`, `kernel` (FIT uImage.itb 5.28 MB), `root` (SquashFS 9.11 MB) and `fwtool` JSON metadata trailer. Disproved the raw `sysu` magic bytes illusion.
-2. **FIT Container Architecture Verified:** Verified FIT images target AArch64, `load = 0x41000000`, Linux 6.12.112 + FDT blob (27,293 B) matched to `config@mp03.3` (Qualcomm reference board ap-mp03.3).
-3. **UBI Physical Eraseblock & NAND Geometry Audit:** Mapped Winbond W25N01GV 128 MB SPI NAND (1024 PEBs, 128K PEB, 124K LEB, 2048 page). Audited all 18 MTD partitions from `ipq5018-xiaomi-base.dtsi`. Proved `KERNEL_SIZE := 36864k` is strictly an OpenWrt build-time assertion gate, not a partition generator. Mathematically derived dynamic `rootfs_data` capacity (160 LEBs = 19.38 MiB). Reconciled 20.75 MB vs 20.90 MB headroom figures.
-4. **Wi-Fi Calibration & DTS Status Identified:** Identified root causes for inactive Wi-Fi: DTS sets `status = "disabled"` on `&wifi` and `&wifi1` (upstream David Yang OOM precaution), and `11-ath11k-caldata` completely omits `xiaomi,cr8818`. Verified physical calibration offsets in 1 MiB `0:art`: 2.4 GHz @ `0x1000` (128K), 5 GHz @ `0x26800` (128K). Reconciled Q6 WCSS 48 MB memory carveout (`0x4b000000`) impact on 256 MB RAM.
-5. **Recovery Runbook Authored:** Established non-UART Xiaomi recovery protocol and interactive UART TFTP RAM boot sequence (`bootm 0x44000000#config@mp03.3`) strictly distinguishing zero-risk RAM boot from permanent NAND flashing.
-6. **27-Row Feature Parity Matrix Hardened:** Applied strict 5-tier taxonomy (`BUILD_VERIFIED`, `STATIC_VERIFIED`, `RUNTIME_VERIFIED_PC`, `UNVERIFIED_ESTIMATE`, `DISABLED`). Explicitly reclassified 1 Gbps wire-speed NAT as unverified estimate (no NSS hardware acceleration in Track A).
-7. **Safety Boundary Enforced:** STRICT `NO-GO FLASH`. 0 SSH, 0 TFTP to router, 0 flashing, 0 NAND/NVRAM writes, 0 reboots. `D:\vibecode\test_wifi` remains 100% untouched. Ready for Chief Architect review.
+Milestone M10 Hardware Enablement & Recovery Feasibility in progress on branch `feature/m10-hardware-enablement`:
+1. **Wi-Fi Dual-Radio Bringup:** Enabled `&wifi` and `&wifi1` in `ipq5018-cr8818.dts` under `ath11k-fw-memory-mode = <1>`. Injected Q6 WCSS remoteproc node with SMEM 507 boot-args `<0x2 4 2 18 0 0>` mapping PCIe companion radio to UserPD 2 with reset GPIO 18.
+2. **Dynamic Caldata & BDF Integration:** Audited and proved physical `0:art` geometry (2.4G @ 0x1000, 5G @ 0x26800). Patched `/etc/hotplug.d/firmware/11-ath11k-caldata` for automatic live extraction preserving factory calibration. Created and built `ipq-wifi-xiaomi_cr8818` supplying reference `board-2.bin` files.
+3. **Switch Reset Timing & Polarity:** Confirmed GPIO 39 active-low reset polarity matching `RESETB`. Added `reset-assert-us = <10000>` and `reset-deassert-us = <50000>` to DTS `&mdio1` to eliminate the PLL lock race condition without fragile userspace scripts.
+4. **RAM Budget Reconciled (No Double Counting):** Proved DTB `no-map` exclusion of 48MB Q6 carveout before Linux `MemTotal` (182MB). Built rigorous balance sheet demonstrating 92.0 MB net available free RAM.
+5. **Non-UART Recovery Feasibility:** Audited recovery mechanisms under strict 4-tier taxonomy, establishing U-Boot Web recovery and TFTP RAM boot capabilities while detailing hard-brick boundaries.
+6. **Master 27-Row Parity Matrix:** Upgraded Wi-Fi from `DISABLED` to `BUILD_VERIFIED / STATIC_VERIFIED`, switch reset to `STATIC_VERIFIED`, and RAM budget to `STATIC_VERIFIED / RECONCILED`.
+7. **Strict Safety Protocol:** STRICT `NO-GO FLASH`. 0 SSH, 0 TFTP to router, 0 flashing, 0 NAND/NVRAM writes, 0 reboots. `D:\vibecode\test_wifi` remains 100% untouched.
