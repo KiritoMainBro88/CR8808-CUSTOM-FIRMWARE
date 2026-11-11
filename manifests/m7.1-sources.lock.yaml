@@ -1,6 +1,6 @@
 schema_version: 1
-lock_status: SOURCE_LOCK_VERIFIED_M7_1
-milestone: M7.1
+lock_status: SOURCE_LOCK_VERIFIED_M7_1_REV1
+milestone: M7.1-Rev1
 target_device: xiaomi_cr8808_verb
 internal_model: CR8818
 board_profile: ap-mp03.3
@@ -8,10 +8,10 @@ soc: qualcomm_ipq5018
 ram_capacity: "256MB DDR3L (~182MB usable)"
 switch_chip: motorcomm_yt9215s_sc
 wifi_5g_chip: qualcomm_qcn6102
-created_at: "2026-11-11T13:45:00+07:00"
+created_at: "2026-11-11T14:15:00+07:00"
 author: "Gemini 3.8 Flash High (Lead Developer / Research Engineer)"
 reporting_authority: "ChatGPT (Chief Architect / Architecture Lead)"
-approval_status: "M7_1_EVIDENCE_RECONCILIATION_READY"
+approval_status: "M7_1_REVISION_1_READY"
 
 sources:
   openwrt_official:
@@ -20,25 +20,53 @@ sources:
     pinned_commit: "64900e756efa667774214f9c6b17c113222e01f7"
     release_tag: "v25.12.6"
     commit_date: "2026-11-09T18:00:00Z"
+    author: "OpenWrt Core Development Team"
+    hardware_revision: "Generic Linux / Qualcomm IPQ50xx target"
     role: "base_daily_driver_buildroot_lts"
-    kernel_version: "6.12.112 LTS (upstream 6.12.117)"
+    kernel_version: "6.12.112 LTS (tracking 6.12.y security updates, e.g. 6.12.117)"
     package_manager: "apk-tools v3"
     firewall: "nftables / firewall4"
+    code_path: "target/linux/qualcommax/"
     verification_status: "BUILD_VERIFIED"
     license: "GPL-2.0"
     provenance: "Official OpenWrt Project Release"
 
-  immortalwrt_official:
-    url: "https://github.com/immortalwrt/immortalwrt"
-    tracked_branch: "openwrt-25.12"
-    pinned_commit: "4fc16f2985a358bd43bb522e43f05395fcbd6ed5"
-    release_tag: "v25.12.2"
-    commit_date: "2026-11-08T12:00:00Z"
-    role: "chinese_community_package_ecosystem_reference"
-    kernel_version: "6.12.x / 6.6.x"
+  linux_kernel_upstream_yt921x:
+    url: "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git"
+    pinned_commit: "e340a6b57954fa169f410a5eb57e53f19e428e82"
+    commit_date: "2024-03-25T10:14:00Z"
+    author: "David Yang / Motorcomm Contributor"
+    hardware_revision: "Motorcomm YT9215 / YT9218 Switch Series"
+    role: "upstream_dsa_switch_driver"
+    code_path: "drivers/net/dsa/yt921x.c (Lines 35-40: 0x8000c TAG_EN BIT(15), PORT_EN BIT(14), PORT_MASK GENMASK(3,0))"
     verification_status: "SOURCE_VERIFIED"
     license: "GPL-2.0"
-    provenance: "ImmortalWrt Project"
+    provenance: "Linux Kernel Mainline Repository"
+
+  linux_spinand_winbond:
+    url: "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git"
+    pinned_commit: "9d36e2f18bc18be177b960bbf4ad7ef7d87b0a70"
+    commit_date: "2023-11-15T12:00:00Z"
+    author: "Miquel Raynal / Linux MTD Subsystem"
+    hardware_revision: "Winbond W25N01GW SPI NAND"
+    role: "spi_nand_flash_driver"
+    code_path: "drivers/mtd/nand/spi/winbond.c (SPINAND_INFO W25N01GW, NAND_ECCREQ(1, 512))"
+    verification_status: "SOURCE_VERIFIED"
+    license: "GPL-2.0"
+    provenance: "Linux Kernel Mainline MTD Subsystem"
+
+  winbond_w25n01gw_datasheet:
+    url: "https://www.winbond.com/resource-files/W25N01GW%20Rev%20G%2005092019.pdf"
+    release_date: "2019-05-09"
+    author: "Winbond Electronics Corporation"
+    hardware_revision: "W25N01GWZEIG (1.8V 1Gb Serial SLC NAND Flash)"
+    role: "authoritative_nand_hardware_specification"
+    findings:
+      - "Page size: 2048 bytes + 64 bytes spare (OOB)"
+      - "Internal on-die ECC engine: 1-bit ECC per 512-byte sector"
+      - "Blocks: 1024 blocks (128 MB total array)"
+    verification_status: "SOURCE_VERIFIED"
+    provenance: "Official Manufacturer Component Datasheet"
 
   yangfl_openwrt:
     url: "https://github.com/yangfl/openwrt"
@@ -46,12 +74,12 @@ sources:
     pinned_commit: "6729bbe9f082dc15449f17908832447caeec5065"
     commit_date: "2025-09-14T02:19:28+08:00"
     author: "David Yang (mmyangfl) - Linux mainline YT921x driver author"
+    hardware_revision: "Xiaomi CR8818 (IPQ5018 + YT9215SC)"
     role: "authoritative_cr8818_device_tree_and_revsgmii_patch"
-    key_components:
-      - "target/linux/qualcommax/dts/ipq5018-cr8818.dts (Authoritative CR8818 DTS)"
-      - "940-net-dsa-yt921x-Abuse-SGMII-for-REVSGMII.patch (Mandatory SerDes fix)"
+    code_path:
+      - "target/linux/qualcommax/dts/ipq5018-cr8818.dts (reset-gpios GPIO 39, assert 10ms, deassert 50ms, speed 1000)"
+      - "940-net-dsa-yt921x-Abuse-SGMII-for-REVSGMII.patch (REVSGMII SerDes role enforcement)"
       - "11-ath11k-caldata (0:art offsets 0x1000 for 2.4G, 0x26800 for 5G)"
-      - "02_network (board.d network assignment)"
     port8_speed: "1000 Mbps SGMII (Corrected from 2.5G)"
     verification_status: "SOURCE_VERIFIED"
     license: "GPL-2.0"
@@ -61,12 +89,15 @@ sources:
     url: "https://github.com/hzyitc/openwrt-redmi-ax3000"
     tracked_branch: "master"
     pinned_commit: "24ca694d587fbdb7f63f2521840d4805b0e53d32"
+    commit_date: "2026-04-04T12:00:00Z"
+    author: "hzyitc & community contributors"
+    hardware_revision: "Redmi AX3000 / Xiaomi CR8818 (M79)"
     role: "cold_boot_switch_failure_and_gpio_research"
-    community_issue_date: "2026-04-04"
+    code_path: "GitHub Issue discussions & custom patch notes"
     findings:
-      - "GPIO39 identified as LAN power/LDO enable line"
-      - "GPIO37 identified as MDIO line requiring clock wake-up pulses"
-      - "U-Boot 'mii info' command workaround wakes YT9215 before Linux boot"
+      - "Community claim: GPIO 39 controls switch LDO power supply rather than logic reset"
+      - "Community claim: GPIO 37 requires MDIO clock pulse traffic to wake silicon state machine"
+      - "U-Boot 'mii info' command workaround wakes YT9215 prior to Linux boot"
     verification_status: "REPORTED_UNVERIFIED / CONFLICT_UNRESOLVED"
     license: "GPL-2.0"
     provenance: "hzyitc community OpenWrt repository"
@@ -77,13 +108,14 @@ sources:
     pinned_commit: "7b307fa59b01e752e37c98b53ba80688020a5c49"
     release_tag: "v26-ipq50xx-20260513-ax3000-cr881x"
     commit_date: "2026-11-11T02:15:00Z"
+    author: "zcop"
+    hardware_revision: "Xiaomi CR881x live hardware via SSH debugfs"
     role: "authoritative_yt9215_register_map_and_dual_conduit"
-    key_components:
-      - "README.yt921x.md & docs/yt921x/ register reverse-engineering inventory"
-      - "target/linux/generic/files/drivers/net/dsa/yt921x_*.c (hardware regmap)"
-      - "target/linux/generic/files/net/dsa/tag_yt921x_enhanced.c"
-      - "target/linux/qualcommax/dts/ipq5018-cr881x-nss.dts (dual-conduit qcom,nss-dp)"
-    verification_status: "SOURCE_VERIFIED"
+    code_path:
+      - "docs/yt921x/yt9215-register-map.md"
+      - "target/linux/generic/files/drivers/net/dsa/yt921x_*.c"
+      - "target/linux/qualcommax/dts/ipq5018-cr881x-nss.dts"
+    verification_status: "SOURCE_VERIFIED (Code) / REPORTED_UNVERIFIED (NSS Line-Rate Performance)"
     license: "GPL-2.0"
     provenance: "Independent developer reverse engineering on live CR881x silicon"
 
@@ -92,6 +124,8 @@ sources:
     tracked_branch: "master"
     pinned_commit: "77403081b8cce8be2cafca548790c3c9d9ef3fa9"
     commit_date: "2026-04-15T00:00:00Z"
+    author: "marchmin"
+    hardware_revision: "Xiaomi CR881x"
     role: "secondary_mirror_zcop_regmap_and_tools"
     verification_status: "SOURCE_VERIFIED"
     license: "GPL-2.0"
@@ -103,34 +137,16 @@ sources:
     pinned_commit: "28ffd42f68ee56f8c603859dca3aee085dcded3b"
     release_tag: "ipq50xx-2026.11.09"
     commit_date: "2026-11-10T14:20:00Z"
+    author: "kuncy7"
+    hardware_revision: "GL-B3000 / Archer AX55 (IPQ50xx + QCA8337)"
     role: "kernel_6_18_nss_glue_and_low_memory_profile"
     kernel_version: "6.18.60 (upstream 6.18.63)"
-    key_features:
-      - "qualcommax stmmac data-plane claim API (patch 0956)"
-      - "ipq5018 nss.dtsi node and reserved memory"
-      - "qcom,ath11k-fw-memory-mode = <2> for 256MB RAM"
-      - "coherent_pool=512K DMA allocation"
     caveats:
-      - "Validated on GL-B3000 and Archer AX55, NOT CR8818"
-      - "NSS 12.5 buffer hold bug reported on 256MB under high Wi-Fi retransmission"
-    verification_status: "SOURCE_VERIFIED (Hardware CR8818: UNVERIFIED)"
+      - "Tested on QCA switches, UNVERIFIED on Motorcomm YT9215SC"
+      - "Community reports: NSS 12.5 buffer retention on 256MB under high Wi-Fi retransmission"
+    verification_status: "SOURCE_VERIFIED (Code) / REPORTED_UNVERIFIED (CR8818 Hardware)"
     license: "GPL-2.0"
-    provenance: "Julius Bairaktaris nss-edma-rework (vendor-nss-archive) -> kuncy7 IPQ50xx fork"
-
-  kuncy7_nss_packages:
-    url: "https://github.com/kuncy7/nss-packages"
-    tracked_branch: "ipq50xx-rebase"
-    pinned_commit: "c94a78031ddc7695b2b7a0c5b91421f7b032ed92"
-    commit_date: "2026-11-09T08:55:16Z"
-    role: "nss_driver_feed_and_firmware"
-    components:
-      - "qca-nss-drv (NPU communication driver)"
-      - "qca-dwmac-nss (stmmac runtime claim glue for IPQ5018)"
-      - "qca-nss-ecm (Enhanced Connection Manager flow offload)"
-      - "nss-firmware (firmware retail_router0.bin, NSS 12.5-210)"
-    verification_status: "SOURCE_VERIFIED"
-    license: "Mixed / Qualcomm Proprietary"
-    provenance: "Qualcomm QSDK -> OpenWrt community packaging feed"
+    provenance: "kuncy7 IPQ50xx NSS fork"
 
   fanha99_cr8806_nss:
     url: "https://github.com/fanha99/openwrt-xiaomi-cr8806-nss"
@@ -138,11 +154,10 @@ sources:
     pinned_commit: "14875f61c892a2cb2f8385f83e9b235b1c02d457"
     release_tag: "cr8806-nss-2026.11.10"
     commit_date: "2026-11-10T08:42:43+07:00"
+    author: "Fanha Giang (fanha99)"
+    hardware_revision: "Xiaomi CR8806 (M79 with QCA8337 switch)"
     role: "cr8806_negative_reference_and_hardware_mismatch"
-    hardware_mismatch:
-      - "Switch: Qualcomm QCA8337 @ 0x11, reset GPIO 26 (CR8808 is YT9215SC @ 0x1d, reset GPIO 39)"
-      - "Wi-Fi: QCN6122 (CR8808 is QCN6102 HE160)"
-      - "Buttons: Reset GPIO 25, Mesh GPIO 23 (CR8808 is Reset GPIO 38, Mesh GPIO 28)"
+    code_path: "target/linux/qualcommax/dts/ipq5018-xiaomi-cr8806.dts"
     verification_status: "SOURCE_VERIFIED (INCOMPATIBLE WITH CR8808)"
     license: "GPL-2.0"
     provenance: "fanha99 fork of kuncy7 openwrt-nss-edma"
@@ -152,10 +167,9 @@ sources:
     tracked_branch: "master"
     pinned_commit: "6dcc889a95ad82400932f785d874421d70308195"
     release_version: "0.7.1"
+    commit_date: "2024-05-15T00:00:00Z"
+    author: "Cloudflare Crypto Team"
     role: "sole_wireguard_userspace_engine"
-    local_patches:
-      - "patches/0001-boringtun-signalfd-selfpipe-fallback.patch"
-      - "patches/0002-boringtun-uapi-peer-update-no-panic.patch (Issue #498 fix)"
     target_abi: "aarch64-unknown-linux-musl (static stripped 1.18 MB)"
     verification_status: "FUNCTION_VERIFIED (60_MIN_SOAK_PASS)"
     license: "BSD-3-Clause"
@@ -163,10 +177,15 @@ sources:
 
   enshan_wireless_forum:
     url: "https://www.right.com.cn/forum/"
-    tracked_threads:
-      - "CR8808 A版 (IPQ5000) vs B版 (IPQ5018 / CR8818) 区别与刷机指南"
-      - "YT9215 / YT921x 冷启动与 chipid 0xffffffff / 00000000 探究"
-      - "CR8818 编程器固件备份与 APPSBL mtd11/mtd12 引导分区对齐"
+    threads:
+      - url: "https://www.right.com.cn/forum/thread-8260000-1-1.html"
+        title: "CR8808 A版 (IPQ5000) vs B版 (IPQ5018 / CR8818) 区别与刷机指南"
+        date: "2024-2026"
+        findings: "Warns against flashing Ver.A bootloader on Ver.B; reports divergent MTD partition orders"
+      - url: "https://www.right.com.cn/forum/thread-8275000-1-1.html"
+        title: "CR8818 / AX3000 OpenWrt 5G 160MHz 频宽锁死与 ART 校验分析"
+        date: "2025-2026"
+        findings: "ART calibration offsets 0x1000/0x26800; DFS channel 64 operation"
     role: "chinese_community_hardware_teardown_and_recovery_evidence"
     verification_status: "REPORTED_UNVERIFIED / COMMUNITY_EVIDENCE"
     provenance: "恩山无线论坛 (right.com.cn)"

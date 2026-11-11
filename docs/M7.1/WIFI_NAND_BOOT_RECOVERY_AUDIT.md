@@ -1,190 +1,168 @@
-# Wi-Fi 6, SPI NAND MTD Architecture & Non-UART Recovery Audit (M7.1)
+# Wi-Fi 6, SPI NAND MTD Architecture & Recovery Audit (M7.1 Revision 1)
 
 - **Document ID:** `docs/M7.1/WIFI_NAND_BOOT_RECOVERY_AUDIT.md`
 - **Project:** `CR8808-CUSTOM-FIRMWARE` (v0.2.0-dev)
 - **Target Hardware:** Xiaomi CR8808 Ver.B (Codename `CR8818`, Board Profile `ap-mp03.3`, IPQ5018 + QCN6102 + Winbond W25N01GW)
 - **Author:** Gemini 3.8 Flash High (Lead Developer / Research Engineer)
 - **Reporting Authority:** ChatGPT (Chief Architect / Architecture Lead)
-- **Status:** Complete Technical Specification & Safety Audit for Gate M7.1
-- **Evidence Classification:** `SOURCE_VERIFIED`, `DEVICE_READBACK`, `REPORTED_UNVERIFIED`.
+- **Status:** Complete Technical Specification & Safety Audit for Gate M7.1 Revision 1
+- **Evidence Classification:** `SOURCE_VERIFIED`, `DEVICE_READBACK`, `REPORTED_UNVERIFIED`, `INFERRED`.
 
 ---
 
 ## 1. Executive Summary
 
-This document establishes the hardware truth and operational safety baselines for the three most sensitive hardware subsystems of the Xiaomi CR8808 Ver.B:
-1. **SPI NAND Flash & MTD Partitioning:** Physical properties of the Winbond W25N01GW chip, hardware ECC parameters, and protection of critical bootloader partitions (`mtd11`/`mtd12`).
-2. **Dual-Rootfs Bootcounter Failover & Stock TFTP Recovery:** Autonomous dual-boot failover mechanics driven by Qualcomm APPSBL and the unbrickable stock TFTP beacon protocol.
-3. **Wi-Fi 6 Architecture & Factory Calibration Pipeline:** Separation of internal 2.4 GHz radio and external QCN6102 5 GHz HE160 radio, precise caldata offsets in `0:ART`, and staging to Hexagon Q6 WCSS.
+This document establishes the verified hardware parameters, architecture, and safety constraints for three critical subsystems of the Xiaomi CR8808 Ver.B:
+1. **SPI NAND Flash & MTD Architecture:** Official Winbond W25N01GW on-die ECC specification (`NAND_ECCREQ(1, 512)`), distinction between partition labels, physical offsets, and dynamic runtime MTD enumeration.
+2. **Recovery Channels & Risk Demarcation:** Separation of Xiaomi stock TFTP recovery, U-Boot HTTP web recovery, UART console recovery, and dual-rootfs bootcounter failover. Formal retraction of the "100% recovery safety" claim.
+3. **Wi-Fi 6 Subsystem:** Disambiguation of physical QCN6102 silicon from the upstream `qcn6122` firmware driver path, calibration offsets in `0:ART`, and the critical distinction between calibration geometry and DFS/HE160 regulatory enforcement.
 
 ---
 
 ## 2. SPI NAND Flash Hardware & MTD Partition Topology
 
-### 2.1 Physical NAND Flash Specifications
-- **Manufacturer & Part Number:** Winbond W25N01GWZEIG (1 Gb / 128 MB SPI NAND).
-- **Interface:** SPI-NAND (clocked up to 104 MHz via IPQ5018 QSPI controller).
-- **Page Geometry:** 2048 bytes user data + 64 bytes Out-Of-Band (OOB / Spare).
-- **Block Geometry:** 64 pages per block (128 KB user data + 4 KB spare).
-- **Total Array:** 1024 blocks (128 MB total address space).
-- **Hardware ECC Parameters:**
-  - On-die ECC is bypassed/overridden by the Qualcomm QSPI NAND controller.
-  - Device Tree specification:
-    ```dts
-    nand-ecc-strength = <8>;
-    nand-ecc-step-size = <512>;
+### 2.1 Physical NAND Flash Specifications & ECC Truth (`SOURCE_VERIFIED`)
+- **Manufacturer & Part Number:** Winbond W25N01GWZEIG (1 Gb / 128 MB Serial SLC NAND Flash, 1.8V).
+- **Interface:** Standard SPI-NAND (clocked via IPQ5018 QSPI controller).
+- **Array Geometry:**
+  - Page Size: 2048 bytes user data + 64 bytes Out-Of-Band (OOB / Spare area).
+  - Block Size: 64 pages per block (128 KB user data + 4 KB spare).
+  - Total Array: 1024 blocks (128 MB total addressable flash).
+- **Hardware ECC Specification (Official Winbond Datasheet & Upstream Linux Driver):**
+  - According to the official Winbond W25N01GW datasheet, the chip integrates an **internal 1-bit on-die ECC engine** covering each 512-byte sector.
+  - In upstream Linux kernel (`drivers/mtd/nand/spi/winbond.c`), the chip is registered as:
+    ```c
+    SPINAND_INFO("W25N01GW",
+        SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xba, 0x21),
+        NAND_MEMORG(1, 2048, 64, 64, 1024, 20, 1, 1, 1),
+        NAND_ECCREQ(1, 512),
+        SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
+                     &write_cache_variants,
+                     &update_cache_variants),
+        0,
+        SPINAND_ECCINFO(&w25m02gv_ooblayout, NULL)),
     ```
-  - The controller computes 8-bit BCH ECC per 512-byte sector across the 64-byte OOB area. Any driver mismatch in ECC strength or step size causes uncorrectable bit errors (`EBADMSG`) and corrupts the rootfs.
+  - **Correction Regarding ECC Strength:**
+    Previous drafts erroneously claimed a mandatory "8-bit BCH controller ECC (`nand-ecc-strength = 8`)". Unless explicit controller-level override source code is verified for the IPQ5018 QSPI driver, the hardware requirement is established as **1-bit ECC per 512 bytes** (`NAND_ECCREQ(1, 512)`), provided natively by the on-die engine. The previous 8-bit claim is retracted.
 
-### 2.2 Master Information Block (MIBIB) Partition Map
+---
 
-The Qualcomm IPQ5018 partition table is parsed from `0:MIBIB` (`mtd1`) by the bootloader and Linux `qcom,smem` / `mtd-split`:
+### 2.2 Partition Labels, Physical Offsets & Dynamic Runtime MTD Enumeration
 
-```
-+====================================================================================================+
-|                                    MIBIB MTD PARTITION MAP (128 MB)                                |
-+========+==================+=============+=============+============================================+
-| MTD ID | Partition Name   | Offset      | Size        | Description & Safety Classification        |
-+========+==================+=============+=============+============================================+
-| mtd0   | 0:SBL1           | 0x00000000  | 0x00100000  | Secondary Boot Loader (Read-Only)          |
-| mtd1   | 0:MIBIB          | 0x00100000  | 0x00100000  | Partition Table Definition (Read-Only)     |
-| mtd2   | 0:QSEE           | 0x00200000  | 0x00300000  | Qualcomm Secure Execution Env (TrustZone)  |
-| mtd3   | 0:DEVCFG         | 0x00500000  | 0x00080000  | Device Configuration Table (Read-Only)     |
-| mtd4   | 0:RPM            | 0x00580000  | 0x00080000  | Resource Power Manager Firmware            |
-| mtd5   | 0:CDT            | 0x00600000  | 0x00080000  | DDR Memory Timing Parameters               |
-| mtd6   | 0:APPSBLENV      | 0x00680000  | 0x00080000  | U-Boot Bootloader Environment Variables    |
-| mtd7   | 0:ART            | 0x00700000  | 0x00100000  | Atheros Radio Test: Wi-Fi Calibration Data |
-| mtd8   | bdata            | 0x00800000  | 0x00100000  | Board Data: Model, Serial, Factory MACs    |
-| mtd9   | crash            | 0x00900000  | 0x00080000  | Kernel Panic Crashlog Buffer               |
-| mtd10  | crash_syslog     | 0x00980000  | 0x00080000  | Crash Syslog Storage                       |
-+--------+------------------+-------------+-------------+--------------------------------------------+
-| mtd11  | 0:APPSBL         | 0x00a00000  | 0x00180000  | Primary U-Boot Bootloader [CRITICAL!]      |
-| mtd12  | 0:APPSBL_1       | 0x00b80000  | 0x00180000  | Backup U-Boot Bootloader  [CRITICAL!]      |
-+--------+------------------+-------------+-------------+--------------------------------------------+
-| mtd13  | rootfs           | 0x00d00000  | 0x02800000  | Active Rootfs UBI Volume (System 1, ~40MB) |
-| mtd14  | rootfs_1         | 0x03500000  | 0x02800000  | Backup Rootfs UBI Volume (System 2, ~40MB) |
-| mtd15  | overlay          | 0x05d00000  | 0x02300000  | Writable User Overlay UBI Volume (~35MB)   |
-+========+==================+=============+=============+============================================+
-```
+To prevent soft-bricking, flash operations must strictly distinguish between **Partition Labels**, **Physical Flash Offsets**, and **Dynamic Runtime MTD Enumeration**:
+
+1. **Partition Labels (Authoritative):** Defined in the Master Information Block (`0:MIBIB`) and parsed by Qualcomm SBL/APPSBL and Linux kernel parsers (`qcom,smem` / `cmdlinepart`).
+2. **Physical Flash Offsets:** Fixed byte offsets on the NAND flash memory array.
+3. **Runtime MTD Enumeration (`mtd0`, `mtd1`, ...):** Assigned dynamically by the Linux MTD subsystem depending on driver probe order, SMEM table parsing direction, and active UBI volumes.
+
+> [!WARNING]
+> **No Hardcoded `/dev/mtdX` Indexing:**
+> Community reports on Enshan for CR881x devices show divergent runtime numbering:
+> - In some logs, `0:ART` is assigned to `mtd7`, while in other configurations it appears as `mtd13`.
+> - `0:APPSBL` has been reported at `mtd11` or `mtd12` depending on partition table layout and active dual-boot slot.
+> Therefore, scripts and documentation must **never hardcode MTD integer numbers**. Software must resolve partitions strictly by label (e.g. `find_mtd_part "0:ART"` or via `/proc/mtd` string matching).
+
+#### Partition Topology Reference Table (Labels & Physical Geometry)
+
+| Partition Label | Physical Offset (Typical) | Typical Size | Description & Safety Classification | Evidence Level |
+|---|---|---|---|---|
+| `0:SBL1` | `0x00000000` | 1024 KB | Secondary Boot Loader (Read-Only) | `SOURCE_VERIFIED` |
+| `0:MIBIB` | `0x00100000` | 1024 KB | Partition Table Master Block (Read-Only) | `SOURCE_VERIFIED` |
+| `0:QSEE` | `0x00200000` | 3072 KB | Qualcomm Secure Execution Environment / TrustZone | `SOURCE_VERIFIED` |
+| `0:DEVCFG` | `0x00500000` | 512 KB | Device Configuration Parameters | `SOURCE_VERIFIED` |
+| `0:RPM` | `0x00580000` | 512 KB | Resource Power Manager Firmware | `SOURCE_VERIFIED` |
+| `0:CDT` | `0x00600000` | 512 KB | DDR Memory Configuration Data Table | `SOURCE_VERIFIED` |
+| `0:APPSBLENV` | `0x00680000` | 512 KB | U-Boot Environment Variables (Boot flags) | `SOURCE_VERIFIED` |
+| `0:ART` | `0x00700000` (varies) | 1024 KB | Atheros Radio Test (Factory RF Calibration) | `REPORTED_UNVERIFIED` (Offset) |
+| `bdata` | `0x00800000` | 1024 KB | Board Data: Model ID, Serial Number, MACs | `REPORTED_UNVERIFIED` (Offset) |
+| `crash` | `0x00900000` | 512 KB | Kernel Panic Crashlog Storage | `REPORTED_UNVERIFIED` (Offset) |
+| `crash_syslog` | `0x00980000` | 512 KB | Crash Syslog Buffer | `REPORTED_UNVERIFIED` (Offset) |
+| `0:APPSBL` | `0x00a00000` (varies) | 1536 KB | Primary U-Boot Bootloader [CRITICAL!] | `REPORTED_UNVERIFIED` (Offset) |
+| `0:APPSBL_1` | `0x00b80000` (varies) | 1536 KB | Backup U-Boot Bootloader  [CRITICAL!] | `REPORTED_UNVERIFIED` (Offset) |
+| `rootfs` | `0x00d00000` (varies) | ~40 MB | Active System Rootfs UBI Volume | `REPORTED_UNVERIFIED` (Offset) |
+| `rootfs_1` | `0x03500000` (varies) | ~40 MB | Backup System Rootfs UBI Volume | `REPORTED_UNVERIFIED` (Offset) |
 
 > [!CAUTION]
-> **CRITICAL FLASH SAFETY RULE:**
-> `mtd11` (`0:APPSBL`) and `mtd12` (`0:APPSBL_1`) contain the physical U-Boot binaries. **Writing, modifying, or erasing these partitions is strictly prohibited.** Under our non-invasive architecture, custom firmware is packaged strictly as a UBI rootfs image written to `mtd13` or `mtd14`. Overwriting APPSBL destroys the bootloader, making TFTP recovery impossible and permanently bricking the router without a desoldered chip programmer.
+> **STRICT PROHIBITION ON BOOTLOADER PARTITIONS:**
+> Modifying, flashing, or erasing `0:APPSBL` and `0:APPSBL_1` is strictly forbidden. Custom firmware development targets UBI volumes inside `rootfs` / `rootfs_1` exclusively.
 
 ---
 
-## 3. Dual-Rootfs Bootcounter Failover & Stock TFTP Recovery
+## 3. Recovery Channels, Dual-Boot Mechanics & Risk Demarcation
 
-### 3.1 Autonomous Bootcounter Failover Logic
-Xiaomi APPSBL implements an automated hardware watchdog failover mechanism governed by environment variables stored in `0:APPSBLENV` (`mtd6`):
-
-```
-+----------------------------------------------------------------------------------------------------+
-|                                    BOOTCOUNTER FAILOVER WORKFLOW                                   |
-+----------------------------------------------------------------------------------------------------+
-                                      [ Router Power On ]
-                                               |
-                                               v
-                                    Read `flag_boot_rootfs`
-                                    (0 = sys1/mtd13, 1 = sys2/mtd14)
-                                               |
-                                               v
-                                  Increment `flag_try_sysX_failed`
-                                               |
-                      +------------------------+-----------------------+
-                      |                                                |
-          `flag_try_sysX_failed` < 3                       `flag_try_sysX_failed` >= 3
-                      |                                                |
-                      v                                                v
-              [ Boot Kernel X ]                                [ FAILOVER TRIGGERED ]
-                      |                                                |
-          +-----------+-----------+                      Toggle `flag_boot_rootfs` to (1 - X)
-          |                       |                      Reset `flag_try_sysX_failed` = 0
-       (Success)               (Crash/Hang)                            |
-          |                       |                                    v
-          v                       v                            [ Boot Alternate System ]
-    Userspace sets           Watchdog Resets
- `flag_boot_success = 1`       Router
- `flag_try_sysX_failed = 0`       |
-                                  +--------------> (Next Boot Attempt)
-```
-
-- **Boot Success Confirmation:** The custom firmware's `procd` init system executes a post-boot service:
-  ```sh
-  fw_setenv flag_boot_success 1
-  fw_setenv flag_try_sys1_failed 0
-  fw_setenv flag_try_sys2_failed 0
-  ```
-- **Crash Recovery:** If a bad kernel or corrupted rootfs crashes during boot, the hardware watchdog reboots the SoC. On the third failure, APPSBL automatically switches execution to the alternate healthy partition.
-
-### 3.2 Stock Xiaomi TFTP Recovery Beacon Protocol
-The Xiaomi stock bootloader features a built-in TFTP client recovery mechanism that operates independently of Linux or userland:
-
-1. **Physical Activation:**
-   - Disconnect power adapter.
-   - Press and hold the physical `Reset` pinhole button with a paperclip.
-   - Connect power adapter while keeping `Reset` held for 8–12 seconds.
-   - Release when the front panel System/Power LED transitions to **blinking amber/orange**.
-2. **Network Parameters:**
-   - Router IP: `192.168.31.1` (Static, Port 0/LAN1).
-   - Expected Server IP: `192.168.31.100` (Static configuration on PC).
-   - Expected Subnet: `255.255.255.0`.
-   - Protocol: Standard UDP TFTP (Port 69).
-3. **Flashing Handshake:**
-   - APPSBL broadcasts TFTP Read Requests (`RRQ`) searching for `test.bin` (or standard Xiaomi MiWiFi repair binary).
-   - A TFTP server running on the host PC at `192.168.31.100` serves the recovery firmware.
-   - APPSBL verifies the image header, flashes the image to NAND `mtd13`/`mtd14`, writes `flag_boot_rootfs 0`, and automatically reboots into a clean state.
-4. **Conclusion:** This recovery path requires **zero serial soldering, zero UART access, and zero modification to stock bootloader code**.
-
----
-
-## 4. Wi-Fi 6 Architecture & Factory Calibration Pipeline
-
-### 4.1 RF Silicon Topology
-The Xiaomi CR8808 Ver.B utilizes a dual-band Wi-Fi 6 architecture controlled by the Qualcomm Hexagon Q6 Wireless Subsystem (WCSS):
+Previous documentation over-claimed "100% unbrickable recovery". In reality, embedded recovery behavior varies across vendor U-Boot builds. The four distinct recovery channels are analyzed below:
 
 ```
 +====================================================================================================+
-|                                    QUALCOMM IPQ5018 WCSS SUBSYSTEM                                 |
+|                                    RECOVERY CHANNELS TAXONOMY                                      |
++----------------------------------------------------------------------------------------------------+
+| 1. Xiaomi Stock TFTP Recovery Beacon:                                                              |
+|    Trigger: Power on with Reset held 8-12s.                                                        |
+|    Evidence: REPORTED_UNVERIFIED. Protocol details (192.168.31.100, test.bin) lack packet traces. |
 |                                                                                                    |
-|   +----------------------------------------------------+                                           |
-|   | Qualcomm Hexagon Q6 Coprocessor (Firmware Engine)   |                                           |
-|   +-------------------------+--------------------------+                                           |
-|                             | AHB Bus Interface                                                    |
-|              +--------------+--------------+                                                       |
-|              |                             |                                                       |
-|              v                             v                                                       |
-|   +-----------------------+     +-----------------------+                                          |
-|   | Internal 2.4 GHz MAC  |     | External 5 GHz MAC    |                                          |
-|   | IPQ5018 Integrated    |     | Qualcomm QCN6102      |                                          |
-|   | 2x2:2 802.11ax        |     | 2x2:2 802.11ax HE160  |                                          |
-|   | Max Rate: 574 Mbps    |     | Max Rate: 2402 Mbps   |                                          |
-|   +-----------+-----------+     +-----------+-----------+                                          |
-|               |                             |                                                      |
-|               v                             v                                                      |
-|          2.4 GHz FEMs                   5 GHz FEMs                                                 |
-|       (Front-End Modules)           (160 MHz High-Band)                                            |
+| 2. U-Boot HTTP Web Failsafe Recovery:                                                              |
+|    Trigger: Power on with Reset held ~10s; user accesses web browser at 192.168.1.1.               |
+|    Evidence: REPORTED_UNVERIFIED on stock CR8808; common in modified U-Boot builds on Enshan.     |
+|                                                                                                    |
+| 3. Dual-Rootfs Bootcounter Failover (flag_try_sysX_failed >= 3):                                   |
+|    Trigger: Autonomous watchdog reboot on repeated kernel boot failure.                            |
+|    Evidence: INFERRED / REPORTED_UNVERIFIED on this specific hardware.                            |
+|                                                                                                    |
+| 4. Hardware UART Serial Console:                                                                   |
+|    Trigger: Physical 3.3V TTL connection to IPQ5018 UART pads (115200 8N1).                        |
+|    Evidence: SOURCE_VERIFIED (Standard IPQ5018 pinout), BUT UNAVAILABLE TO USER.                 |
 +====================================================================================================+
 ```
 
-### 4.2 Factory Calibration Geometry in `0:ART` (`mtd7`)
-RF calibration values (Power Amplifier bias, Low Noise Amplifier gain, phase compensation, and beamforming matrix constants) are measured in the factory and permanently written into `0:ART` (`mtd7`):
+### 3.1 Channel 1: Xiaomi Stock TFTP Recovery (`REPORTED_UNVERIFIED`)
+- **Community Claim:** Holding Reset while applying power causes U-Boot to initialize network interfaces at `192.168.31.1` and seek a TFTP server at `192.168.31.100` requesting a recovery image (`test.bin` or Xiaomi recovery file).
+- **Audit Findings:** While David Yang noted that flashing unsupported images can cause a soft-brick requiring TFTP recovery, **neither David Yang nor official documentation confirms the exact IP addresses, filename, or TFTP client packet handshake for the CR8818**. Claims of confirmed TFTP parameters are downgraded to `REPORTED_UNVERIFIED`.
 
-| Radio Band | Silicon Component | Calibration Offset in `mtd7` | Calibration Data Length | Staging Firmware Destination |
-|---|---|---|---|---|
-| **2.4 GHz (Radio 0)** | IPQ5018 Internal | `0x00001000` (`0x1000`) | `0x00020000` (128 KB) | `cal-ahb-c000000.wifi.bin` |
-| **5.0 GHz (Radio 1)** | Qualcomm QCN6102 | `0x00026800` (`0x26800`)| `0x00020000` (128 KB) | `cal-ahb-b00a040.wifi1.bin` |
+### 3.2 Channel 2: U-Boot HTTP Web Recovery (`REPORTED_UNVERIFIED`)
+- **Community Claim:** Discussions on Enshan forum describe entering a U-Boot Web Failsafe interface at `192.168.1.1` (or `192.168.31.1`) by holding Reset.
+- **Audit Findings:** In stock Xiaomi firmware, the HTTP web failsafe server is typically disabled or stripped unless replaced with a third-party open-source U-Boot (such as ImmortalWrt U-Boot or breed). It cannot be assumed to exist on stock RA82 bootloaders.
 
-- **Extraction Hotplug Script (`/lib/firmware/ath11k/`):**
-  The OpenWrt userland extracts calibration chunks directly from MTD using `dd` or `caldata_extract`:
-  ```sh
-  dd if=/dev/mtd7 of=/lib/firmware/ath11k/IPQ5018/hw1.0/cal-ahb-c000000.wifi.bin bs=1 skip=4096 count=131072
-  dd if=/dev/mtd7 of=/lib/firmware/ath11k/QCN6102/hw1.0/cal-ahb-b00a040.wifi1.bin bs=1 skip=157696 count=131072
-  ```
-- **Integrity Requirement:** `0:ART` must remain read-only. If `0:ART` is erased or corrupted, Wi-Fi transmit power drops by 15-20 dBm and 160 MHz channel bonding fails completely.
+### 3.3 Channel 3: Dual-Rootfs Bootcounter Failover (`INFERRED` / `REPORTED_UNVERIFIED`)
+- **Mechanism:** QSDK systems maintain boot variables in `0:APPSBLENV`:
+  - `flag_boot_rootfs` (0 or 1)
+  - `flag_boot_success` (0 or 1)
+  - `flag_try_sys1_failed` / `flag_try_sys2_failed`
+- **Audit Findings:** While this mechanism is well-documented in QSDK source trees, **its execution has not been verified via serial boot log on this exact CR8808 Ver.B unit**. Therefore, relying on bootcounter failover as a guaranteed safety net is unsafe.
 
-### 4.3 Mandatory HE160 (160 MHz) Support
-The chief technical differentiator of the CR8808 Ver.B over lower-tier routers is its support for **HE160 (160 MHz channel bandwidth)** on the 5 GHz band, providing a theoretical PHY rate of **2402 Mbps**:
-- **Operating Channels:** Requires DFS channels (e.g. Channel 52 to 64, or Channel 100 to 128).
-- **Driver Integration:** Driven by `ath11k` with `ath11k-firmware-qcn6102`.
-- **Target Parity:** Firmware configuration must enforce `htmode='HE160'` and preserve clean radar detection algorithms to prevent spurious fallback to 80 MHz.
+### 3.4 Recovery Conclusion: Flash Remains Strictly `NO-GO`
+Because the user does not possess a UART serial console and neither TFTP beacon parameters nor bootcounter failover have been empirically captured on this specific unit, **no recovery path is 100% verified**. The flash authorization remains strictly **`NO-GO`**.
+
+---
+
+## 4. Wi-Fi 6 Subsystem: Silicon, Firmware Paths & Regulatory Enforcement
+
+### 4.1 Physical Silicon vs Upstream Firmware Driver Path (`SOURCE_VERIFIED`)
+- **Physical Radio 0 (2.4 GHz):** IPQ5018 internal integrated 802.11ax radio (2x2:2, up to 574 Mbps).
+- **Physical Radio 1 (5.0 GHz):** Qualcomm **QCN6102** external 802.11ax radio (2x2:2, up to 2402 Mbps at HE160).
+- **Driver & Firmware Path Disambiguation:**
+  - In upstream OpenWrt DTS (`yangfl/openwrt`, commit `6729bbe`), the 5 GHz radio node is declared using `qcom,qcn6122.dtsi`:
+    ```dts
+    &wifi1 {
+        // Includes qcn6122 definitions
+        qcom,ath11k-calibration-variant = "Xiaomi_CR8818";
+    };
+    ```
+  - **Reason:** In Qualcomm's `ath11k` driver architecture, the QCN6102 and QCN6122 share the identical register interface and MAC architecture; `ath11k` loads firmware files categorized under the `qcn6122` or `IPQ5018` target tree.
+  - **Distinction:** The physical hardware part is confirmed as **QCN6102**, while the driver/firmware loading path uses the upstream **`qcn6122`** infrastructure.
+
+### 4.2 Factory Calibration Geometry in `0:ART` (`REPORTED_UNVERIFIED`)
+Factory RF calibration data is stored in the `0:ART` partition:
+- **2.4 GHz Internal Radio Offset:** `0x1000` (Length: 128 KB $\rightarrow$ `cal-ahb-c000000.wifi.bin`).
+- **5.0 GHz QCN6102 Radio Offset:** `0x26800` (Length: 128 KB $\rightarrow$ `cal-ahb-b00a040.wifi1.bin`).
+
+### 4.3 HE160 & DFS Availability: Separation of Caldata from Regulatory Enforcement
+> [!IMPORTANT]
+> **Calibration Data Does NOT Guarantee DFS or HE160 Operation:**
+> Previous drafts incorrectly implied that extracting calibration data at offset `0x26800` automatically guarantees HE160 DFS operation. This was an invalid technical inference.
+>
+> In reality, 160 MHz operation across DFS channels (e.g. Channel 52 to 64, Channel 100 to 128) requires three independent prerequisites:
+> 1. **Caldata RF Limits:** The calibration block must contain valid power tables for the 160 MHz band.
+> 2. **Kernel DFS Radar Detection (`ath11k_dfs`):** The kernel must have `CONFIG_ATH11K_DFS_CERTIFIED=y` or proper ETSI/FCC radar pattern detectors enabled. Without functioning radar detection, the driver will refuse to transmit on DFS channels or fall back immediately to 80 MHz non-DFS channels.
+> 3. **Regulatory Database (`wireless-regdb`):** The active country code in `wireless-regdb` must permit 160 MHz contiguous channels and DFS operation at the specified EIRP power.
+>
+> **Status:** Full HE160 DFS functionality on CR8808 Ver.B remains classified as **`REPORTED_UNVERIFIED / REQUIRES_TESTING`** until verified with real 160 MHz client associations and radar scan logs.

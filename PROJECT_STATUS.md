@@ -2,10 +2,10 @@
 
 - Version: `0.2.0-dev`
 - Date: 2026-11-11
-- Phase: P6/M7.1 Chinese Community Research & Hardware Evidence Reconciliation
-- Current Branch: `feature/m7.1-china-source-audit`
-- Overall status: `M7.1_CHINA_SOURCE_AUDIT_COMPLETE_AWAITING_REVIEW`
-- GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`, `feature/g1-corrections-round3`, `feature/g1-corrections-round4`, `feature/g1-corrections-round5`, `feature/g1-corrections-round5.1`, `feature/g1-corrections-round5.2`, `feature/nss-cr8818-research`, `feature/nss-cr8818-poc`, `feature/rust-userspace-strategy`, `feature/product-vision-hardening`, `feature/m5-daily-driver-build`, `feature/m6-full-source-build`, `feature/m7-architecture-selection`, `feature/m7.1-china-source-audit`)
+- Phase: P6/M7.1-Rev1 Evidence Corrections & Technical Reconciliation
+- Current Branch: `feature/m7.1-evidence-corrections`
+- Overall status: `M7.1_REVISION_1_COMPLETE_AWAITING_REVIEW`
+- GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`, `feature/g1-corrections-round3`, `feature/g1-corrections-round4`, `feature/g1-corrections-round5`, `feature/g1-corrections-round5.1`, `feature/g1-corrections-round5.2`, `feature/nss-cr8818-research`, `feature/nss-cr8818-poc`, `feature/rust-userspace-strategy`, `feature/product-vision-hardening`, `feature/m5-daily-driver-build`, `feature/m6-full-source-build`, `feature/m7-architecture-selection`, `feature/m7.1-china-source-audit`, `feature/m7.1-evidence-corrections`)
 - Flash authorization: `NO-GO pending independent recovery validation (All artifacts classified NON_FLASHABLE_TEST_ARTIFACT)`
 - Initial Firmware Baseline Proposal: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Architecture Proposal under review; NOT yet approved for implementation by Product Owner)
 - Primary Hardware References:
@@ -34,13 +34,15 @@
 - `zcop/immortalwrt` approved as primary reference for CR881x board DTS, YT921x enhanced DSA driver, and GPIO39 reset — `OWNER_CONFIRMED` / Architecture Lead approved.
 - History cleanup dry-run executed on isolated clone: 100% elimination of netbios hostname and private IPs verified — `MEASURED`.
 - Port 8 Physical Link Speed: Strictly **1,000 Mbps SGMII** (`speed = <1000>`). Historical 2.5 Gbps claim formally retracted — `SOURCE_VERIFIED`.
+- Switch Register `0x8000c`: Defined as `YT921X_EXT_CPU_PORT` with `TAG_EN` (bit 15), `PORT_EN` (bit 14), `PORT_MASK` (bits 3:0). `0xc008` selects Port 8; `0xc004` selects Port 4. No bit-4 dual-conduit toggle exists — `SOURCE_VERIFIED`.
+- Winbond W25N01GW SPI NAND: Integrated 1-bit on-die ECC engine per 512 bytes (`NAND_ECCREQ(1, 512)`). Controller 8-bit ECC unverified — `SOURCE_VERIFIED` (On-die).
 
 ## Reported / Unverified on-device
 - Motorcomm switch physical silicon suffix: `UNKNOWN / REPORTED_UNVERIFIED` (YT9215S vs YT9215SC unconfirmed).
-- GPIO 39 / 37 cold-boot lockup bug: Upstream DTS defines GPIO 39 as `reset-gpios` active-low, but Chinese community shows it functions as LAN LDO power enable requiring GPIO 37 MDIO clock burst (`mii info`) to awaken — `CONFLICT_UNRESOLVED`.
-- Qualcomm NSS offload on real CR8818 hardware: ZERO verified packet traces or benchmarks; NSS 12.5 buffer hold bug on 256MB RAM — `REPORTED_UNVERIFIED`.
-- Winbond W25N01GWZEIG NAND physical part marking.
-- Xiaomi bootloader failover flags (`flag_try_sysX_failed`): `REPORTED_UNVERIFIED`.
+- GPIO 39 / 37 cold-boot lockup bug: Upstream DTS defines GPIO 39 as `reset-gpios` active-low (10ms assert, 50ms deassert), but Chinese community shows it functions as LAN LDO power enable requiring GPIO 37 MDIO clock burst (`mii info`) to awaken — `CONFLICT_UNRESOLVED`.
+- Qualcomm NSS offload on real CR8818 hardware: ZERO verified packet traces or benchmarks; NSS 12.5 buffer retention on 256MB RAM — `REPORTED_UNVERIFIED`.
+- Forwarding Performance: Pure software forwarding estimated at 50-65% CPU; nftables software flowtable estimated at 25-45% CPU (`ENGINEERING_ESTIMATE`). 18% CPU claim retracted; zero on-device benchmarks conducted.
+- Non-UART Recovery: Xiaomi stock TFTP beacon protocol details (`192.168.31.100`, `test.bin`), U-Boot web failsafe (`192.168.1.1`), and bootcounter failover execution unverified on this physical unit — `REPORTED_UNVERIFIED`. Flash authorization strictly `NO-GO`.
 
 ## Current blockers
 1. No verified recovery path independent of UART (Permanent constraint; flash remains `NO-GO`).
@@ -94,5 +96,17 @@
   6. **P0-5 Wi-Fi, SPI NAND & Non-UART Recovery Audit:** Audited Winbond W25N01GW 128MB SPI NAND with 8-bit ECC (`nand-ecc-strength = 8`), MIBIB MTD layout, dual-rootfs bootcounter failover (`flag_boot_rootfs`, `flag_boot_success`, `flag_try_sysX_failed`), and stock TFTP beacon recovery (`192.168.31.1` -> `192.168.31.100`). Documented QCN6102 5 GHz HE160 calibration offsets in `0:ART` (`0x1000` / `0x26800`). Authored `docs/M7.1/WIFI_NAND_BOOT_RECOVERY_AUDIT.md`.
   7. **Updated Architecture ADR (ADR-0005):** Re-grounded Two-Track Architecture with empirical evidence from Chinese community audits. Authored `docs/M7.1/UPDATED_ARCHITECTURE_ADR.md`.
   8. **Safety & Zero-Contact Affirmation:** Maintained 100% adherence to safety directives: ZERO router SSH, ZERO flashing, ZERO NVRAM writes, ZERO switch register writes, lab workspace `D:\vibecode\test_wifi` 100% pristine. Status updated to `M7.1_CHINA_SOURCE_AUDIT_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Developer / Research Engineer).
+- 2026-11-11: Milestone M7.1 Revision 1 (Evidence Corrections & Technical Reconciliation) completed on branch `feature/m7.1-evidence-corrections` (merge base `32e4eb9`).
+  1. **Register `0x8000c` Corrected (`SOURCE_VERIFIED`):** Reconciled bitfield definitions against upstream Linux kernel `drivers/net/dsa/yt921x.c` (`TAG_EN` bit 15, `PORT_EN` bit 14, `PORT_MASK` bits 3:0; `0xc008` Port 8, `0xc004` Port 4). Eliminated unsupported bit-4 dual-conduit claim; clarified real dual-conduit implementation via switch VLAN/forwarding matrix and dual CPU ports in DTS. Updated `docs/M7.1/DSA_DUAL_CONDUIT_AUDIT.md`.
+  2. **Winbond NAND ECC Re-Audited (`SOURCE_VERIFIED`):** Verified official Winbond W25N01GW datasheet Rev G and Linux `drivers/mtd/nand/spi/winbond.c` (`NAND_ECCREQ(1, 512)`). Established 1-bit on-die ECC; retracted ungrounded 8-bit BCH controller ECC claim. Updated `docs/M7.1/WIFI_NAND_BOOT_RECOVERY_AUDIT.md`.
+  3. **MTD Partition Demarcation (`SOURCE_VERIFIED` / `REPORTED_UNVERIFIED`):** Formally distinguished partition labels, physical NAND offsets, and runtime dynamic MTD enumeration. Retracted hardcoded integer MTD indices (e.g. `mtd7 = ART`, `mtd11 = APPSBL`); enforced name-based resolution (`find_mtd_part`).
+  4. **Recovery Channels Disambiguated & Safety Retraction (`REPORTED_UNVERIFIED`):** Separated Xiaomi stock recovery tool, U-Boot web failsafe (`192.168.1.1`), UART console, and bootcounter failover. Formally retracted "100% recovery safety" claim. Re-affirmed strict `NO-GO` on flashing.
+  5. **GPIO 39 / 37 Timing De-escalated (`CONFLICT_UNRESOLVED`):** Retracted invented 100 ms stabilization delay. Adhered strictly to upstream David Yang DTS timings (10ms assert, 50ms deassert). Maintained formal `CONFLICT_UNRESOLVED` status. Updated `docs/M7.1/CR8818_HARDWARE_CONFLICT_RESOLUTION.md`.
+  6. **Wi-Fi 6 QCN6102 vs QCN6122 Disambiguated:** Disambiguated physical QCN6102 silicon from upstream driver firmware path (`qcn6122`). Clarified that caldata offsets (`0x1000` / `0x26800`) do not guarantee DFS/HE160 operation without kernel radar detection (`ath11k_dfs`) and regulatory DB compliance.
+  7. **NSS 8-byte Tagger & Reclassification (`INFERRED` / `REPORTED_UNVERIFIED`):** Corrected Motorcomm DSA tag length to 8 bytes (TPID `0x9988` + 6B payload). Reclassified parser behavior to `INFERRED` and memory retention to `REPORTED_UNVERIFIED`. Retracted invented memory leak quantities. Updated `docs/M7.1/NSS_FEASIBILITY_MATRIX.md`.
+  8. **Performance Metrics Reconciled (`ENGINEERING_ESTIMATE`):** Formally retracted unverified 18% CPU / 940M claim. Reconciled with M7.0 baseline estimates (50-65% pure software, 25-45% flowtable offload). Stated zero on-device benchmarks conducted.
+  9. **Kernel Baseline Hardened:** Strictly decoupled OpenWrt 25.12.6 / Linux 6.12.112 Daily Driver baseline from Linux 6.18 experimental research track. Updated ADR-0005 (`docs/M7.1/UPDATED_ARCHITECTURE_ADR.md`).
+  10. **Correction Log & Manifest Pinned:** Authored itemized correction log `docs/M7.1/M7.1_CORRECTION_LOG.md` tracking all 9 corrected assertions. Updated `manifests/m7.1-sources.lock.yaml` with upstream driver code paths and original URLs.
+  11. **Safety Affirmation:** ZERO router contact (0 SSH, 0 flashing, 0 NVRAM writes, test_wifi untouched). Status updated to `M7.1_REVISION_1_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Developer / Research Engineer).
 
 
