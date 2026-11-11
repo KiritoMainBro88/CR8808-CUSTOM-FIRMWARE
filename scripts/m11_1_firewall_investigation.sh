@@ -1,12 +1,12 @@
-#!/bin/sh
+#!/bin/bash
 # scripts/m11_1_firewall_investigation.sh
 # Class R0 Firewall & Dual-Stack Network Investigation Script
 # Xiaomi CR8808 Ver.B (RA82 v1.4.31 / Linux 4.4.60 QSDK)
 #
-# PC-SIDE DRAFT IMPLEMENTATION — REQUIRES EXPLICIT ARCHITECT AUTHORIZATION
+# HARDENED WITH BASH PIPELINE INTEGRITY & STRICT ERROR PROPAGATION
 # Strict Constraints: ZERO writes to router | Pinned Host Key Verification | Sanitized Output
 
-set -eu
+set -Eeuo pipefail
 
 ROUTER_IP="${ROUTER_IP:-192.168.31.1}"
 ROUTER_PORT="${ROUTER_PORT:-56789}"
@@ -43,7 +43,8 @@ fi
 # Step 2: Synthesize Verified Known Hosts File
 KNOWN_HOSTS_DIR="$(mktemp -d /tmp/cr8818_ssh.XXXXXX)"
 KNOWN_HOSTS_FILE="${KNOWN_HOSTS_DIR}/known_hosts"
-trap 'rm -rf "$KNOWN_HOSTS_DIR"' EXIT
+TEMP_RAW_OUTPUT="$(mktemp /tmp/cr8818_fw_raw.XXXXXX)"
+trap 'rm -rf "$KNOWN_HOSTS_DIR" "$TEMP_RAW_OUTPUT"' EXIT
 
 PUB_KEY_DATA=$(awk '{print $1, $2}' "$PINNED_KEY_FILE")
 echo "[$ROUTER_IP]:$ROUTER_PORT $PUB_KEY_DATA" > "$KNOWN_HOSTS_FILE"
@@ -51,14 +52,17 @@ chmod 600 "$KNOWN_HOSTS_FILE"
 
 echo "Host key verified ($EXPECTED_FINGERPRINT). Connecting to CR8808 Ver.B..."
 
-# Step 3: Stream Interrogation Commands and Pipe through Sanitizer
-sshpass -e ssh -p "$ROUTER_PORT" \
+# Step 3: Execute SSH and capture raw output into temporary file first
+# Using Bash set -e to ensure SSH failure aborts before sanitization
+if ! sshpass -e ssh -p "$ROUTER_PORT" \
   -o StrictHostKeyChecking=yes \
   -o UserKnownHostsFile="$KNOWN_HOSTS_FILE" \
   -o GlobalKnownHostsFile=/dev/null \
   -o CheckHostIP=no \
+  -o HostKeyAlgorithms=+ssh-rsa \
+  -o PubkeyAcceptedKeyTypes=+ssh-rsa \
   -o ConnectTimeout=5 \
-  "${ROUTER_USER}@${ROUTER_IP}" "sh -s" << 'EOF' | sh "$SANITIZER" > "$OUTPUT_FILE"
+  "${ROUTER_USER}@${ROUTER_IP}" "sh -s" << 'EOF' > "$TEMP_RAW_OUTPUT"
 echo "================================================================================"
 echo "FW-01: IPv4 Address & Routing Table"
 echo "================================================================================"
@@ -113,5 +117,14 @@ echo "==========================================================================
 cat /proc/net/tcp 2>/dev/null | head -n 25 || echo "/proc/net/tcp not present"
 cat /proc/net/tcp6 2>/dev/null | head -n 25 || echo "/proc/net/tcp6 not present"
 EOF
+then
+    echo "[PIPELINE ERROR] SSH command failed or timed out! Aborting without generating report." >&2
+    rm -f "$OUTPUT_FILE"
+    exit 1
+fi
+
+# Step 4: Stream sanitized output to persistent destination
+mkdir -p "$(dirname "$OUTPUT_FILE")"
+bash "$SANITIZER" < "$TEMP_RAW_OUTPUT" > "$OUTPUT_FILE"
 
 echo "Class R0 Firewall Investigation complete. Sanitized report saved to: $OUTPUT_FILE"

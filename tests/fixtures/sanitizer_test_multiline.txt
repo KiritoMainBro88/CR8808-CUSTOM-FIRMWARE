@@ -12,6 +12,34 @@ eth0      Link encap:Ethernet  HWaddr E4:39:DF:04:6C:FD
 eth1      Link encap:Ethernet  HWaddr E4-39-DF-04-6C-FE
           UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
 
+# Diverse IPv6 Formats:
+# GUA 3xxx prefix (expanded & compressed)
+3ffe:1200:2001:1:200:f8ff:fe21:67cf
+3ffe::1
+# ULA fc00::/7 (fcxx and fdxx)
+fc00:1234:5678:9abc::1
+fd00:dead:beef::1
+# Link-Local fe80::/10 (fe80 and fe90)
+fe80::1
+fe90::1234:5678:9abc:def0
+
+# Diverse Public IPv4 Addresses
+Public DNS 1: 8.8.8.8
+Public DNS 2: 1.1.1.1
+Server IP A: 45.33.32.156
+Server IP B: 172.217.16.206
+Documentation IP: 203.0.113.195
+
+# Hex Socket Tables:
+# /proc/net/tcp6 format
+   0: 00000000000000000000000000000000:DE09 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 1393 1 0000000000000000 100 0 0 10 0
+   1: 2402080063A54432E639DFFFE046CFD0:DE09 2402080063A544320000000000000001:C350 01 00000000:00000000 00:00000000 00000000     0        0 1393 1 0000000000000000 100 0 0 10 0
+
+# /proc/net/tcp format
+   0: 00000000:DE09 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 1393 1 0000000000000000 100 0 0 10 0
+   1: 4B64A8C0:DE09 0164A8C0:C350 01 00000000:00000000 00:00000000 00000000     0        0 1393 1 0000000000000000 100 0 0 10 0
+   2: 011FA8C0:0035 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 3139 1 0000000000000000 100 0 0 10 0
+
 wl0       IEEE 802.11ax  ESSID:"Xiaomi_8808_5G_Home"  Nickname:""
           Mode:Master  Frequency:5.2 GHz  Access Point: E4:39:DF:04:6C:FE
           Bit Rate:2.4019 Gb/s   Tx-Power:23 dBm
@@ -23,7 +51,3 @@ wireless.@wifi-iface[0].sae_password='WPA3SecretPassWord999'
 # WireGuard Process Telemetry
 1420 root      1420 S    /data/wg_server -srvkey YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY= -clientkey MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI= -port 51820
 wg set wg0 private-key YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY= peer abc= preshared-key MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=
-
-# Remote WAN Observation
-Public WAN IP connection from: 118.68.195.158
-Internal ULA prefix: fd00:dead:beef::1/64

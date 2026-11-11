@@ -9,11 +9,17 @@
     "wan": {
       "proto": "dhcp",
       "ip": "192.168.100.75",
-      "public_ip": "118.68.195.158",
       "gateway": "192.168.100.1",
-      "ipv6_addr": "2402:800:63a5:4432:e639:dfff:fe04:6cfd",
-      "ipv6_ll": "fe80::e639:dfff:fe04:6cfd",
-      "ipv6_ula": "fd00:dead:beef::1"
+      "public_dns_1": "8.8.8.8",
+      "public_dns_2": "1.1.1.1",
+      "server_ip_1": "45.33.32.156",
+      "server_ip_2": "172.217.16.206",
+      "ipv6_gua_2xxx": "2402:800:63a5:4432:e639:dfff:fe04:6cfd",
+      "ipv6_gua_3xxx": "3ffe:1200:2001:1:200:f8ff:fe21:67cf",
+      "ipv6_ula_fc": "fc00:1234:5678:9abc::1",
+      "ipv6_ula_fd": "fd00:dead:beef::1",
+      "ipv6_ll_fe80": "fe80::e639:dfff:fe04:6cfd",
+      "ipv6_ll_fe90": "fe90::1234:5678:9abc:def0"
     }
   },
   "wireless": {

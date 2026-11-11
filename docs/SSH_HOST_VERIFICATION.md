@@ -23,7 +23,7 @@ While this prevented SSH from prompting interactively, **it inherently implement
 
 ## 2. Pinned Cryptographic Identity of CR8808 Ver.B (RA82)
 
-The physical device's Dropbear SSH daemon identity has been extracted and independently verified from baseline records:
+The physical device's Dropbear SSH daemon identity has been recorded and pinned:
 
 - **Key Algorithm:** RSA 2048-bit (`ssh-rsa`)
 - **Public Key File:** [`config/cr8818_host_key.pub`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/config/cr8818_host_key.pub)
@@ -34,6 +34,22 @@ The physical device's Dropbear SSH daemon identity has been extracted and indepe
   ```text
   AAAAB3NzaC1yc2EAAAADAQABAAABAQDs/ojWVnbLTVelbMXmOgIwGUKUMpw8mXMhmycIo8vXBYdux9XNyEaW3L5MY4Pq8JwBScYw0j4DFx+atYtgF0TmRzEJfGm0NnbYz6qukpREKKAe0+IadbxTMekxRRS4/eMbG9QYwcPqrsUiHT7Qy/XTV/IiWslMargB2l8RsEjIlQYt6TlNVSEP0YzrbS+wStQ+BBCgc+N6FvsvYeWerJJKO2v4ICz9iBi1r/4OSlxJ+loHcrA5R7pHUjMx578RgJABoGhmZM+eKG8Rsxbz1GvEioSDxh/e/yYAuDm5zdNFHbX1YMrXrLg4gULugPpjRsRyxjLlMNPUYmtwQyw6i/Xn
   ```
+
+### 2.1 Host Key Provenance & Trust Boundary Limitations
+
+In strict adherence to Chief Architect Directive M11.1.0.3, the provenance of this pinned host key is formally disclosed:
+
+1. **Origin of Key Baseline:** The host key and fingerprint were extracted from the operator workstation's historical SSH cache (`%USERPROFILE%\.ssh\known_hosts` entry bound to port `56789`), created during prior management sessions of this physical unit.
+2. **What Key Pinning Guarantees:** 
+   - Pinning prevents dynamic Trust-On-First-Use (`ssh-keyscan`) vulnerability.
+   - It strictly guarantees that no future SSH connection will proceed if the server presents any key other than this pinned RSA key, immunizing against newly injected Man-in-the-Middle (MitM) attacks or ARP spoofing on the LAN.
+3. **What Key Pinning Does NOT Guarantee:**
+   - It does NOT constitute an independent hardware-level mathematical proof of silicon authenticity. If the historical connection was somehow intercepted at the moment of first initialization, the cache would have preserved the interceptor's key.
+   - Independent verification requires direct out-of-band physical extraction on the router:
+     ```sh
+     dropbearkey -y -f /etc/dropbear/dropbear_rsa_host_key | ssh-keygen -l -f -
+     ```
+   - Until verified against physical storage or serial console, this key is classified as **`PINNED_HISTORICAL_CACHE`**, NOT absolute hardware root-of-trust.
 
 ---
 

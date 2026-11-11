@@ -1,20 +1,25 @@
 #!/bin/sh
 # tests/test_firewall_ownership.sh
-# Empirical Test Harness for Firewall Rule Ownership, Targeted Rollback,
-# Pre-Existing Rule Preservation, and Atomic Failure Rollback.
+# Empirical Test Harness for Firewall Rule Ownership, Position 1 Verification,
+# Production Helper Integration, and Dynamic Chain Isolation.
 # Executed via real Linux netfilter in WSL2.
 
 set -e
 
-CHAIN_V4="TEST_M11_WAN_IN"
-CHAIN_V6="TEST_M11_WAN_IN"
+# Generate unique, non-colliding dynamic chain names for this specific test PID
+UNIQUE_SUFFIX="$$-${RANDOM:-12345}"
+CHAIN_V4="M11_V4_${UNIQUE_SUFFIX}"
+CHAIN_V6="M11_V6_${UNIQUE_SUFFIX}"
 TAG="M11_1_TRIAL_SSH_BLOCK"
+PORT="56789"
+HELPER="scripts/firewall_manager.sh"
 
-echo "=== M11.1.0.2 FIREWALL RULE OWNERSHIP & TRANSACTIONAL ROLLBACK TEST ==="
+echo "=== M11.1.0.3 FIREWALL OWNERSHIP & PRODUCTION HELPER TEST ==="
+echo "Dynamic Test Chains: $CHAIN_V4 (IPv4), $CHAIN_V6 (IPv6)"
 
-# Cleanup function to restore clean state
+# Selective cleanup function: ONLY removes chains created by this run
 cleanup() {
-    echo "Cleaning up test netfilter chains..."
+    echo "Cleaning up dynamic test chains ($CHAIN_V4, $CHAIN_V6)..."
     sudo iptables -F "$CHAIN_V4" 2>/dev/null || true
     sudo iptables -X "$CHAIN_V4" 2>/dev/null || true
     sudo ip6tables -F "$CHAIN_V6" 2>/dev/null || true
@@ -23,155 +28,129 @@ cleanup() {
 trap cleanup EXIT
 
 # -----------------------------------------------------------------------------
-# SETUP: Create isolated test chains representing zone_wan_input
+# SETUP: Create isolated dynamic test chains representing zone_wan_input
 # -----------------------------------------------------------------------------
-cleanup
 sudo iptables -N "$CHAIN_V4"
 sudo ip6tables -N "$CHAIN_V6"
 
-# Add pre-existing baseline rules into IPv4 chain:
-# Rule 1: A pre-existing accept rule (simulating custom wan input)
+# Inject pre-existing baseline rules into IPv4:
+# Rule A: HTTP accept rule
 sudo iptables -A "$CHAIN_V4" -p tcp --dport 80 -j ACCEPT
-# Rule 2: A pre-existing DROP on port 56789 WITHOUT our comment (pre-existing baseline)
-sudo iptables -A "$CHAIN_V4" -p tcp --dport 56789 -j DROP
-# Rule 3: Another pre-existing rule
+# Rule B: Pre-existing DROP on port 56789 WITHOUT comment (historical rule)
+sudo iptables -A "$CHAIN_V4" -p tcp --dport "$PORT" -j DROP
+# Rule C: DNS accept rule
 sudo iptables -A "$CHAIN_V4" -p udp --dport 53 -j ACCEPT
 
-# Add pre-existing baseline rule into IPv6 chain:
-sudo ip6tables -A "$CHAIN_V6" -p tcp --dport 56789 -j DROP
+# Inject pre-existing baseline rule into IPv6:
+sudo ip6tables -A "$CHAIN_V6" -p tcp --dport "$PORT" -j DROP
 
-echo "Pre-existing IPv4 rules count: $(sudo iptables -S "$CHAIN_V4" | wc -l)"
-echo "Pre-existing IPv6 rules count: $(sudo ip6tables -S "$CHAIN_V6" | wc -l)"
+INITIAL_COUNT_V4=$(sudo iptables -S "$CHAIN_V4" | grep -c '^-A')
+INITIAL_COUNT_V6=$(sudo ip6tables -S "$CHAIN_V6" | grep -c '^-A')
+
+echo "Pre-existing baseline rules: IPv4 = $INITIAL_COUNT_V4 rules, IPv6 = $INITIAL_COUNT_V6 rules."
 
 # -----------------------------------------------------------------------------
-# TEST 1: Prerequisite Check (Chain Existence)
+# TEST 1: Production Helper Apply with Position 1 Verification
 # -----------------------------------------------------------------------------
-echo "--- [TEST 1] Prerequisite Chain Validation ---"
-if sudo iptables -L "$CHAIN_V4" -n >/dev/null 2>&1 && sudo ip6tables -L "$CHAIN_V6" -n >/dev/null 2>&1; then
-    echo "PASS: Prerequisite verification confirmed chains exist."
+echo "--- [TEST 1] Applying Trial Rules via Production Helper ---"
+IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+  sh "$HELPER" apply "$CHAIN_V4" "$CHAIN_V6" "$PORT" "$TAG"
+
+# Verify exact Rule Position 1 using iptables -S <chain> 1
+FIRST_RULE_V4=$(sudo iptables -S "$CHAIN_V4" 1)
+FIRST_RULE_V6=$(sudo ip6tables -S "$CHAIN_V6" 1)
+
+echo "Rule at Position 1 (IPv4): $FIRST_RULE_V4"
+echo "Rule at Position 1 (IPv6): $FIRST_RULE_V6"
+
+if echo "$FIRST_RULE_V4" | grep -Fq -- "$TAG" && echo "$FIRST_RULE_V6" | grep -Fq -- "$TAG"; then
+    echo "PASS: Trial rules are confirmed strictly at Position 1 in both IPv4 and IPv6."
 else
-    echo "FAIL: Prerequisite verification failed."
+    echo "FAIL: Trial rules are not at Position 1!"
     exit 1
 fi
 
-# Test non-existent chain check
-if ! sudo iptables -L "NON_EXISTENT_CHAIN" -n >/dev/null 2>&1; then
-    echo "PASS: Non-existent chain correctly identified and rejected."
+# Verify total count increased by exactly 1
+CURRENT_COUNT_V4=$(sudo iptables -S "$CHAIN_V4" | grep -c '^-A')
+CURRENT_COUNT_V6=$(sudo ip6tables -S "$CHAIN_V6" | grep -c '^-A')
+if [ "$CURRENT_COUNT_V4" -eq "$((INITIAL_COUNT_V4 + 1))" ] && [ "$CURRENT_COUNT_V6" -eq "$((INITIAL_COUNT_V6 + 1))" ]; then
+    echo "PASS: Exactly 1 rule added per protocol family."
 else
-    echo "FAIL: Non-existent chain detection failed."
-    exit 1
-fi
-
-# -----------------------------------------------------------------------------
-# TEST 2: Targeted Rule Insertion with Explicit Ownership Tag
-# -----------------------------------------------------------------------------
-echo "--- [TEST 2] Targeted Rule Insertion with Explicit Identifier ---"
-# Insert at position 1 with comment
-sudo iptables -I "$CHAIN_V4" 1 -p tcp --dport 56789 -m comment --comment "$TAG" -j DROP
-sudo ip6tables -I "$CHAIN_V6" 1 -p tcp --dport 56789 -m comment --comment "$TAG" -j DROP
-
-# Verify insertion via iptables -C
-if sudo iptables -C "$CHAIN_V4" -p tcp --dport 56789 -m comment --comment "$TAG" -j DROP && \
-   sudo ip6tables -C "$CHAIN_V6" -p tcp --dport 56789 -m comment --comment "$TAG" -j DROP; then
-    echo "PASS: Tagged trial rules successfully inserted and verified in position 1."
-else
-    echo "FAIL: Tagged trial rules failed verification."
-    exit 1
-fi
-
-# -----------------------------------------------------------------------------
-# TEST 3: Pre-Existing Rule Preservation During Targeted Rollback
-# -----------------------------------------------------------------------------
-echo "--- [TEST 3] Pre-Existing Rule Preservation During Rollback ---"
-# Execute targeted rollback ONLY on rules matching our comment
-sudo iptables -D "$CHAIN_V4" -p tcp --dport 56789 -m comment --comment "$TAG" -j DROP
-sudo ip6tables -D "$CHAIN_V6" -p tcp --dport 56789 -m comment --comment "$TAG" -j DROP
-
-# Check that the tagged rule is gone:
-if sudo iptables -C "$CHAIN_V4" -p tcp --dport 56789 -m comment --comment "$TAG" -j DROP 2>/dev/null; then
-    echo "FAIL: Tagged rule was not deleted by targeted rollback!"
-    exit 1
-fi
-
-# CRUCIAL CHECK: Verify that the pre-existing un-commented DROP rule on port 56789 is STILL INTACT!
-if sudo iptables -C "$CHAIN_V4" -p tcp --dport 56789 -j DROP 2>/dev/null; then
-    echo "PASS: Pre-existing un-commented DROP rule on port 56789 was PRESERVED!"
-else
-    echo "FAIL: Pre-existing rule was incorrectly deleted by rollback!"
-    exit 1
-fi
-
-if sudo ip6tables -C "$CHAIN_V6" -p tcp --dport 56789 -j DROP 2>/dev/null; then
-    echo "PASS: Pre-existing IPv6 rule on port 56789 was PRESERVED!"
-else
-    echo "FAIL: Pre-existing IPv6 rule was deleted!"
+    echo "FAIL: Unexpected rule count after apply."
     exit 1
 fi
 
 # -----------------------------------------------------------------------------
-# TEST 4: Atomic Transactional Rollback on Partial (IPv6) Failure
+# TEST 2: Targeted Rollback Preserves Pre-Existing Un-Commented Rules
 # -----------------------------------------------------------------------------
-echo "--- [TEST 4] Atomic Transactional Rollback on Partial Failure ---"
-# Scenario: IPv4 succeeds, but IPv6 fails (simulated by invalid chain)
-IPV4_SUCCEEDED=0
-IPV6_SUCCEEDED=0
+echo "--- [TEST 2] Production Helper Rollback & Rule Preservation ---"
+IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+  sh "$HELPER" rollback "$CHAIN_V4" "$CHAIN_V6" "$PORT" "$TAG"
 
-# Step 1: Add IPv4
-if sudo iptables -I "$CHAIN_V4" 1 -p tcp --dport 56789 -m comment --comment "$TAG" -j DROP; then
-    IPV4_SUCCEEDED=1
+# Verify trial rule is gone
+if sudo iptables -C "$CHAIN_V4" -p tcp --dport "$PORT" -m comment --comment "$TAG" -j DROP 2>/dev/null; then
+    echo "FAIL: Tagged trial rule still present in IPv4 after rollback!"
+    exit 1
+fi
+if sudo ip6tables -C "$CHAIN_V6" -p tcp --dport "$PORT" -m comment --comment "$TAG" -j DROP 2>/dev/null; then
+    echo "FAIL: Tagged trial rule still present in IPv6 after rollback!"
+    exit 1
 fi
 
-# Step 2: Attempt IPv6 on an invalid target (simulating failure)
-if sudo ip6tables -I "INVALID_CHAIN_SIMULATION" 1 -p tcp --dport 56789 -m comment --comment "$TAG" -j DROP 2>/dev/null; then
-    IPV6_SUCCEEDED=1
+# CRUCIAL ASSERTION: Verify pre-existing un-commented DROP rule on port 56789 STILL EXISTS!
+if sudo iptables -C "$CHAIN_V4" -p tcp --dport "$PORT" -j DROP 2>/dev/null; then
+    echo "PASS: Pre-existing un-commented IPv4 DROP rule on port $PORT was PRESERVED."
 else
-    IPV6_SUCCEEDED=0
+    echo "FAIL: Pre-existing IPv4 rule was wiped out!"
+    exit 1
 fi
 
-# Atomic failure handling:
-if [ "$IPV4_SUCCEEDED" = "1" ] && [ "$IPV6_SUCCEEDED" = "0" ]; then
-    echo "Detected partial failure (IPv6 failed). Executing immediate atomic rollback of IPv4..."
-    sudo iptables -D "$CHAIN_V4" -p tcp --dport 56789 -m comment --comment "$TAG" -j DROP
+if sudo ip6tables -C "$CHAIN_V6" -p tcp --dport "$PORT" -j DROP 2>/dev/null; then
+    echo "PASS: Pre-existing un-commented IPv6 DROP rule on port $PORT was PRESERVED."
+else
+    echo "FAIL: Pre-existing IPv6 rule was wiped out!"
+    exit 1
 fi
 
-# Verify IPv4 was cleanly restored to baseline state (no orphaned rule)
-if sudo iptables -C "$CHAIN_V4" -p tcp --dport 56789 -m comment --comment "$TAG" -j DROP 2>/dev/null; then
-    echo "FAIL: Atomic rollback left orphaned IPv4 trial rule!"
+# Verify rule counts returned exactly to initial counts
+FINAL_COUNT_V4=$(sudo iptables -S "$CHAIN_V4" | grep -c '^-A')
+FINAL_COUNT_V6=$(sudo ip6tables -S "$CHAIN_V6" | grep -c '^-A')
+if [ "$FINAL_COUNT_V4" -eq "$INITIAL_COUNT_V4" ] && [ "$FINAL_COUNT_V6" -eq "$INITIAL_COUNT_V6" ]; then
+    echo "PASS: Netfilter chains returned precisely to baseline counts (zero side-effects)."
+else
+    echo "FAIL: Netfilter counts drift detected after rollback."
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+# TEST 3: Atomic Transactional Rollback on Simulated IPv6 Failure
+# -----------------------------------------------------------------------------
+echo "--- [TEST 3] Atomic Rollback on Partial (IPv6) Failure ---"
+# We simulate IPv6 failure by directing IPv6 to a non-existent chain
+INVALID_CHAIN="NON_EXISTENT_CHAIN_$$"
+
+if IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+   sh "$HELPER" apply "$CHAIN_V4" "$INVALID_CHAIN" "$PORT" "$TAG" 2>/dev/null; then
+    echo "FAIL: Helper succeeded despite invalid IPv6 chain!"
     exit 1
 else
-    echo "PASS: Atomic rollback cleanly removed IPv4 trial rule after IPv6 failure."
+    echo "PASS: Helper correctly reported error on IPv6 chain failure."
 fi
 
-# -----------------------------------------------------------------------------
-# TEST 5: Gate Before Disarming (Verification Required Before Disarm)
-# -----------------------------------------------------------------------------
-echo "--- [TEST 5] Verification Gate Before Disarming ---"
-# Add both rules properly
-sudo iptables -I "$CHAIN_V4" 1 -p tcp --dport 56789 -m comment --comment "$TAG" -j DROP
-sudo ip6tables -I "$CHAIN_V6" 1 -p tcp --dport 56789 -m comment --comment "$TAG" -j DROP
-
-# Verification function
-verify_trial_rules() {
-    sudo iptables -C "$CHAIN_V4" -p tcp --dport 56789 -m comment --comment "$TAG" -j DROP 2>/dev/null && \
-    sudo ip6tables -C "$CHAIN_V6" -p tcp --dport 56789 -m comment --comment "$TAG" -j DROP 2>/dev/null
-}
-
-DISARM_AUTHORIZED=0
-if verify_trial_rules; then
-    DISARM_AUTHORIZED=1
-    echo "PASS: Verification confirmed both rules active. Disarm gate AUTHORIZED."
+# Verify IPv4 trial rule was NOT left behind (atomic rollback restored baseline)
+if sudo iptables -C "$CHAIN_V4" -p tcp --dport "$PORT" -m comment --comment "$TAG" -j DROP 2>/dev/null; then
+    echo "FAIL: Atomic rollback left orphaned IPv4 trial rule behind!"
+    exit 1
 else
-    echo "FAIL: Verification failed. Disarm gate BLOCKED."
+    echo "PASS: Atomic rollback cleanly reverted IPv4 trial rule after IPv6 failure."
+fi
+
+# Verify baseline rules are still intact
+if sudo iptables -C "$CHAIN_V4" -p tcp --dport "$PORT" -j DROP 2>/dev/null; then
+    echo "PASS: Baseline rules remained intact through atomic rollback."
+else
+    echo "FAIL: Baseline rules damaged during atomic rollback."
     exit 1
 fi
 
-if [ "$DISARM_AUTHORIZED" -ne 1 ]; then
-    echo "FAIL: Disarm permitted without verification."
-    exit 1
-fi
-
-# Clean up trial rules
-sudo iptables -D "$CHAIN_V4" -p tcp --dport 56789 -m comment --comment "$TAG" -j DROP
-sudo ip6tables -D "$CHAIN_V6" -p tcp --dport 56789 -m comment --comment "$TAG" -j DROP
-
-echo "=== ALL 5 FIREWALL RULE OWNERSHIP TESTS PASSED ==="
+echo "=== ALL 3 FIREWALL OWNERSHIP & HELPER TESTS PASSED ==="
