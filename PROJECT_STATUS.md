@@ -2,9 +2,9 @@
 
 - Version: `0.2.0-dev`
 - Date: 2026-11-11
-- Phase: P10/M11.0.2 RA82 Optimization Readiness & Safe Trial Preflight (Track A Primary)
+- Phase: P10/M11.1 Controlled Runtime Reversible Trials (Track A Primary)
 - Current Branch: `feature/m11-0-2-ra82-optimization-preflight`
-- Overall status: `M11_0_2_PREFLIGHT_COMPLETE_AWAITING_REVIEW`
+- Overall status: `M11_1_R0_BASELINE_COMPLETE_READY_FOR_STEP_2_WAN_SSH`
 - GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE`
 - Flash authorization: `STRICT NO-GO FLASH (Live read-only device audit, static partition verification & optimization analysis only)`
 - Initial Firmware Baseline: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Single-conduit Port 8 SGMII 1000M, Linux 6.12.112 LTS verified)
@@ -178,6 +178,13 @@
   5. **Kernel Security & Userspace Boundaries (Task E):** Audited Linux 4.4.60 CVE exposure vs Qualcomm 2023 QSDK build. Separated kernel binary replacement (`NO-GO` under strict safety rules) from non-destructive static userspace enhancements in `/data`.
   6. **Master Optimization Matrix Produced:** Authored 13-item master matrix classifying proposals into `GO` (OPT-SEC-01), `HOLD` (VPN, RPS, Daemons, Wi-Fi tuning, DNS), and `REJECT` (QoS, Conntrack, TCP buffers, live kernel upgrade).
   7. **Deliverables & Strict Safety Affirmation:** Authored `reports/M11_0_2_RA82_OPTIMIZATION_REPORT.md`, `docs/RA82_OPTIMIZATION_MATRIX.md`, `tests/test_measure_cpu_deltas.sh`, synthetic fixtures `tests/fixtures/`, and updated `docs/R0_READONLY_AUDIT_MANIFEST.md`. Maintained workstation-only execution (0 router SSH, 0 uploads, 0 router commands, 0 NAND writes). Lab directory `D:\vibecode\test_wifi` 100% untouched. Status: `M11_0_2_PREFLIGHT_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Systems Engineer).
+- 2026-11-11: Milestone M11.1 Step 1 Authorized Class R0 Live Baseline Audit completed on branch `feature/m11-0-2-ra82-optimization-preflight`.
+  1. **Authorized R0 Execution (`DEVICE_READBACK`):** Interrogated live running RA82 router over SSH port 56789 using strictly the 14 approved read-only commands from `docs/R0_READONLY_AUDIT_MANIFEST.md`. Zero config modifications, zero writes to disk, zero reboots executed.
+  2. **Empirical Process Memory Discovery:** Measured real physical memory (`VmRSS`): `wg_server` (WireGuard Go) consumes **20,600 kB (~20.1 MB)** with 535 MB virtual memory. In contrast, all 4 Xiaomi vendor daemons combined (`messagingagent`, `trafficd`, `cab_meshd`, `smartcontroller`) consume a mere **3,790 kB (~3.79 MB)** of physical RAM. Proved that terminating vendor daemons is futile, whereas migrating WireGuard Go to BoringTun Rust (~3.0 MB) will reclaim **~17.1 MB of physical RAM**, more than doubling the router's current `MemAvailable` (10.4 MB).
+  3. **Empirical CPU & SoftIRQ Differential Discovery:** Measured 10-second differential window: CPU0 active 18.56% (81.44% idle), CPU1 active 3.59% (96.41% idle). Although 99.6% of `NET_RX` softirqs hit CPU0 (1,230/s), CPU0 is 81.4% idle in quiescent state. Proved enabling RPS immediately would be counter-productive; kept on `HOLD` until high-throughput VPN load testing.
+  4. **NSS Offload & Wi-Fi Link Speed:** Confirmed Qualcomm NSS hardware rule match ratio is **96.96%** (95.2M / 98.2M packets) with 0 drops across all queues. Confirmed Wi-Fi 6 HE160 operating at 2.4019 Gbps PHY link speed on 5 GHz radio.
+  5. **Security Exposure Confirmed:** Confirmed Dropbear listening on `0.0.0.0:56789` across all interfaces, validating urgency of Step 2 (Chặn WAN SSH).
+  6. **Deliverables:** Authored `reports/M11_1_R0_LIVE_BASELINE_REPORT.md` and `scripts/m11_1_r0_baseline_audit.sh`. Raw telemetry safely stored in ignored `reports/M11_1_R0_LIVE_BASELINE_RAW.txt`. Status: `M11_1_R0_BASELINE_COMPLETE_READY_FOR_STEP_2_WAN_SSH`. Author: Gemini (Lead Systems Engineer).
 
 
 
