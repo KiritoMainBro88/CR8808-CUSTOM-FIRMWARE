@@ -1,0 +1,83 @@
+=== UNAME ===
+Linux XiaoQiang 4.4.60 #0 SMP PREEMPT Tue Jul 25 13:31:40 2023 armv7l GNU/Linux
+armv7l
+=== PROC VERSION ===
+Linux version 4.4.60 (jenkins@2fb299296942) (gcc version 5.5.0 (OpenWrt GCC 5.5.0 unknown) ) #0 SMP PREEMPT Tue Jul 25 13:31:40 2023
+=== PROC CMDLINE ===
+ubi.mtd=rootfs_1 root=mtd:ubi_rootfs rootfstype=squashfs cnss2.bdf_integrated=0x23 cnss2.bdf_pci0=0x60 cnss2.bdf_pci1=0x60 cnss2.skip_radio_bmap=4 rootwait swiotlb=1
+=== PROC MTD ===
+dev:    size   erasesize  name
+mtd0: 00080000 00020000 "0:SBL1"
+mtd1: 00080000 00020000 "0:MIBIB"
+mtd2: 00040000 00020000 "0:BOOTCONFIG"
+mtd3: 00040000 00020000 "0:BOOTCONFIG1"
+mtd4: 00100000 00020000 "0:QSEE"
+mtd5: 00100000 00020000 "0:QSEE_1"
+mtd6: 00040000 00020000 "0:DEVCFG"
+mtd7: 00040000 00020000 "0:DEVCFG_1"
+mtd8: 00040000 00020000 "0:CDT"
+mtd9: 00040000 00020000 "0:CDT_1"
+mtd10: 00080000 00020000 "0:APPSBLENV"
+mtd11: 00140000 00020000 "0:APPSBL"
+mtd12: 00140000 00020000 "0:APPSBL_1"
+mtd13: 00100000 00020000 "0:ART"
+mtd14: 00080000 00020000 "0:TRAINING"
+mtd15: 00080000 00020000 "bdata"
+mtd16: 00080000 00020000 "crash"
+mtd17: 00080000 00020000 "crash_syslog"
+mtd18: 01e00000 00020000 "rootfs"
+mtd19: 01e00000 00020000 "rootfs_1"
+mtd20: 03980000 00020000 "overlay"
+mtd21: 00364000 0001f000 "kernel"
+mtd22: 01458000 0001f000 "ubi_rootfs"
+mtd23: 034cc000 0001f000 "data"
+=== PROC MEMINFO ===
+MemTotal:         186920 kB
+MemFree:           24884 kB
+MemAvailable:      11776 kB
+Buffers:            3024 kB
+Cached:            28876 kB
+SwapCached:            0 kB
+Active:            51756 kB
+Inactive:           5724 kB
+Active(anon):      43112 kB
+Inactive(anon):     2264 kB
+Active(file):       8644 kB
+Inactive(file):     3460 kB
+Unevictable:        2704 kB
+Mlocked:               0 kB
+SwapTotal:             0 kB
+SwapFree:              0 kB
+Dirty:                 0 kB
+Writeback:             0 kB
+AnonPages:         28276 kB
+Mapped:             3584 kB
+Shmem:             17100 kB
+Slab:              60556 kB
+SReclaimable:       2640 kB
+SUnreclaim:        57916 kB
+KernelStack:        1072 kB
+PageTables:          784 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:       93460 kB
+Committed_AS:     133964 kB
+VmallocTotal:    1818624 kB
+VmallocUsed:           0 kB
+VmallocChunk:          0 kB
+=== NVRAM FLAGS ===
+model: CR8818
+board_id: 
+flag_boot_rootfs: 1
+flag_last_success: 1
+flag_boot_success: 1
+flag_try_sys1_failed: 0
+flag_try_sys2_failed: 0
+boot_backup: 
+=== CONFIG_GZ AND KEXEC ===
+/proc/config.gz not present
+ls: /sys/kernel/kexec*: No such file or directory
+=== WATCHDOG DEVICE AND DMESG ===
+crw-------    1 root     root       10, 130 Jan  1  1970 /dev/watchdog
+crw-------    1 root     root      251,   0 Jan  1  1970 /dev/watchdog0

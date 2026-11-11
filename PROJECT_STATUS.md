@@ -2,11 +2,11 @@
 
 - Version: `0.2.0-dev`
 - Date: 2026-11-11
-- Phase: P9/M10.2 CR8818 Non-UART Safe Deployment & KEXEC Feasibility
-- Current Branch: `feature/m10-2-non-uart-kexec-audit`
-- Overall status: `M10_2_KEXEC_AUDIT_COMPLETE_AWAITING_REVIEW`
+- Phase: P9/M10.2.1 CR8818 Critical Evidence Correction & Recovery Validation
+- Current Branch: `feature/m10-2-1-evidence-correction`
+- Overall status: `M10_2_1_EVIDENCE_CORRECTION_COMPLETE_AWAITING_REVIEW`
 - GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE`
-- Flash authorization: `STRICT NO-GO FLASH (PC-side static audit, build verification & recovery analysis only)`
+- Flash authorization: `STRICT NO-GO FLASH (Live read-only device audit, static partition verification & recovery analysis only)`
 - Initial Firmware Baseline: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Single-conduit Port 8 SGMII 1000M, Linux 6.12.112 LTS verified)
 - Primary Hardware References:
   - `yangfl/openwrt` (commit `6729bbe9f082dc15449f17908832447caeec5065` on `cr8818` branch) — Authoritative CR8818 DTS, SerDes REVSGMII abuse patch 940, caldata geometry
@@ -145,5 +145,13 @@
   4. **Class R0 Read-Only Audit Script:** Created `scripts/m10_2_readonly_audit.sh` incorporating strict passive checks for `/proc/cpuinfo`, `/proc/meminfo`, MTD partitions, and NVRAM bootcounter flags.
   5. **Chief Architect Review Report:** Authored `reports/M10_2_ARCHITECTURE_REVIEW.md` answering all 6 acceptance criteria questions and establishing 4 mandatory pre-flight gates.
   6. **Strict Safety Protocol:** STRICT `NO-GO FLASH`. 0 SSH writes, 0 TFTP to router, 0 flashing, 0 NAND/NVRAM writes, 0 reboots. `D:\vibecode\test_wifi` remains 100% untouched. Status: `M10_2_KEXEC_AUDIT_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Developer / Research Engineer).
+- 2026-11-11: Milestone M10.2.1 Critical Evidence Correction & Non-UART Recovery Validation completed on branch `feature/m10-2-1-evidence-correction`.
+  1. **Active Slot Inversion Correction (`DEVICE_READBACK`):** Interrogated live running router passively via SSH (Dropbear port 56789). Confirmed from `/proc/cmdline` (`ubi.mtd=rootfs_1`) and NVRAM (`flag_boot_rootfs=1`) that stock RA82 is actively executing on **Slot 1 (`rootfs_1` / `mtd19`)**. The inactive dormant slot is **Slot 0 (`rootfs` / `mtd18`)**. Rectified the catastrophic M10.2 inversion error: flashing Slot 1 would have destroyed the active running system.
+  2. **Authoritative SPI NAND Partition Map (`DEVICE_READBACK`):** Reconciled live `/proc/mtd` into a contiguous, 128 MiB (134,217,728 bytes) physical map across `mtd0` through `mtd20` with zero overlaps and zero unmapped gaps. Confirmed `0:ART` (`mtd13`) is 1 MiB at `0x00780000`–`0x00880000`. Disambiguated raw MTD partitions from virtual UBI volumes: `rootfs` (mtd18) and `rootfs_1` (mtd19) are 30 MiB UBI containers; dynamic volumes `kernel` (mtd21) and `ubi_rootfs` (mtd22) exist inside UBI. Deliverable: `docs/M10_2_1_SLOT_AND_PARTITION_VERIFICATION.md`.
+  3. **Reclassification of Recovery Mechanisms (`THEORETICAL_HAZARD` / `UNVERIFIED_ON_CR8818`):** Retracted premature verification claims. Hardware watchdog auto-reset after 30s, U-Boot 3-boot failure auto-failover, and Xiaomi MiWiFi Repair Tool reclassified to `THEORETICAL_HAZARD / UNVERIFIED_ON_CR8818`. Exposed early kernel hang watchdog blindspot (watchdog disabled or not petted; CPU spin; router never reboots). Deliverable: `docs/M10_2_1_RECOVERY_VALIDATION.md`.
+  4. **Architectural Grounding of KEXEC Constraint (`SOURCE_VERIFIED`):** Reframed ARM32 to ARM64 execution state transition: architecturally possible via higher EL exception in ARMv8-A, but blocked on this platform by Qualcomm TrustZone (QTEE) firmware lacking an EL3 Secure Monitor service for runtime state switching. `CONFIG_KEXEC` disabled in stock kernel; syscall returns `ENOSYS`. Removed unproven 43.6 MB contiguous RAM claim.
+  5. **Dissection of `IITII/openwrt-redmi-ax3000` Community Pattern:** Validated dynamic `/proc/cmdline` detection and `ubiformat /dev/mtd18` payload delivery to inactive Slot 0, while issuing a critical warning that precompiled AX3000 firmware is fatal on CR8808 Ver.B due to switch (QCA8337 vs YT9215SC) and kernel incompatibilities.
+  6. **Deliverables & Strict Safety Protocol:** Authored `reports/M10_2_1_EVIDENCE_CORRECTION.md`, `docs/M10_2_1_SLOT_AND_PARTITION_VERIFICATION.md`, and `docs/M10_2_1_RECOVERY_VALIDATION.md`. Live readback archived at `reports/live_device_audit_m10_2_1.txt`. STRICT `NO-GO FLASH` maintained (0 flash, 0 NAND writes, 0 NVRAM commits). Lab directory `D:\vibecode\test_wifi` 100% untouched. Status: `M10_2_1_EVIDENCE_CORRECTION_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Developer / Research Engineer).
+
 
 
