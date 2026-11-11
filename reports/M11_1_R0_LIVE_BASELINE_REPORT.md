@@ -4,18 +4,21 @@
 - **Target Device:** Xiaomi CR8808 Ver.B (Internal Codename: `CR8818`, Profile: `ap-mp03.3`)
 - **Active System:** Xiaomi RA82 Global v1.4.31 (Linux 4.4.60 QSDK, 32-bit `armv7l`)
 - **Interrogation Method:** Class R0 Pure Read-Only SSH via [`scripts/m11_1_r0_baseline_audit.sh`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/scripts/m11_1_r0_baseline_audit.sh)
-- **Safety Boundary:** **STRICT CLASS R0 | ZERO CONFIG MODIFICATIONS | ZERO WRITES | ZERO REBOOTS**
-- **Date/Time:** 2026-11-11 23:56:56 +07:00
-- **Status:** **R0 LIVE BASELINE COMPLETE — READY FOR RUNTIME OPTIMIZATION GATES**
+- **Safety Boundary:** **CLASS R0 | ZERO CONFIG MODIFICATIONS | ZERO FLASH/NVRAM WRITES | ZERO REBOOTS**
+- **Date/Time:** 2026-11-11 23:56:56 +07:00 (Revised under Architecture Directive M11.1.0.1)
+- **Status:** **R0 LIVE BASELINE CORRECTED — PREFLIGHT GATED**
 
 ---
 
-## 1. Executive Summary & Authorization Confirmation
+## 1. Executive Summary & Storage Boundary Clarification
 
-Pursuant to the User / Chief Architect Directive:
+Pursuant to the User / Chief Architect Directives M11.1 and M11.1.0.1:
 > *"Cho phép Gemini bắt đầu M11.1 – R0 Live Baseline, tức SSH vào router nhưng chỉ chạy đúng danh sách lệnh đọc dữ liệu trong docs/R0_READONLY_AUDIT_MANIFEST.md. Chưa cho phép thay đổi cấu hình router."*
 
-The Lead Systems Engineer executed the exact 14 read-only interrogation commands defined in [`docs/R0_READONLY_AUDIT_MANIFEST.md`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/docs/R0_READONLY_AUDIT_MANIFEST.md). Zero state modifications were made to the router. The live readback was sanitized through automated redaction filters and saved to `reports/M11_1_R0_LIVE_BASELINE_RAW.txt`.
+### 1.1 Storage Boundary Demarcation (Correction)
+- **Persistent Flash Storage (NAND / NVRAM / MTD):** **ABSOLUTELY ZERO WRITES.** The flash memory, bootloader, partition tables, and NVRAM configuration were untouched (0 bytes written).
+- **Volatile RAM Storage (`/tmp` tmpfs):** The initial execution created 4 transient text files in volatile RAM `/tmp` (`stat_t1`, `stat_t2`, `softirqs_t1`, `softirqs_t2`) during differential CPU sampling before deleting them. In strict compliance with Architecture Directive M11.1.0.1, the script has been re-architected to use **pure in-memory stream pipelines into AWK**, eliminating temporary file creation on any filesystem.
+- **Router Configuration & State:** **ZERO MODIFICATIONS.** No firewall rules were inserted, no services were stopped, no interfaces were reconfigured. All raw outputs were scrubbed through multi-layer regex filters (MACs, BSSIDs, SSIDs, WAN IP, serial numbers, credentials).
 
 ---
 
@@ -77,7 +80,7 @@ The Lead Systems Engineer executed the exact 14 read-only interrogation commands
 - **Finding:** Wi-Fi 6 HE160 is fully functional and running at peak 2.4 Gbps PHY link speed.
 
 ### R0-10: IP Routing & Interface Status
-- `eth0` (WAN): `192.168.100.75/24`, Gateway: `192.168.100.1` (ISP ONT).
+- `eth0` (WAN): `[REDACTED_WAN_IP]/24`, Gateway: `[REDACTED_GATEWAY_IP]` (ISP ONT).
 - `br-lan` (LAN): `192.168.31.1/24`.
 - `br-miot` (IoT): `192.168.32.1/24`.
 - `wg0` (WireGuard): `10.99.0.1/24` with `qdisc fq_codel`.
@@ -86,7 +89,7 @@ The Lead Systems Engineer executed the exact 14 read-only interrogation commands
 
 ## 3. Groundbreaking Discoveries from Live Baseline
 
-### 3.1 R0-11: Process Memory Taxonomy — The RAM Reclamation Truth
+### 3.1 R0-11: Process Memory Taxonomy — The RAM Reclamation Reality
 
 ```
 +----------------------------------------------------------------------------------------------------+
@@ -112,10 +115,12 @@ The Lead Systems Engineer executed the exact 14 read-only interrogation commands
 ```
 
 > [!IMPORTANT]
-> **CRITICAL MEMORY TAKEAWAY:**
-> - All 4 Xiaomi vendor daemons combined consume only **3.79 MB of physical RAM** ($2.55 + 0.55 + 0.31 + 0.36\text{ MB}$). Terminating them provides almost zero memory relief while breaking the Web UI and mobile app.
-> - Meanwhile, `wg_server` (WireGuard Go) alone consumes **20.1 MB of physical RAM**.
-> - Migrating WireGuard to **BoringTun Rust ($\sim 3.0\text{ MB}$ RSS)** will immediately recover **$\sim 17.1\text{ MB}$ of physical RAM** — more than doubling the router's current `MemAvailable` (10.4 MB)!
+> **CRITICAL MEMORY TAKEAWAY & HYPOTHESIS FORMULATION:**
+> - All 4 Xiaomi vendor daemons combined consume only **3.79 MB of physical RAM** ($2.55 + 0.55 + 0.31 + 0.36\text{ MB}$). Terminating them provides negligible memory relief while breaking the Web UI and mobile app.
+> - Meanwhile, `wg_server` (WireGuard Go) alone consumes **20.1 MB of physical RAM** (`VmRSS`).
+> - **Engineering Hypothesis (`TEST_HYPOTHESIS / ENGINEERING_PROJECTION`):**
+>   In PC/WSL2 laboratory benchmarks, BoringTun 0.7.1 maintained a resident set size of 2.88–3.0 MB VmRSS. Under the working hypothesis that BoringTun achieves similar memory efficiency on ARMv7, projected physical RAM recovery is approximately $\sim 17.1\text{ MB}$.
+>   *Constraint:* This number is strictly an engineering projection and must NOT be asserted as proven fact until BoringTun is empirically benchmarked on the physical router hardware under Step 4. Zero throughput or speed superiority is claimed prior to empirical testing.
 
 ---
 
@@ -145,22 +150,26 @@ Current Window Distribution: CPU0 = 99.6%, CPU1 = 0.4%
 
 ---
 
-### 3.3 R0-13: Security Listening Sockets
-- **Dropbear SSH:** `0.0.0.0:56789` and `:::56789` (Listening on ALL interfaces, accepting connections from WAN).
+### 3.3 R0-13: Security Listening Sockets & Firewall Preflight
+- **Dropbear SSH Bindings:** `0.0.0.0:56789` (IPv4 all interfaces) and `:::56789` (IPv6 all interfaces).
 - **WireGuard:** Listening on UDP 51820.
 - **dnsmasq:** Listening on port 53 across local IP addresses.
-- **Finding:** Confirms that Dropbear SSH is exposed on WAN and ready for Step 2 hardening (`GO`).
+- **Firewall Nuance & Dual-Stack Preflight:**
+  * While Dropbear is bound to `0.0.0.0` and `:::`, socket listening alone does NOT prove WAN penetration without checking netfilter firewall chains (`iptables` and `ip6tables`).
+  * In OpenWrt fw3, incoming WAN packets traverse `INPUT -> delegate_input -> zone_wan_input`.
+  * **Crucial Dual-Stack Finding:** An `iptables` rule dropping port 56789 on `zone_wan_input` only affects **IPv4** traffic. It does NOT protect against **IPv6** connections arriving at `:::56789`! Both `iptables` AND `ip6tables` must be configured symmetrically.
 
 ---
 
-### 3.4 R0-14: Qualcomm NSS Hardware Offload Reality
+### 3.4 R0-14: Qualcomm NSS Hardware Offload Statistics
 - Common IPv4 RX: 98,237,131 packets / 98.8 GB.
 - Special IPv4 RX (Rule Match): 95,251,332 packets / 96.9 GB.
 - Hash Hits: 95,311,622 (Lookups during forward, create, and destroy).
 - Drops: **0 drops across all 4 RX queues and rule tables**.
 - **Internal Rule Match Ratio:**
-  $$\frac{95,251,332}{98,237,131} \times 100\% = \mathbf{96.96\%}$$
-- **Finding:** Qualcomm NSS hardware forwarding is operating with near-perfect 97% efficiency and zero packet drops.
+  $$\text{Internal NSS Rule Match Ratio} = \frac{95,251,332}{98,237,131} \times 100\% = \mathbf{96.96\%}$$
+- **Nuanced Interpretation:**
+  This 96.96% ratio reflects the internal rule match rate of IPv4 packets delivered to the NSS engine. It must NOT be interpreted as an absolute global offload percentage of 100% of all router transit traffic, because non-NSS interfaces (such as `wg0` and local proxies) are handled by the host CPU.
 
 ---
 
@@ -172,16 +181,16 @@ Based on the confirmed R0 telemetry, the 6-step roadmap is aligned:
 +--------+------------------------------------+------------+---------------------------------------------+
 | Thứ Tự | Hạng Mục Công Việc                 | Phê Duyệt  | Căn Cứ Thực Nghiệm Vừa Đo Đạc               |
 +--------+------------------------------------+------------+---------------------------------------------+
-| Bước 1 | M11.1 R0 Live Baseline Audit       | HOÀN THÀNH | Đã hoàn thành 100% qua SSH Class R0         |
+| Bước 1 | M11.1 R0 Live Baseline Audit       | HOÀN THÀNH | Đã đo đạc đủ 14 hạng mục R0 thực tế         |
 +--------+------------------------------------+------------+---------------------------------------------+
-| Bước 2 | Chặn WAN SSH port 56789            | SẴN SÀNG   | Xác nhận 0.0.0.0:56789 mở WAN; iptables     |
-|        | (Giữ kết nối LAN với 180s watchdog)| (ĐÃ CÓ GO) | volatile + fail-safe watchdog 180s          |
+| Bước 2 | Chặn WAN SSH port 56789            | PREFLIGHT  | Xác nhận 0.0.0.0 & ::: mở Dropbear;         |
+|        | (Dual-stack IPv4/IPv6 + Watchdog)  | CHỜ DUYỆT  | Cần chặn cả iptables & ip6tables            |
 +--------+------------------------------------+------------+---------------------------------------------+
-| Bước 3 | Đo CPU0/CPU1 khi tải VPN iperf3    | CHỜ DUYỆT  | baseline quiescent là 18.5% CPU0; cần đo    |
+| Bước 3 | Đo CPU0/CPU1 khi tải VPN iperf3    | CHỜ DUYỆT  | Baseline tĩnh là 18.5% CPU0; cần đo         |
 |        |                                    |            | khi có lưu lượng VPN thực tế                |
 +--------+------------------------------------+------------+---------------------------------------------+
 | Bước 4 | Chạy BoringTun Rust trên wg1:51821 | CHỜ DUYỆT  | Go đang chiếm 20.1 MB RAM; BoringTun sẽ     |
-|        | (Sandbox độc lập, giữ nguyên wg0)  |            | giải phóng ~17 MB RAM                       |
+|        | (Sandbox độc lập, giữ nguyên wg0)  |            | kiểm chứng giả thuyết tiết kiệm ~17 MB      |
 +--------+------------------------------------+------------+---------------------------------------------+
 | Bước 5 | Thử RPS nếu CPU0 tải VPN > 80%     | GIỮ NGUYÊN | Chỉ thử nếu Bước 3 chứng minh CPU0 quá tải  |
 +--------+------------------------------------+------------+---------------------------------------------+
@@ -192,9 +201,12 @@ Based on the confirmed R0 telemetry, the 6-step roadmap is aligned:
 
 ---
 
-## 5. Đề xuất hành động tiếp theo
+## 5. Kết luận & Cổng kiểm soát an toàn (Gate M11.1.0.1)
 
-Baseline R0 đã hoàn thành xuất sắc và an toàn.  
-Lead Systems Engineer kính trình Chief Architect và User:
-1. Nghiệm thu kết quả **M11.1 – R0 Live Baseline**.
-2. **Cấp lệnh triển khai Bước 2: Chặn Dropbear WAN SSH (port 56789)** bằng lệnh iptables an toàn trong RAM kèm cơ chế tự động hoàn tác sau 180 giây nếu xảy ra sự cố.
+Số liệu R0 Baseline đã được hiệu chỉnh chính xác theo Architecture Directive M11.1.0.1:
+1. Đã phân định rõ ranh giới lưu trữ: 0 bytes ghi vào NAND/flash, script được tái cấu trúc thành pure in-memory stream pipeline.
+2. Đã làm sạch toàn bộ dữ liệu nhạy cảm (SSID, BSSID/MAC, serial, WAN IP, credentials).
+3. Đã xác lập giả thuyết tiết kiệm RAM của BoringTun Rust (`TEST_HYPOTHESIS`), không khẳng định thành sự thật trước khi đo đạc.
+4. Đã hoàn thiện bộ test harness kiểm thử watchdog SIGHUP và dual-stack trên PC.
+
+*(Tuân thủ tuyệt đối quy tắc `AGENTS.md`: Tạm dừng tại đây, không SSH vào router, không thay đổi firewall và chờ chỉ thị từ Architecture Lead).*

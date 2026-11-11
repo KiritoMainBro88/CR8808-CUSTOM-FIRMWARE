@@ -1,6 +1,7 @@
 #!/bin/bash
 # scripts/m11_1_r0_baseline_audit.sh
-# Milestone M11.1: Authorized Class R0 Read-Only Live Baseline Audit for Xiaomi RA82
+# Milestone M11.1.0.1: Hardened, In-Memory Stream Class R0 Read-Only Live Baseline Audit
+# Pure In-Memory Stream Processing: ZERO temporary files created on router (/tmp untouched)
 # Target: 192.168.31.1:56789
 # Usage: export SSHPASS="<password>"; ./scripts/m11_1_r0_baseline_audit.sh
 
@@ -22,7 +23,7 @@ echo "Verifying host key for ${ROUTER_IP}:${ROUTER_PORT}..."
 mkdir -p "$(dirname "$KNOWN_HOSTS_FILE")"
 ssh-keyscan -p "$ROUTER_PORT" -t rsa "$ROUTER_IP" 2>/dev/null > "$KNOWN_HOSTS_FILE"
 
-echo "Connecting to Xiaomi CR8808 Ver.B (RA82) and executing Class R0 manifest commands..."
+echo "Connecting to Xiaomi CR8808 Ver.B (RA82) and executing pure in-memory Class R0 manifest..."
 
 sshpass -e ssh -p "$ROUTER_PORT" \
   -o StrictHostKeyChecking=yes \
@@ -32,6 +33,11 @@ sshpass -e ssh -p "$ROUTER_PORT" \
   "${ROUTER_USER}@${ROUTER_IP}" "sh -s" << 'EOF' | sed -E \
     -e "s/(-srvkey|-clientkey) [^ ]+/\1 [REDACTED_WG_KEY]/g" \
     -e "s/(key|sae_password)=['\"][^'\"]*['\"]/\1='[REDACTED_WIFI_KEY]'/g" \
+    -e "s/ESSID:\"[^\"]*\"/ESSID:\"[REDACTED_SSID]\"/g" \
+    -e "s/ssid='[^']*'/ssid='[REDACTED_SSID]'/g" \
+    -e "s/([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})/[REDACTED_MAC]/g" \
+    -e "s/192\.168\.100\.[0-9]+/[REDACTED_WAN_IP]/g" \
+    -e "s/Serial\s*:\s*[0-9a-zA-Z]+/Serial\t\t: [REDACTED_SERIAL]/g" \
     > "$OUTPUT_FILE"
 echo "================================================================================"
 echo "R0-01: /proc/cpuinfo"
@@ -104,35 +110,39 @@ for name in wg_server messagingagent trafficd cab_meshd smartcontroller; do
 done
 
 echo "================================================================================"
-echo "R0-12: Time-Bounded CPU & SoftIRQ Delta Profiling (10s window)"
+echo "R0-12: Time-Bounded CPU & SoftIRQ Delta Profiling (Pure In-Memory Stream)"
 echo "================================================================================"
-cat /proc/stat > /tmp/stat_t1
-cat /proc/softirqs > /tmp/softirqs_t1
-sleep 10
-cat /proc/stat > /tmp/stat_t2
-cat /proc/softirqs > /tmp/softirqs_t2
-
-awk -v dur=10 '
-BEGIN {
-    while ((getline line < "/tmp/stat_t1") > 0) {
-        split(line, f)
-        if (f[1] ~ /^cpu[0-9]/) {
-            cpu = f[1]
-            u1[cpu]=f[2]; n1[cpu]=f[3]; s1[cpu]=f[4]; i1[cpu]=f[5];
-            w1[cpu]=f[6]; x1[cpu]=f[7]; y1[cpu]=f[8]; z1[cpu]=f[9]
-        }
+(
+    echo "=== T1 ==="
+    cat /proc/stat
+    cat /proc/softirqs
+    sleep 10
+    echo "=== T2 ==="
+    cat /proc/stat
+    cat /proc/softirqs
+) | awk -v dur=10 '
+BEGIN { phase = 0 }
+/^=== T1 ===/ { phase = 1; next }
+/^=== T2 ===/ { phase = 2; next }
+phase == 1 {
+    if ($1 ~ /^cpu[0-9]/) {
+        c = $1
+        u1[c]=$2; n1[c]=$3; s1[c]=$4; i1[c]=$5; w1[c]=$6; x1[c]=$7; y1[c]=$8; z1[c]=$9
     }
-    close("/tmp/stat_t1")
-    while ((getline line < "/tmp/stat_t2") > 0) {
-        split(line, f)
-        if (f[1] ~ /^cpu[0-9]/) {
-            cpu = f[1]
-            u2[cpu]=f[2]; n2[cpu]=f[3]; s2[cpu]=f[4]; i2[cpu]=f[5];
-            w2[cpu]=f[6]; x2[cpu]=f[7]; y2[cpu]=f[8]; z2[cpu]=f[9]
-        }
+    if ($1 ~ /NET_RX:/) {
+        rx1_0 = $2; rx1_1 = $3
     }
-    close("/tmp/stat_t2")
-
+}
+phase == 2 {
+    if ($1 ~ /^cpu[0-9]/) {
+        c = $1
+        u2[c]=$2; n2[c]=$3; s2[c]=$4; i2[c]=$5; w2[c]=$6; x2[c]=$7; y2[c]=$8; z2[c]=$9
+    }
+    if ($1 ~ /NET_RX:/) {
+        rx2_0 = $2; rx2_1 = $3
+    }
+}
+END {
     printf("\n--- CPU UTILIZATION (10s delta) ---\n")
     printf("%-8s %-12s %-12s %-12s %-12s %-12s\n", "Core", "Total%", "User%", "System%", "SoftIRQ%", "Idle%")
     for (c in u1) {
@@ -143,27 +153,16 @@ BEGIN {
                    c, (act/tot)*100, ((u2[c]-u1[c])/tot)*100, ((s2[c]-s1[c])/tot)*100, ((y2[c]-y1[c])/tot)*100, ((i2[c]-i1[c])/tot)*100)
         }
     }
-
-    while ((getline line < "/tmp/softirqs_t1") > 0) {
-        if (line ~ /NET_RX:/) { split(line, f); rx1_0=f[2]; rx1_1=f[3] }
-    }
-    close("/tmp/softirqs_t1")
-    while ((getline line < "/tmp/softirqs_t2") > 0) {
-        if (line ~ /NET_RX:/) { split(line, f); rx2_0=f[2]; rx2_1=f[3] }
-    }
-    close("/tmp/softirqs_t2")
-
-    d0 = (rx2_0 - rx1_0); d1 = (rx2_1 - rx1_1); tot = d0 + d1
+    d0 = (rx2_0 - rx1_0); d1 = (rx2_1 - rx1_1); tot_rx = d0 + d1
     printf("\n--- NET_RX SOFTIRQ (10s delta) ---\n")
     printf("CPU0 NET_RX Delta: %d events (%.1f/sec)\n", d0, d0/dur)
     printf("CPU1 NET_RX Delta: %d events (%.1f/sec)\n", d1, d1/dur)
-    if (tot > 0) {
-        printf("Current Window Distribution: CPU0 = %.1f%%, CPU1 = %.1f%%\n", (d0/tot)*100, (d1/tot)*100)
+    if (tot_rx > 0) {
+        printf("Current Window Distribution: CPU0 = %.1f%%, CPU1 = %.1f%%\n", (d0/tot_rx)*100, (d1/tot_rx)*100)
     } else {
         printf("Current Window Distribution: 0 packets processed in software path.\n")
     }
 }'
-rm -f /tmp/stat_t1 /tmp/stat_t2 /tmp/softirqs_t1 /tmp/softirqs_t2
 
 echo "================================================================================"
 echo "R0-13: Listening Sockets (netstat)"
@@ -176,4 +175,4 @@ echo "==========================================================================
 cat /sys/kernel/debug/qca-nss-drv/stats/ipv4 2>/dev/null | head -n 35 || echo "NSS stats not available"
 EOF
 
-echo "Class R0 Live Baseline Audit complete. Sanitized report saved to: $OUTPUT_FILE"
+echo "Pure In-Memory Class R0 Live Baseline Audit complete. Sanitized report saved to: $OUTPUT_FILE"

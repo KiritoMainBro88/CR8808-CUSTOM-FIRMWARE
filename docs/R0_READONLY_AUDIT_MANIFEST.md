@@ -9,14 +9,16 @@
 
 ---
 
-## 1. Safety Mandate and Execution Protocol
+## 1. Safety Mandate and Storage Boundary Taxonomy
 
-In strict adherence to `AGENTS.md` and the **Architecture Gate G1 Final Review**:
-- **NO SSH execution will occur until this manifest is reviewed and formally approved by ChatGPT Architecture Lead and User.**
-- All proposed commands are strictly read-only interrogations of Linux procfs, sysfs, ubus, and nvram.
-- Zero files will be written, zero daemons will be terminated, zero services will be restarted, and zero NVRAM variables will be set.
+In strict adherence to `AGENTS.md` and the **Architecture Directives M11.1 and M11.1.0.1**:
+- **Execution Boundary:** Class R0 commands are strictly read-only interrogations of Linux procfs, sysfs, ubus, and nvram.
+- **Storage Boundary Classification:**
+  1. *Persistent Storage (NAND Flash / SPI MTD / NVRAM / Bootconfig):* **ABSOLUTELY ZERO WRITES.** Any modification to MTD or NVRAM is strictly prohibited under the `STRICT NO-GO FLASH` mandate.
+  2. *Volatile Memory Storage (`/tmp` tmpfs in RAM):* **AVOIDED IN CLASS R0.** Prior scripts created temporary files in `/tmp` for differential calculation. Under M11.1.0.1, all differential CPU and SoftIRQ sampling is re-engineered to stream data directly into AWK process memory via standard input pipelines, ensuring **ZERO files are created in `/tmp` or on any filesystem**.
+  3. *Kernel State / Network Routing / Firewall / Daemons:* **ZERO MODIFICATIONS.** No iptables rules added, no daemons killed, no network interfaces touched.
 - All commands incorporate pre-flight availability checks (`command -v` or file test `-e`) to prevent shell exceptions or unexpected script failures.
-- All collected outputs will pass through mandatory sanitization filters to strip MAC addresses, serial numbers, Wi-Fi keys, and private identifiers before inclusion in any report.
+- All collected outputs must pass through mandatory sanitization filters before storage or reporting.
 
 ---
 
@@ -46,8 +48,8 @@ Even within read-only operations, commands carry different levels of bus interac
 | **R0-08** | `lsmod \| grep -E "yt\|qca\|nss"` | Loaded kernel modules (`yt_switch.ko`, `qca-ssdk.ko`, `nss-dp.ko`) | Low | `command -v lsmod >/dev/null` | None. |
 | **R0-09** | `uci show wireless \| grep -E "channel\|band\|htmode\|disabled"; iwconfig 2>/dev/null \| grep -E "IEEE\|Mode"` | Wi-Fi 5 GHz HE160 operating mode and channel bandwidth (Replaces OpenWrt `iwinfo` which does not exist on QSDK) | Low | `command -v uci >/dev/null` | Redact SSIDs, passwords (`key`), and BSSIDs. |
 | **R0-10** | `ip addr show; ip route show` | Network interface topology (`br-lan`, `eth0`, `eth1`, `wan`) and routing table | Low | `command -v ip >/dev/null` | Redact public WAN IP address and hardware MACs. |
-| **R0-11** | `for pid in $(pgrep -E "wg_server|messagingagent|trafficd|cab_meshd|smartcontroller"); do echo "PID $pid:"; cat /proc/$pid/status 2>/dev/null \| grep -E "^(Name\|VmSize\|VmRSS\|RssAnon\|RssFile):"; done` | Process memory profiling: exact VmRSS, RssAnon, and RssFile | Low | Check `/proc` entries | None (Standard memory integers). |
-| **R0-12** | `sh /tmp/measure_cpu_deltas.sh 10` | Time-bounded differential CPU, softirq, and interrupt profiling | Low | Check script presence | None (Differential counters). |
+| **R0-11** | `for name in wg_server messagingagent trafficd cab_meshd smartcontroller; do for pid in $(pidof $name 2>/dev/null); do cat /proc/$pid/status 2>/dev/null \| grep -E "^(Name\|VmSize\|VmRSS\|RssAnon\|RssFile):"; done; done` | Process memory profiling: exact VmRSS, RssAnon, and RssFile (BusyBox pidof compatible) | Low | Check `/proc` entries | None (Standard memory integers). |
+| **R0-12** | `(echo "=== T1 ==="; cat /proc/stat /proc/softirqs; sleep 10; echo "=== T2 ==="; cat /proc/stat /proc/softirqs) \| awk -v dur=10 '...'` | Time-bounded differential CPU & softirq profiling (Pure In-Memory Stream; zero `/tmp` files) | Low | Check command presence | None (Differential counters). |
 | **R0-13** | `netstat -tlpn 2>/dev/null \| grep -E "56789\|51820\|53"` | Socket listening bindings (Dropbear, WireGuard, dnsmasq) | Low | `command -v netstat >/dev/null` | None (Local port numbers). |
 | **R0-14** | `cat /sys/kernel/debug/qca-nss-drv/stats/ipv4 2>/dev/null \| head -n 30` | NSS hardware offload statistics and rule match counters | Low | File existence check | None (Packet and byte counters). |
 
@@ -77,10 +79,11 @@ On Qualcomm QSDK vendor firmware, Xiaomi's `yt_switch` kernel driver creates the
 
 ## 5. Redaction Filter Specification
 
-Before any output from the commands above is saved to disk or pasted into conversation:
-1. **MAC Addresses:** Replaced with `[REDACTED_MAC]`.
-2. **Public WAN IP:** Replaced with `[REDACTED_WAN_IP]`.
-3. **Serial Numbers:** Replaced with `[REDACTED_SERIAL]`.
-4. **Wi-Fi SSIDs / PSKs:** Replaced with `[REDACTED_SSID]` / `[REDACTED_WIFI_KEY]`.
-5. **Private Keys / Tunnel Secrets:** Explicit redaction filter replacing `-srvkey <key>` and `-clientkey <key>` with `[REDACTED_WG_PRIVATE_KEY]` / `[REDACTED_WG_CLIENT_KEY]`.
-6. **Automation:** All audit commands executed via automated wrappers must pipe through dual-layer `sed` sanitizers before writing to persistent storage.
+Before any output from the commands above is saved to disk or pasted into conversation, it MUST pass through the standardized multi-pattern regex sanitizer:
+1. **MAC Addresses & BSSIDs:** Regex `([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})` $\rightarrow$ `[REDACTED_MAC]`.
+2. **WAN & Public IP Addresses:** Regex `192\.168\.100\.[0-9]+` (and any non-RFC1918 public IP) $\rightarrow$ `[REDACTED_WAN_IP]`.
+3. **Serial Numbers:** Regex `Serial\s*:\s*[0-9a-zA-Z]+` $\rightarrow$ `Serial : [REDACTED_SERIAL]`.
+4. **Wireless SSIDs:** Regex `ESSID:"[^"]*"` $\rightarrow$ `ESSID:"[REDACTED_SSID]"`, and `ssid='[^']*'` $\rightarrow$ `ssid='[REDACTED_SSID]'`.
+5. **Wi-Fi PSK / Passphrases:** Regex `(key|sae_password)=['"][^'"]*['"]` $\rightarrow$ `\1='[REDACTED_WIFI_KEY]'`.
+6. **WireGuard Private & Preshared Keys:** Regex `(-srvkey|-clientkey) [^ ]+` $\rightarrow$ `\1 [REDACTED_WG_KEY]`.
+7. **Automation Rule:** All audit scripts must pipe remote output through these filters before saving to persistent storage. Raw files with unredacted personal identifiers must never be committed to Git.
