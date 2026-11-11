@@ -2,9 +2,9 @@
 
 - Version: `0.2.0-dev`
 - Date: 2026-11-11
-- Phase: P9/M10.1 CR8818 Evidence Correction & Architecture Review
-- Current Branch: `feature/m10.1-architecture-review`
-- Overall status: `M10_1_EVIDENCE_CORRECTION_COMPLETE_AWAITING_REVIEW`
+- Phase: P9/M10.2 CR8818 Non-UART Safe Deployment & KEXEC Feasibility
+- Current Branch: `feature/m10-2-non-uart-kexec-audit`
+- Overall status: `M10_2_KEXEC_AUDIT_COMPLETE_AWAITING_REVIEW`
 - GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE`
 - Flash authorization: `STRICT NO-GO FLASH (PC-side static audit, build verification & recovery analysis only)`
 - Initial Firmware Baseline: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Single-conduit Port 8 SGMII 1000M, Linux 6.12.112 LTS verified)
@@ -138,5 +138,12 @@
   5. **P0-5 Forensic Image Audit & DTB Extraction (`BUILD_VERIFIED`):** Extracted embedded FDT blob from `openwrt-qualcommax-ipq50xx-xiaomi_cr8818-initramfs-uImage.itb`. Proved bit-for-bit cryptographic match (`3845856eff1cee40267636f77c5633feb0d936c5af04a820a82524313cc00458`) with build DTB. Decompiled and verified all required DTS nodes. Audited 183 packages in manifest and confirmed NSS offload engine exclusion from Track A. Deliverable: `docs/M10_1/M10_1_FINAL_IMAGE_AUDIT.md`.
   6. **Executive Synthesis & Parity Matrix:** Authored `docs/M10_1/M10_1_ARCHITECTURE_REVIEW.md` and updated `docs/M10_1/FEATURE_PARITY_MATRIX.md` adhering strictly to the 6-tier evidence taxonomy.
   7. **Strict Safety Protocol:** STRICT `NO-GO FLASH`. 0 SSH, 0 TFTP to router, 0 flashing, 0 NAND/NVRAM writes, 0 reboots. `D:\vibecode\test_wifi` remains 100% untouched. Status: `M10_1_EVIDENCE_CORRECTION_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Developer / Research Engineer).
+- 2026-11-11: Milestone M10.2 Non-UART Safe Deployment & KEXEC Feasibility completed on branch `feature/m10-2-non-uart-kexec-audit`.
+  1. **P0 KEXEC Feasibility Audit (`SOURCE_VERIFIED` / `IMPOSSIBLE`):** Formally proved that Linux KEXEC is architecturally impossible and unviable on Xiaomi RA82. The kernel runs 32-bit ARM (AArch32), which cannot execute or hand over control to 64-bit ARM64 OpenWrt 25.12.6 at EL1 without an EL3 Secure Monitor service. `CONFIG_KEXEC` is disabled in stock QSDK defconfig; syscall returns `ENOSYS`. Handover without SoC reset leaves switch, WCSS Q6, and GMAC DMA active, causing fatal memory corruption. Staging ~44 MB contiguous RAM in fragmented ~50 MB free RAM triggers immediate OOM panic. Deliverable: `docs/M10_2_KEXEC_FEASIBILITY.md`.
+  2. **P1 IPQ5018 Boot Chain & Dual-Slot Architecture (`SOURCE_VERIFIED`):** Decomposed 5-stage Qualcomm boot flow (PBL -> SBL1 -> QTEE/TZ -> APPSBL/U-Boot -> Linux). Analyzed Winbond W25N01GV 128 MB SPI NAND layout. Detailed U-Boot dual-slot selection (`flag_boot_rootfs`) and bootcounter auto-failover (`flag_try_sysX_failed >= 3`). Deliverable: `docs/M10_2_CR8808_BOOT_CHAIN_ANALYSIS.md`.
+  3. **P1 Non-UART Recovery & Community Research (`SOURCE_VERIFIED` / `REPORTED_UNVERIFIED`):** Compared 5 candidate pathways. Uncovered the root cause of Ver.B bricking in early AX3000 scripts (overwrote APPSBL/MIBIB with incompatible QCA8337 code). Formulated the Controlled Dual-Slot Deployment Strategy (Slot 1 isolated, Slot 0 pristine RA82) backed by U-Boot bootcounter failover and MiWiFi Repair Tool. Deliverable: `docs/M10_2_NON_UART_RECOVERY_RESEARCH.md`.
+  4. **Class R0 Read-Only Audit Script:** Created `scripts/m10_2_readonly_audit.sh` incorporating strict passive checks for `/proc/cpuinfo`, `/proc/meminfo`, MTD partitions, and NVRAM bootcounter flags.
+  5. **Chief Architect Review Report:** Authored `reports/M10_2_ARCHITECTURE_REVIEW.md` answering all 6 acceptance criteria questions and establishing 4 mandatory pre-flight gates.
+  6. **Strict Safety Protocol:** STRICT `NO-GO FLASH`. 0 SSH writes, 0 TFTP to router, 0 flashing, 0 NAND/NVRAM writes, 0 reboots. `D:\vibecode\test_wifi` remains 100% untouched. Status: `M10_2_KEXEC_AUDIT_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Developer / Research Engineer).
 
 
