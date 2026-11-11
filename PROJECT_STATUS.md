@@ -4,7 +4,7 @@
 - Date: 2026-11-11
 - Phase: P5/M6 OpenWrt Daily Driver Full Source Build & BoringTun Hardening
 - Current Branch: `feature/m6-full-source-build`
-- Overall status: `M6_CONDITIONAL_ACCEPTANCE_FULL_FIRMWARE_VERIFIED`
+- Overall status: `M6_FULL_BUILD_AND_SOAK_VERIFIED_AWAITING_REVIEW`
 - GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`, `feature/g1-corrections-round3`, `feature/g1-corrections-round4`, `feature/g1-corrections-round5`, `feature/g1-corrections-round5.1`, `feature/g1-corrections-round5.2`, `feature/nss-cr8818-research`, `feature/nss-cr8818-poc`, `feature/rust-userspace-strategy`, `feature/product-vision-hardening`, `feature/m5-daily-driver-build`, `feature/m6-full-source-build`)
 - Flash authorization: `NO-GO pending independent recovery validation (M6 artifacts classified NON_FLASHABLE_TEST_ARTIFACT)`
 - Initial Firmware Baseline Proposal: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Architecture Proposal under review; NOT yet approved for implementation by Product Owner)
@@ -12,7 +12,7 @@
   - `yangfl/openwrt` (commit `6729bbe9f082dc15449f17908832447caeec5065` on `cr8818` branch) — Authoritative CR8818 DTS, SerDes REVSGMII abuse patch 940, caldata geometry
   - `zcop/immortalwrt` (commit `c5ad88b702dc2374c9d67141693cc06cce742dc8`) — Register reverse-engineering reference for YT9215 (NSS offload on CR8818: `NSS_NOT_VERIFIED`)
 - Secondary Reference: `kuncy7/openwrt-nss-edma` — Low-memory profile reference (NSS tagger currently incompatible with YT9215)
-- WireGuard Target Engine: `BoringTun Rust 0.7.1` (Patched Issue #498, 2.8–3.0 MB VmRSS; 60-minute soak test active in netns with 0% loss; tested immune to Issue #495 & Issue #498)
+- WireGuard Target Engine: `BoringTun Rust 0.7.1` (Patched Issue #498, 2.88 MB VmRSS; 60-minute soak test COMPLETED with 2,907 pings, 0 drops, 29 rekeys, 0 kB leak; tested immune to Issue #495 & Issue #498)
 - Wi-Fi Target Mode: `5 GHz HE160 (160 MHz)` (Mandatory retention, 2402 Mbps link rate)
 - Git History Remediation: `DRY_RUN_VALIDATED_CLEAN` (All commits verified 100% clean)
 - Firmware build: `BUILD_VERIFIED (Full OpenWrt 25.12.6 factory.ubi 10.12 MB, sysupgrade.bin 9.53 MB, rootfs 3.97 MB - NON_FLASHABLE_TEST_ARTIFACT)`
@@ -69,4 +69,10 @@
   3. **P0 Lab Integrity Audit:** Forensic audit of `D:\vibecode\test_wifi` completed in `reports/LAB_INTEGRITY_AUDIT.md`. Proved `"Ran clean up temporary files in test_wifi"` at Step 8911 targeted solely two 17-second-old prompt dump files (`temp_user_req.txt` and `full_user_req.txt`). Zero original lab files touched. Reconciled filesystem counts (3,329 non-hidden files, 3,492 total files, 713 directories, 4,205 objects). Proved most recent file timestamp is 2026-11-09T17:05:02 (check_boot_flags.py). Hashed all 3,492 files with SHA-256 baseline.
   4. **P1 Architecture Diagram & Parity:** Updated `docs/architecture/cr8818_dual_track_architecture.svg` with `ACCEPTANCE_TARGET` for NAT, `CONFIG_VERIFIED` for forwarding, and `SOURCE_AVAILABLE / DISABLED` for Wi-Fi 6. Updated `reports/HARDWARE_PARITY_REPORT.md` across all 8 approved badges.
   5. **Safety Affirmation:** ZERO router contact, ZERO flashing, lab workspace pristine. Status: `M6_AUDIT_HARDENING_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Coordinator) & Swarm Team.
+- 2026-11-11: Milestone M6 Full OpenWrt Firmware Build & 60-Minute Soak Test Completion on branch `feature/m6-full-source-build`.
+  1. **Full OpenWrt 25.12.6 Firmware Build (`BUILD_VERIFIED`):** Executed real `make -j24 target/linux/install V=s` in OpenWrt 25.12.6 buildroot on WSL2. Built `factory.ubi` (10.12 MB, SHA-256 `317f840a...`), `sysupgrade.bin` (9.53 MB, SHA-256 `df761c28...`), and rootfs SquashFS (3.97 MB XZ, SHA-256 `8e3a24b0...`). Verified rootfs contents with `unsquashfs`: contains 71 compiled `.ko` modules, static BoringTun 0.7.1 AArch64 binary (1.18 MB), LuCI Web UI, and APK v3 package database (31 packages). All firmware artifacts classified `NON_FLASHABLE_TEST_ARTIFACT`.
+  2. **BoringTun 60-Minute Soak Test (`FUNCTION_VERIFIED` / `60_MIN_SOAK_PASS`):** Executed full 3,600s continuous soak test (`tests/integration/soak_boringtun_60m.sh 3600`) in isolated Linux network namespaces. Delivered 2,907 bidirectional ICMP probes with 0 lost (0.0000% packet loss, 0 alert lines). Verified 29 consecutive cryptographic rekey cycles at ~120s intervals with seamless key transition and 0 packet drops. Verified 11 live UAPI keepalive mutations under active traffic with 0 panics. Measured flat VmRSS at 2,880 kB (0 kB net heap growth across 117 progress samples). Deliverables: `artifacts/m6_build/boringtun_soak_60m.log`, `artifacts/m6_build/boringtun_soak_60m_telemetry.json`, and `reports/SOAK_60M_COMPLETION_REPORT.md`.
+  3. **SHA-256 Hashes & Integrity:** All 19 build and test artifacts in `artifacts/m6_build/SHA256SUMS` verified 100% OK via `sha256sum -c`.
+  4. **Architecture SVG & Parity Reports:** Updated `docs/architecture/cr8818_dual_track_architecture.svg` and `reports/HARDWARE_PARITY_REPORT.md` promoting BoringTun 60m soak badge to `60_MIN_SOAK_PASS` / `FUNCTION_VERIFIED`.
+  5. **Safety Affirmation:** ZERO router contact, ZERO flashing, lab workspace `D:\vibecode\test_wifi` 100% pristine. Status: `M6_FULL_BUILD_AND_SOAK_VERIFIED_AWAITING_REVIEW`. Author: Gemini (Coordinator) & Swarm Team.
 

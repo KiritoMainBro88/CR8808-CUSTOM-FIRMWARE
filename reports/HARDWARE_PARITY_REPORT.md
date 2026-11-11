@@ -35,7 +35,8 @@ In strict accordance with the project governance standard established by the Arc
 - **`STOCK_MEASURED`:** Empirically measured and benchmarked directly on physical Xiaomi RA82 v1.4.31 stock router hardware or official OEM firmware dumps.
 - **`ACCEPTANCE_TARGET`:** Design performance threshold, throughput requirement, or memory budget required for milestone sign-off (differentiated from measured physical metrics).
 - **`BUILD_PENDING`:** Build subtarget or full firmware image generation awaiting compilation / verification (`make world` / full `factory.ubi`).
-- **`IN PROGRESS`:** Test suite or verification process currently underway and accumulating metrics (e.g., BoringTun 60-minute continuous soak test).
+- **`IN PROGRESS`:** Test suite or verification process currently underway and accumulating metrics (e.g., test cycles in flight).
+- **`FUNCTION_VERIFIED` (`60_MIN_SOAK_PASS`):** 60-minute continuous soak test completed successfully in Linux network namespaces (3,600s, 2,907 pings, 0 lost, 29 rekeys, 11 live UAPI mutations, 0 kB VmRSS growth).
 
 ---
 
@@ -53,7 +54,7 @@ In strict accordance with the project governance standard established by the Arc
 | **Wi-Fi 2.4 GHz (On-Die)** | IPQ5018 2x2 802.11b/g/n/ax (574 Mbps max) via proprietary QSDK WLAN | Upstream `ath11k` (Explicitly disabled in base DTS to prevent OOM) | Upstream `ath11k` / QSDK hybrid | `SOURCE_AVAILABLE / DISABLED` | **QUARANTINED** (Base build prioritizes routing stability; RF tuning `HARDWARE_BLOCKED`) |
 | **Wi-Fi 5 GHz (PCIe QCN6102)** | QCN6102 2x2 802.11a/n/ac/ax, **HE160 (160 MHz, 2402 Mbps)** | Upstream `ath11k_pci` (HE160 supported; disabled in base DTS to prevent OOM) | Upstream `ath11k_pci` (HE160) | `SOURCE_AVAILABLE / DISABLED` | **PARITY RESERVED** (HE160 capability preserved in kernel config; DTS disabled to protect 256MB RAM) |
 | **Hardware NAT / Offload** | Qualcomm SSDK closed-source NSS / PPE offload (940 Mbps line rate) | **nftables software flowtable offload** (`kmod-nft-offload`) | **Qualcomm NSS Hardware Offload** (`qca-nss-drv`, `ecm`) | `CONFIG_VERIFIED` | **ACCEPTABLE PARITY** (~900 Mbps bidirectional CPU-safe NAT is `ACCEPTANCE_TARGET`; no benchmark on IPQ5018 yet) |
-| **VPN Acceleration** | None (Stock firmware has no VPN server/client) | **BoringTun Rust 0.7.1 (AArch64 musl static, Patched)** | BoringTun Rust + eBPF Sandbox | `PC_VERIFIED` (60m soak: `IN PROGRESS`) | **SUPERIOR** (Stock has 0 VPN capability; OpenWrt provides secure WireGuard with 0% loss soak) |
+| **VPN Acceleration** | None (Stock firmware has no VPN server/client) | **BoringTun Rust 0.7.1 (AArch64 musl static, Patched)** | BoringTun Rust + eBPF Sandbox | `PC_VERIFIED` (60m soak: `60_MIN_SOAK_PASS`) | **SUPERIOR** (Stock has 0 VPN capability; OpenWrt provides secure WireGuard with 0% loss soak) |
 | **Firewall Engine** | Legacy `iptables` (Linux 4.4 Netfilter) | Modern **`nftables` (`firewall4`)** | Modern **`nftables` (`firewall4`)** | `CONFIG_VERIFIED` & `BUILD_VERIFIED` | **SUPERIOR** (Atomic rule updates, lower kernel overhead) |
 | **Management Interface** | Proprietary MiWiFi Web + Mobile Cloud App (Closed) | Modern **LuCI Bootstrap Web UI** + JSON-RPC / REST API | Modern **LuCI Bootstrap Web UI** | `BUILD_VERIFIED` | **SUPERIOR** (Open, local, no cloud telemetry dependency) |
 | **Package Manager** | Proprietary closed `opkg` fork (Locked repositories) | Modern **`apk` (`apk-tools` v3 native)** | Modern **`apk` (`apk-tools` v3 native)** | `BUILD_VERIFIED` | **SUPERIOR** (Cryptographic signatures, faster Alpine packaging) |
@@ -92,10 +93,10 @@ In strict accordance with the project governance standard established by the Arc
 - **Stock RA82 Baseline:**
   Zero native WireGuard or VPN support. Users must place the router in bridge mode or deploy secondary gateway hardware.
 - **OpenWrt 25.12.6 Daily Driver:**
-  - **Verification Badges:** `PC_VERIFIED` (BoringTun CLI & UAPI mutation) and `IN PROGRESS` (60-minute soak test).
+  - **Verification Badges:** `PC_VERIFIED` (BoringTun CLI & UAPI mutation) and `FUNCTION_VERIFIED` (`60_MIN_SOAK_PASS`).
   - Integrates statically compiled BoringTun Rust CLI v0.7.1 (`aarch64-unknown-linux-musl`, 1.18 MB, stripped; `BUILD_VERIFIED` & `PC_VERIFIED`).
   - Surgical patch `0002-boringtun-uapi-peer-update-no-panic.patch` eliminates upstream Issue #498 panic without clobbering session keys (PSK updates return `libc::EOPNOTSUPP` = 95).
-  - Multi-rekey continuous 60-minute soak test: **`IN PROGRESS`** (underway in Linux netns; >1,040s elapsed, 8 rekey cycles, 0% packet loss, VmRSS ~3.0 MB; awaiting full 3,600s completion for sign-off).
+  - Multi-rekey continuous 60-minute soak test: **`PC_VERIFIED` / `60_MIN_SOAK_PASS`** (Completed full 3,600s in Linux netns: 2,907 pings, 0 lost, 29 cryptographic rekeys at ~120s interval, 11 live UAPI keepalive mutations without panic, VmRSS flat at 2,880 kB with 0 kB net growth across 117 samples). See [SOAK_60M_COMPLETION_REPORT.md](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/SOAK_60M_COMPLETION_REPORT.md).
   - Expected throughput on physical router Cortex-A53 is an `ACCEPTANCE_TARGET` of 180–250 Mbps without NSS (`PERFORMANCE_VERIFIED` pending physical bench).
   - Controlled via standard `wireguard-tools` (`wg`, `wg-quick`) and LuCI WireGuard web applet.
 
@@ -148,7 +149,7 @@ Summary of the 8 approved verification badges and supplementary designations acr
 | **`BUILD_VERIFIED (built-in)`** | Driver verified built directly into kernel | Motorcomm YT9215SC DSA driver built into vmlinux (`CONFIG_NET_DSA_YT921X=y`, 221 symbols in System.map). | **ACTIVE** |
 | **`BUILD_VERIFIED` (Full Firmware)** | Full firmware image build & packaging verified | OpenWrt 25.12.6 full firmware build (`factory.ubi` 10.12 MB, `sysupgrade.bin` 9.53 MB, rootfs 3.97 MB, apk database). | **ACTIVE** |
 | **`PC_VERIFIED`** | Validated in host PC / emulation / netns | BoringTun Rust CLI & UAPI mutation tests (Issue #498 resolved; errno=95 on PSK), DSA tagging oracle (30/30). | **ACTIVE** |
-| **`IN PROGRESS`** | Active ongoing verification run | BoringTun continuous 60-minute soak test in netns (>1,040s elapsed, 0% loss, VmRSS 3.0MB; awaiting 3,600s). | **IN PROGRESS** |
+| **`FUNCTION_VERIFIED` (`60_MIN_SOAK_PASS`)** | 60-minute soak test completed | BoringTun continuous 60-minute soak test in netns (3,600s, 2,907 pings, 0 drops, 29 rekeys, 0 kB VmRSS growth). | **COMPLETED** |
 | **`FUNCTION_VERIFIED`** | Functional logic & protocols validated | WireGuard UAPI handshake, in-place peer mutation without panic, netifd network configuration flow. | **ACTIVE** |
 | **`PERFORMANCE_VERIFIED`** | Throughput & latency measured on physical target | **0 / 17 verified on physical hardware.** ~900 Mbps NAT & 180–250 Mbps VPN designated `ACCEPTANCE_TARGET`. | **GATED** (Bench test required) |
 | **`HARDWARE_BLOCKED`** | Requires execution on live target silicon | Router hardware validation, physical antenna RF calibration, physical PHY auto-negotiation, SPI NAND flashing, UART recovery. | **GATED** (Flash safety enforced) |

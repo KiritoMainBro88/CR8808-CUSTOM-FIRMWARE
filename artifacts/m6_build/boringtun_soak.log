@@ -2,9 +2,9 @@
 BoringTun 60-Minute Extended Soak & Cryptographic Rekey Test Suite
 Target: CR8818 Dual Cortex-A53 Architecture Stability Validation
 Script: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/tests/integration/soak_boringtun_60m.sh
-Script SHA256: 71b8a643d10e126691c44ee70e14213771928aad53e0d051c7ee63aeeee2a3ea
-Configured Soak Duration: 5 seconds (0 minutes)
-Started At: 2026-11-11T03:35:14Z
+Script SHA256: 7d01fecbb6ce1c969192ca841cf90c7f3a2edb86cf4032371847adc444b46d5c
+Configured Soak Duration: 3600 seconds (60 minutes)
+Started At: 2026-11-11T04:04:41Z
 ====================================================================
 
 [SOAK CLEANUP] Tearing down namespaces and processes...
@@ -16,30 +16,201 @@ Started At: 2026-11-11T03:35:14Z
 
 --- Step 3: Establishing Initial Cryptographic Handshake ---
 PING 192.168.160.2 (192.168.160.2) 56(84) bytes of data.
-64 bytes from 192.168.160.2: icmp_seq=1 ttl=64 time=0.680 ms
-64 bytes from 192.168.160.2: icmp_seq=2 ttl=64 time=0.155 ms
-64 bytes from 192.168.160.2: icmp_seq=3 ttl=64 time=0.316 ms
+64 bytes from 192.168.160.2: icmp_seq=1 ttl=64 time=0.552 ms
+64 bytes from 192.168.160.2: icmp_seq=2 ttl=64 time=0.201 ms
+64 bytes from 192.168.160.2: icmp_seq=3 ttl=64 time=0.235 ms
 
 --- 192.168.160.2 ping statistics ---
-3 packets transmitted, 3 received, 0% packet loss, time 2145ms
-rtt min/avg/max/mdev = 0.155/0.383/0.680/0.219 ms
+3 packets transmitted, 3 received, 0% packet loss, time 2025ms
+rtt min/avg/max/mdev = 0.201/0.329/0.552/0.158 ms
 Initial tunnel connectivity established.
 
---- Step 4: Starting Continuous Soak Engine (5s) ---
+--- Step 4: Starting Continuous Soak Engine (3600s) ---
 Tracking: ICMP continuous flow, Rekey cycles (~120s), VmRSS growth, UAPI mutations...
 Initial Router VmRSS: 2880 kB
+[SOAK PROGRESS] T=30s/3600s | Pings: 26, Drops: 0, Rekeys: 0, VmRSS: 2880 kB
+[SOAK PROGRESS] T=61s/3600s | Pings: 51, Drops: 0, Rekeys: 0, VmRSS: 2880 kB
+[SOAK PROGRESS] T=91s/3600s | Pings: 76, Drops: 0, Rekeys: 0, VmRSS: 2880 kB
+[REKEY EVENT #1] T=119s: Cryptographic rekey succeeded (handshake age reset: 119s -> 0s)
+[SOAK PROGRESS] T=121s/3600s | Pings: 101, Drops: 0, Rekeys: 1, VmRSS: 2880 kB
+[SOAK PROGRESS] T=151s/3600s | Pings: 126, Drops: 0, Rekeys: 1, VmRSS: 2880 kB
+[SOAK PROGRESS] T=181s/3600s | Pings: 151, Drops: 0, Rekeys: 1, VmRSS: 2880 kB
+[SOAK PROGRESS] T=211s/3600s | Pings: 176, Drops: 0, Rekeys: 1, VmRSS: 2880 kB
+[REKEY EVENT #2] T=240s: Cryptographic rekey succeeded (handshake age reset: 119s -> 0s)
+[SOAK PROGRESS] T=242s/3600s | Pings: 199, Drops: 0, Rekeys: 2, VmRSS: 2880 kB
+[SOAK PROGRESS] T=272s/3600s | Pings: 223, Drops: 0, Rekeys: 2, VmRSS: 2880 kB
+[UAPI MUTATION #1] T=300s: Mutating keepalive to 21s during live traffic...
+[UAPI MUTATION #1] Success without panic or packet drop.
+[SOAK PROGRESS] T=302s/3600s | Pings: 247, Drops: 0, Rekeys: 2, VmRSS: 2880 kB
+[SOAK PROGRESS] T=333s/3600s | Pings: 272, Drops: 0, Rekeys: 2, VmRSS: 2880 kB
+[REKEY EVENT #3] T=362s: Cryptographic rekey succeeded (handshake age reset: 119s -> 0s)
+[SOAK PROGRESS] T=364s/3600s | Pings: 297, Drops: 0, Rekeys: 3, VmRSS: 2880 kB
+[SOAK PROGRESS] T=394s/3600s | Pings: 322, Drops: 0, Rekeys: 3, VmRSS: 2880 kB
+[SOAK PROGRESS] T=424s/3600s | Pings: 346, Drops: 0, Rekeys: 3, VmRSS: 2880 kB
+[SOAK PROGRESS] T=455s/3600s | Pings: 371, Drops: 0, Rekeys: 3, VmRSS: 2880 kB
+[REKEY EVENT #4] T=483s: Cryptographic rekey succeeded (handshake age reset: 118s -> 0s)
+[SOAK PROGRESS] T=486s/3600s | Pings: 396, Drops: 0, Rekeys: 4, VmRSS: 2880 kB
+[SOAK PROGRESS] T=516s/3600s | Pings: 421, Drops: 0, Rekeys: 4, VmRSS: 2880 kB
+[SOAK PROGRESS] T=547s/3600s | Pings: 446, Drops: 0, Rekeys: 4, VmRSS: 2880 kB
+[SOAK PROGRESS] T=578s/3600s | Pings: 471, Drops: 0, Rekeys: 4, VmRSS: 2880 kB
+[UAPI MUTATION #2] T=601s: Mutating keepalive to 22s during live traffic...
+[UAPI MUTATION #2] Success without panic or packet drop.
+[REKEY EVENT #5] T=607s: Cryptographic rekey succeeded (handshake age reset: 119s -> 0s)
+[SOAK PROGRESS] T=609s/3600s | Pings: 496, Drops: 0, Rekeys: 5, VmRSS: 2880 kB
+[SOAK PROGRESS] T=640s/3600s | Pings: 521, Drops: 0, Rekeys: 5, VmRSS: 2880 kB
+[SOAK PROGRESS] T=671s/3600s | Pings: 546, Drops: 0, Rekeys: 5, VmRSS: 2880 kB
+[SOAK PROGRESS] T=702s/3600s | Pings: 571, Drops: 0, Rekeys: 5, VmRSS: 2880 kB
+[REKEY EVENT #6] T=730s: Cryptographic rekey succeeded (handshake age reset: 118s -> 0s)
+[SOAK PROGRESS] T=732s/3600s | Pings: 594, Drops: 0, Rekeys: 6, VmRSS: 2880 kB
+[SOAK PROGRESS] T=763s/3600s | Pings: 619, Drops: 0, Rekeys: 6, VmRSS: 2880 kB
+[SOAK PROGRESS] T=794s/3600s | Pings: 644, Drops: 0, Rekeys: 6, VmRSS: 2880 kB
+[SOAK PROGRESS] T=825s/3600s | Pings: 669, Drops: 0, Rekeys: 6, VmRSS: 2880 kB
+[REKEY EVENT #7] T=854s: Cryptographic rekey succeeded (handshake age reset: 119s -> 0s)
+[SOAK PROGRESS] T=856s/3600s | Pings: 694, Drops: 0, Rekeys: 7, VmRSS: 2880 kB
+[SOAK PROGRESS] T=887s/3600s | Pings: 719, Drops: 0, Rekeys: 7, VmRSS: 2880 kB
+[UAPI MUTATION #3] T=901s: Mutating keepalive to 23s during live traffic...
+[UAPI MUTATION #3] Success without panic or packet drop.
+[SOAK PROGRESS] T=917s/3600s | Pings: 743, Drops: 0, Rekeys: 7, VmRSS: 2880 kB
+[SOAK PROGRESS] T=947s/3600s | Pings: 768, Drops: 0, Rekeys: 7, VmRSS: 2880 kB
+[REKEY EVENT #8] T=978s: Cryptographic rekey succeeded (handshake age reset: 119s -> 0s)
+[SOAK PROGRESS] T=978s/3600s | Pings: 793, Drops: 0, Rekeys: 8, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1009s/3600s | Pings: 818, Drops: 0, Rekeys: 8, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1040s/3600s | Pings: 843, Drops: 0, Rekeys: 8, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1071s/3600s | Pings: 868, Drops: 0, Rekeys: 8, VmRSS: 2880 kB
+[REKEY EVENT #9] T=1102s: Cryptographic rekey succeeded (handshake age reset: 120s -> 1s)
+[SOAK PROGRESS] T=1102s/3600s | Pings: 893, Drops: 0, Rekeys: 9, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1133s/3600s | Pings: 918, Drops: 0, Rekeys: 9, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1164s/3600s | Pings: 943, Drops: 0, Rekeys: 9, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1195s/3600s | Pings: 968, Drops: 0, Rekeys: 9, VmRSS: 2880 kB
+[UAPI MUTATION #4] T=1201s: Mutating keepalive to 24s during live traffic...
+[UAPI MUTATION #4] Success without panic or packet drop.
+[REKEY EVENT #10] T=1224s: Cryptographic rekey succeeded (handshake age reset: 119s -> 0s)
+[SOAK PROGRESS] T=1226s/3600s | Pings: 993, Drops: 0, Rekeys: 10, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1257s/3600s | Pings: 1018, Drops: 0, Rekeys: 10, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1288s/3600s | Pings: 1043, Drops: 0, Rekeys: 10, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1319s/3600s | Pings: 1068, Drops: 0, Rekeys: 10, VmRSS: 2880 kB
+[REKEY EVENT #11] T=1348s: Cryptographic rekey succeeded (handshake age reset: 119s -> 1s)
+[SOAK PROGRESS] T=1350s/3600s | Pings: 1093, Drops: 0, Rekeys: 11, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1381s/3600s | Pings: 1118, Drops: 0, Rekeys: 11, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1412s/3600s | Pings: 1143, Drops: 0, Rekeys: 11, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1442s/3600s | Pings: 1168, Drops: 0, Rekeys: 11, VmRSS: 2880 kB
+[REKEY EVENT #12] T=1472s: Cryptographic rekey succeeded (handshake age reset: 120s -> 1s)
+[SOAK PROGRESS] T=1472s/3600s | Pings: 1192, Drops: 0, Rekeys: 12, VmRSS: 2880 kB
+[UAPI MUTATION #5] T=1501s: Mutating keepalive to 25s during live traffic...
+[UAPI MUTATION #5] Success without panic or packet drop.
+[SOAK PROGRESS] T=1503s/3600s | Pings: 1217, Drops: 0, Rekeys: 12, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1534s/3600s | Pings: 1242, Drops: 0, Rekeys: 12, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1565s/3600s | Pings: 1267, Drops: 0, Rekeys: 12, VmRSS: 2880 kB
+[REKEY EVENT #13] T=1594s: Cryptographic rekey succeeded (handshake age reset: 119s -> 0s)
+[SOAK PROGRESS] T=1596s/3600s | Pings: 1292, Drops: 0, Rekeys: 13, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1627s/3600s | Pings: 1317, Drops: 0, Rekeys: 13, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1657s/3600s | Pings: 1341, Drops: 0, Rekeys: 13, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1688s/3600s | Pings: 1366, Drops: 0, Rekeys: 13, VmRSS: 2880 kB
+[REKEY EVENT #14] T=1719s: Cryptographic rekey succeeded (handshake age reset: 119s -> 1s)
+[SOAK PROGRESS] T=1719s/3600s | Pings: 1391, Drops: 0, Rekeys: 14, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1750s/3600s | Pings: 1416, Drops: 0, Rekeys: 14, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1780s/3600s | Pings: 1439, Drops: 0, Rekeys: 14, VmRSS: 2880 kB
+[UAPI MUTATION #6] T=1801s: Mutating keepalive to 26s during live traffic...
+[UAPI MUTATION #6] Success without panic or packet drop.
+[SOAK PROGRESS] T=1811s/3600s | Pings: 1464, Drops: 0, Rekeys: 14, VmRSS: 2880 kB
+[REKEY EVENT #15] T=1841s: Cryptographic rekey succeeded (handshake age reset: 118s -> 0s)
+[SOAK PROGRESS] T=1841s/3600s | Pings: 1489, Drops: 0, Rekeys: 15, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1871s/3600s | Pings: 1513, Drops: 0, Rekeys: 15, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1902s/3600s | Pings: 1538, Drops: 0, Rekeys: 15, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1933s/3600s | Pings: 1563, Drops: 0, Rekeys: 15, VmRSS: 2880 kB
+[SOAK PROGRESS] T=1963s/3600s | Pings: 1587, Drops: 0, Rekeys: 15, VmRSS: 2880 kB
+[REKEY EVENT #16] T=1966s: Cryptographic rekey succeeded (handshake age reset: 119s -> 0s)
+[SOAK PROGRESS] T=1994s/3600s | Pings: 1612, Drops: 0, Rekeys: 16, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2025s/3600s | Pings: 1637, Drops: 0, Rekeys: 16, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2056s/3600s | Pings: 1662, Drops: 0, Rekeys: 16, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2086s/3600s | Pings: 1686, Drops: 0, Rekeys: 16, VmRSS: 2880 kB
+[REKEY EVENT #17] T=2090s: Cryptographic rekey succeeded (handshake age reset: 119s -> 1s)
+[UAPI MUTATION #7] T=2101s: Mutating keepalive to 27s during live traffic...
+[UAPI MUTATION #7] Success without panic or packet drop.
+[SOAK PROGRESS] T=2117s/3600s | Pings: 1711, Drops: 0, Rekeys: 17, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2148s/3600s | Pings: 1736, Drops: 0, Rekeys: 17, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2179s/3600s | Pings: 1761, Drops: 0, Rekeys: 17, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2209s/3600s | Pings: 1784, Drops: 0, Rekeys: 17, VmRSS: 2880 kB
+[REKEY EVENT #18] T=2213s: Cryptographic rekey succeeded (handshake age reset: 118s -> 0s)
+[SOAK PROGRESS] T=2239s/3600s | Pings: 1809, Drops: 0, Rekeys: 18, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2270s/3600s | Pings: 1834, Drops: 0, Rekeys: 18, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2300s/3600s | Pings: 1858, Drops: 0, Rekeys: 18, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2331s/3600s | Pings: 1883, Drops: 0, Rekeys: 18, VmRSS: 2880 kB
+[REKEY EVENT #19] T=2337s: Cryptographic rekey succeeded (handshake age reset: 119s -> 0s)
+[SOAK PROGRESS] T=2362s/3600s | Pings: 1908, Drops: 0, Rekeys: 19, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2393s/3600s | Pings: 1933, Drops: 0, Rekeys: 19, VmRSS: 2880 kB
+[UAPI MUTATION #8] T=2401s: Mutating keepalive to 28s during live traffic...
+[UAPI MUTATION #8] Success without panic or packet drop.
+[SOAK PROGRESS] T=2423s/3600s | Pings: 1958, Drops: 0, Rekeys: 19, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2454s/3600s | Pings: 1983, Drops: 0, Rekeys: 19, VmRSS: 2880 kB
+[REKEY EVENT #20] T=2458s: Cryptographic rekey succeeded (handshake age reset: 118s -> 0s)
+[SOAK PROGRESS] T=2484s/3600s | Pings: 2008, Drops: 0, Rekeys: 20, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2514s/3600s | Pings: 2032, Drops: 0, Rekeys: 20, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2545s/3600s | Pings: 2057, Drops: 0, Rekeys: 20, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2575s/3600s | Pings: 2082, Drops: 0, Rekeys: 20, VmRSS: 2880 kB
+[REKEY EVENT #21] T=2581s: Cryptographic rekey succeeded (handshake age reset: 119s -> 1s)
+[SOAK PROGRESS] T=2605s/3600s | Pings: 2106, Drops: 0, Rekeys: 21, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2636s/3600s | Pings: 2131, Drops: 0, Rekeys: 21, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2666s/3600s | Pings: 2156, Drops: 0, Rekeys: 21, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2697s/3600s | Pings: 2181, Drops: 0, Rekeys: 21, VmRSS: 2880 kB
+[UAPI MUTATION #9] T=2702s: Mutating keepalive to 29s during live traffic...
+[UAPI MUTATION #9] Success without panic or packet drop.
+[REKEY EVENT #22] T=2704s: Cryptographic rekey succeeded (handshake age reset: 119s -> 0s)
+[SOAK PROGRESS] T=2728s/3600s | Pings: 2206, Drops: 0, Rekeys: 22, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2759s/3600s | Pings: 2231, Drops: 0, Rekeys: 22, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2789s/3600s | Pings: 2256, Drops: 0, Rekeys: 22, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2819s/3600s | Pings: 2279, Drops: 0, Rekeys: 22, VmRSS: 2880 kB
+[REKEY EVENT #23] T=2826s: Cryptographic rekey succeeded (handshake age reset: 119s -> 1s)
+[SOAK PROGRESS] T=2850s/3600s | Pings: 2304, Drops: 0, Rekeys: 23, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2881s/3600s | Pings: 2329, Drops: 0, Rekeys: 23, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2912s/3600s | Pings: 2354, Drops: 0, Rekeys: 23, VmRSS: 2880 kB
+[SOAK PROGRESS] T=2943s/3600s | Pings: 2379, Drops: 0, Rekeys: 23, VmRSS: 2880 kB
+[REKEY EVENT #24] T=2949s: Cryptographic rekey succeeded (handshake age reset: 118s -> 0s)
+[SOAK PROGRESS] T=2974s/3600s | Pings: 2404, Drops: 0, Rekeys: 24, VmRSS: 2880 kB
+[UAPI MUTATION #10] T=3002s: Mutating keepalive to 30s during live traffic...
+[UAPI MUTATION #10] Success without panic or packet drop.
+[SOAK PROGRESS] T=3005s/3600s | Pings: 2429, Drops: 0, Rekeys: 24, VmRSS: 2880 kB
+[SOAK PROGRESS] T=3036s/3600s | Pings: 2454, Drops: 0, Rekeys: 24, VmRSS: 2880 kB
+[SOAK PROGRESS] T=3066s/3600s | Pings: 2479, Drops: 0, Rekeys: 24, VmRSS: 2880 kB
+[REKEY EVENT #25] T=3073s: Cryptographic rekey succeeded (handshake age reset: 119s -> 0s)
+[SOAK PROGRESS] T=3097s/3600s | Pings: 2504, Drops: 0, Rekeys: 25, VmRSS: 2880 kB
+[SOAK PROGRESS] T=3128s/3600s | Pings: 2529, Drops: 0, Rekeys: 25, VmRSS: 2880 kB
+[SOAK PROGRESS] T=3159s/3600s | Pings: 2554, Drops: 0, Rekeys: 25, VmRSS: 2880 kB
+[SOAK PROGRESS] T=3190s/3600s | Pings: 2579, Drops: 0, Rekeys: 25, VmRSS: 2880 kB
+[REKEY EVENT #26] T=3194s: Cryptographic rekey succeeded (handshake age reset: 118s -> 0s)
+[SOAK PROGRESS] T=3220s/3600s | Pings: 2603, Drops: 0, Rekeys: 26, VmRSS: 2880 kB
+[SOAK PROGRESS] T=3251s/3600s | Pings: 2628, Drops: 0, Rekeys: 26, VmRSS: 2880 kB
+[SOAK PROGRESS] T=3282s/3600s | Pings: 2653, Drops: 0, Rekeys: 26, VmRSS: 2880 kB
+[UAPI MUTATION #11] T=3303s: Mutating keepalive to 31s during live traffic...
+[UAPI MUTATION #11] Success without panic or packet drop.
+[SOAK PROGRESS] T=3312s/3600s | Pings: 2677, Drops: 0, Rekeys: 26, VmRSS: 2880 kB
+[REKEY EVENT #27] T=3319s: Cryptographic rekey succeeded (handshake age reset: 119s -> 0s)
+[SOAK PROGRESS] T=3343s/3600s | Pings: 2702, Drops: 0, Rekeys: 27, VmRSS: 2880 kB
+[SOAK PROGRESS] T=3374s/3600s | Pings: 2727, Drops: 0, Rekeys: 27, VmRSS: 2880 kB
+[SOAK PROGRESS] T=3404s/3600s | Pings: 2751, Drops: 0, Rekeys: 27, VmRSS: 2880 kB
+[SOAK PROGRESS] T=3435s/3600s | Pings: 2776, Drops: 0, Rekeys: 27, VmRSS: 2880 kB
+[REKEY EVENT #28] T=3444s: Cryptographic rekey succeeded (handshake age reset: 119s -> 1s)
+[SOAK PROGRESS] T=3466s/3600s | Pings: 2801, Drops: 0, Rekeys: 28, VmRSS: 2880 kB
+[SOAK PROGRESS] T=3497s/3600s | Pings: 2826, Drops: 0, Rekeys: 28, VmRSS: 2880 kB
+[SOAK PROGRESS] T=3527s/3600s | Pings: 2851, Drops: 0, Rekeys: 28, VmRSS: 2880 kB
+[SOAK PROGRESS] T=3557s/3600s | Pings: 2874, Drops: 0, Rekeys: 28, VmRSS: 2880 kB
+[REKEY EVENT #29] T=3567s: Cryptographic rekey succeeded (handshake age reset: 119s -> 0s)
+[SOAK PROGRESS] T=3587s/3600s | Pings: 2898, Drops: 0, Rekeys: 29, VmRSS: 2880 kB
 
 ====================================================================
 BORINGTUN SOAK TEST COMPLETED
 ====================================================================
-Total Soak Time:     6 seconds (0 min 6 s)
-Total Packets Sent:  4
+Total Soak Time:     3600 seconds (60 min 0 s)
+Total Packets Sent:  2907
 Packets Lost:        0
 Packet Loss Rate:    0.0000%
-Rekey Cycles:        0
+Rekey Cycles:        29
 Initial VmRSS:       2880 kB
-Final VmRSS:         3072 kB
-Net Memory Growth:   192 kB
-UAPI Mutations:      0
+Final VmRSS:         2880 kB
+Net Memory Growth:   0 kB
+UAPI Mutations:      11
 Final Exit Code:     0
 Telemetry exported to /tmp/boringtun_soak_telemetry.json
+
+[SOAK CLEANUP] Tearing down namespaces and processes...
+[SOAK CLEANUP] Complete.

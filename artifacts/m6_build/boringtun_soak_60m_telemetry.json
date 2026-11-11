@@ -1,14 +1,14 @@
 {
   "test": "boringtun_soak_60m",
-  "status": "RUNNING",
-  "soak_duration_seconds": 1319,
+  "status": "COMPLETED",
+  "soak_duration_seconds": 3600,
   "target_duration_seconds": 3600,
-  "packets_sent": 1068,
+  "packets_sent": 2907,
   "packets_lost": 0,
-  "rekey_cycles": 10,
+  "rekey_cycles": 29,
   "initial_vmrss_kb": 2880,
-  "current_vmrss_kb": 2880,
+  "final_vmrss_kb": 2880,
   "vmrss_growth_kb": 0,
-  "uapi_mutations": 4,
-  "exit_code": null
+  "uapi_mutations": 11,
+  "exit_code": 0
 }
