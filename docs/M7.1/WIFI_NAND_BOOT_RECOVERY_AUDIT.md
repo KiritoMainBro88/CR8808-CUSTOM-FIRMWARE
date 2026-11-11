@@ -22,12 +22,12 @@ This document establishes the verified hardware parameters, architecture, and sa
 ## 2. SPI NAND Flash Hardware & MTD Partition Topology
 
 ### 2.1 Physical NAND Flash Specifications & ECC Truth (`DEVICE_READBACK_RECONCILED` / `SOURCE_VERIFIED`)
-- **Forensic Part Number & Voltage Reconciliation:**
+- **Forensic Part Family & Voltage Reconciliation:**
   - Saved device readback baseline in `docs/02_DEVICE_BASELINE.md` captured JEDEC ID **`0xef 0xaa 0x21`**.
   - According to official Winbond datasheets and Linux `drivers/mtd/nand/spi/winbond.c`:
-    - **`0xef 0xaa 0x21`:** Identifies the **Winbond W25N01GV (3.3V)** (e.g. `W25N01GVZEIG`).
-    - **`0xef 0xba 0x21`:** Identifies the **Winbond W25N01GW (1.8V)**.
-  - The router motherboard runs on a standard 3.3V flash power domain. The previous "W25N01GW" label was a legacy community transcription error. The physical flash is established as **Winbond W25N01GV (3.3V)**. (Detailed in [`docs/M7.1/NAND_IDENTITY_RECONCILIATION.md`](NAND_IDENTITY_RECONCILIATION.md)).
+    - **`0xef 0xaa 0x21`:** Identifies the **Winbond W25N01GV family (3.3V)**.
+    - **`0xef 0xba 0x21`:** Identifies the **Winbond W25N01GW family (1.8V)**.
+  - The router motherboard runs on a standard 3.3V flash power domain. The previous "W25N01GW" label was a legacy community transcription error. The physical flash is established as **Winbond W25N01GV family – JEDEC EF AA 21 (3.3V)**. The specific package ordering suffix (such as `ZEIG` for WSON8 vs `SFIF` for SOIC16) cannot be determined by JEDEC ID alone and remains unverified without microscopic package teardown. (Detailed in [`docs/M7.1/NAND_IDENTITY_RECONCILIATION.md`](NAND_IDENTITY_RECONCILIATION.md)).
 - **Interface:** Standard SPI-NAND (clocked via IPQ5018 QSPI controller).
 - **Array Geometry:**
   - Page Size: 2048 bytes user data + 64 bytes Out-Of-Band (OOB / Spare area).
@@ -166,11 +166,11 @@ Factory RF calibration data is stored in the `0:ART` partition:
 > Previous drafts incorrectly implied that extracting calibration data at offset `0x26800` automatically guarantees HE160 DFS operation. This was an invalid technical inference.
 >
 > In reality, 160 MHz operation across DFS channels (e.g. Channel 52 to 64, Channel 100 to 128) requires four independent prerequisites:
-> 1. **Caldata Multi-dimensional Analog Matrix:** The calibration block contains factory-measured analog operational curves: per-channel target power, LNA gain steps, IQ imbalance amplitude/phase correction constants, CFR baseband filter constants, thermistor slopes, and MU-MIMO chain-to-chain phase deltas. It does not provide regulatory authority.
-> 2. **Firmware Baseband Radar Detector:** Qualcomm Hexagon Q6 WCSS / PHY microcode must actively detect radar pulse width/chirp and transmit asynchronous `WMI_RADAR_DETECT_EVENTID` messages.
-> 3. **Host Driver Engine (`ath11k.ko` -> `dfs.c`):** Monolithic `ath11k.ko` driver (there is no standalone `ath11k_dfs.ko` module) translates WMI radar events and interfaces with `cfg80211` / `mac80211` to trigger Channel Availability Checks (CAC) and Channel Switch Announcements (CSA).
+> 1. **Caldata Raw Opaque Blob Extraction:** The host extracts 128 KB opaque binary blobs from `0:ART` (`0x1000` / `0x26800`) and passes them undecoded to firmware. Internal RF structures (PA curves, LNA gains, IQ imbalance, CFR, phase deltas) are processed solely by firmware; their exact on-device binary layout is unverified by host software.
+> 2. **Radio Target Microcode Radar Detector:** Radar pulse detection algorithms execute inside the radio target firmware (QCN6102 target firmware for 5 GHz DFS, distinct from IPQ5018 WPSS 2.4 GHz subsystem), transmitting the asynchronous `WMI_PDEV_DFS_RADAR_DETECTION_EVENTID` across the interconnect.
+> 3. **Host Driver Engine (`ath11k.ko` -> `dfs.c`):** Monolithic `ath11k.ko` driver (there is no standalone `ath11k_dfs.ko` module) translates WMI radar events and interfaces with `cfg80211` / `mac80211` to trigger Channel Availability Checks (CAC: 60s standard, 10m for 5600–5650 MHz weather radar under ETSI EN 301 893) and Channel Switch Announcements (CSA with 30-minute NOP).
 > 4. **Regulatory Database (`wireless-regdb`):** Country-code database defining allowed EIRP and radar channel boundaries.
 >
 > For a comprehensive technical audit of the DFS pipeline, see [`docs/M7.1/ATH11K_DFS_COMPATIBILITY_AUDIT.md`](ATH11K_DFS_COMPATIBILITY_AUDIT.md).
 >
-> **Status:** Full HE160 DFS functionality on CR8808 Ver.B remains classified as **`REPORTED_UNVERIFIED / REQUIRES_TESTING`** until verified with real 160 MHz client associations and radar scan logs.
+> **Status:** Full HE160 DFS functionality on CR8808 Ver.B is formally classified as a **`CONDITIONAL_ACCEPTANCE_TARGET / REPORTED_UNVERIFIED`**. It is NOT an approved Daily Driver capability until empirically validated with physical RF test bench and 160 MHz client packet captures.

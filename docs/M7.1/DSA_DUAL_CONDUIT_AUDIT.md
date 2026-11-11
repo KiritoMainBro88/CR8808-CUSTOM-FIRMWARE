@@ -124,7 +124,7 @@ yt921x_write(priv, YT921X_EXT_CPU_PORT,
 ```
 **Conclusion:** Upstream Linux mainline DSA does **NOT** support dual CPU ports on the Motorcomm YT9215. David Yang's upstream DTS targets strictly a single CPU port (Port 8 via `eth1`).
 
-### 4.2 ZCOP Out-of-Tree Dual-Conduit Implementation (`REPORTED_UNVERIFIED`)
+### 4.2 ZCOP Out-of-Tree Dual-Conduit Implementation (`SOURCE_VERIFIED` at repo level / `REPORTED_UNVERIFIED` on CR8818)
 Dual-conduit is exclusively an out-of-tree feature implemented in ZCOP's custom fork (`zcop/immortalwrt` commit `7b307fa`) using proprietary DTS bindings and switch forwarding matrices:
 1. **Device Tree Specification of Dual CPU Ports:**
    In ZCOP's `ipq5018-cr881x.dts`, the switch is declared as `compatible = "motorcomm,yt9215-enhanced"`, with:
@@ -160,3 +160,4 @@ Dual-conduit is exclusively an out-of-tree feature implemented in ZCOP's custom 
 2. **Register `0x8000c`:** Bitfield definitions are corrected to match upstream Linux kernel (`TAG_EN` bit 15, `PORT_EN` bit 14, `PORT_MASK` bits 3:0). The erroneous "bit 4 dual-conduit" claim has been completely eliminated.
 3. **Daily Driver Baseline (Track A):** Single-conduit via Port 8 (`eth1`) using standard Linux DSA is the designated production baseline.
 4. **Dual-Conduit (Track B):** Retained strictly for experimental NSS research. Dual-conduit must be implemented via Device Tree dual CPU ports and switch VLAN isolation tables, not register hacks.
+5. **Silicon Hardware Capability vs Driver Implementation:** While the YT9215 silicon physically supports two MAC connections (Port 4 & Port 8), the upstream mainline Linux driver configures only one tagged CPU port (`0x8000c`). Hardware multi-MAC capability cannot be equated with upstream driver support. ZCOP's driver is `SOURCE_VERIFIED` in its repository, but dual-conduit operation on physical CR8818 silicon remains `REPORTED_UNVERIFIED`.

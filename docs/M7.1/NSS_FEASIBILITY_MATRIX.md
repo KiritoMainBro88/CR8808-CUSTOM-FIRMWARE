@@ -1,12 +1,12 @@
-# Qualcomm NSS Hardware Offload Feasibility Matrix & Architectural Evaluation (M7.1 Revision 1)
+# Qualcomm NSS Hardware Offload Feasibility Matrix & Architectural Evaluation (M7.1 Revision 1.2)
 
 - **Document ID:** `docs/M7.1/NSS_FEASIBILITY_MATRIX.md`
 - **Project:** `CR8808-CUSTOM-FIRMWARE` (v0.2.0-dev)
 - **Target Hardware:** Xiaomi CR8808 Ver.B (Codename `CR8818`, Qualcomm IPQ5018 + Motorcomm YT9215SC + 256MB DDR3L)
 - **Author:** Gemini 3.8 Flash High (Lead Developer / Research Engineer)
 - **Reporting Authority:** ChatGPT (Chief Architect / Architecture Lead)
-- **Status:** Complete Technical Matrix for Gate M7.1 Revision 1
-- **Evidence Classification:** `SOURCE_VERIFIED`, `PC_VERIFIED`, `REPORTED_UNVERIFIED`, `INFERRED`, `ENGINEERING_ESTIMATE`.
+- **Status:** Complete Technical Matrix for Gate M7.1 Revision 1.2
+- **Evidence Classification:** `SOURCE_VERIFIED`, `PC_VERIFIED`, `TEST_HYPOTHESIS`, `REPORTED_UNVERIFIED`, `ENGINEERING_ESTIMATE`.
 
 ---
 
@@ -94,24 +94,40 @@ Motorcomm Proprietary DSA Tagged Frame (tag_yt921x):
   0               6              12 (0x9988)          14                         20
 ```
 
-### 3.2 The Structural Incompatibility Mechanism (`INFERRED`)
-1. **Parser Misalignment:** The NSS NPU hardware parser hardcodes parsing state transitions for:
+### 3.2 Theoretical Parser Hypotheses & Unified Exception Pipeline (`TEST_HYPOTHESIS`)
+1. **Parser Misalignment:** The NSS NPU hardware parser hardcodes parsing state transitions for standard L2/L3 protocols:
    - `EtherType == 0x0800` (IPv4)
    - `EtherType == 0x86DD` (IPv6)
    - `EtherType == 0x8100` or `0x88A8` (Single / Double 802.1Q VLAN)
    - `EtherType == 0x8864` (PPPoE Session)
-2. **Rejection of Proprietary EtherTypes:** When the Motorcomm switch inserts its proprietary 8-byte DSA tag (TPID `0x9988`), the NSS parser reads `0x9988` at offset 12. Because `0x9988` is not recognized by the NPU microcode:
-   - The parser flags the packet as **UNKNOWN L2 PAYLOAD**.
-   - It cannot locate the IP header at expected offsets.
-   - It cannot extract the 5-tuple (`SrcIP`, `DstIP`, `Proto`, `SrcPort`, `DstPort`).
-3. **Hardware Acceleration Failure & Four Potential Outcomes:**
-   Because the 5-tuple cannot be extracted by the NPU, hardware offload cannot succeed. Depending on NSS microcode version and runtime driver configuration, four distinct potential behaviors exist:
-   - **Outcome 1 (Hardware Offload Compatible):** Fails immediately because the parser cannot identify L3/L4 headers behind the 8-byte tag.
-   - **Outcome 2 (Hardware Offload Incompatible):** The connection is bypassed by ECM, remaining completely unaccelerated by hardware.
-   - **Outcome 3 (Software Fallback via Exception Ring):** The NPU forwards unparsed frames to the host CPU via the NSS exception ring, generating high interrupt load.
-   - **Outcome 4 (Ingress Packet Drop):** The NPU ingress filter discards frames flagged as malformed or unknown L2 payloads.
-   
-   **Governance Directive:** The exact outcome (Outcome 2, 3, or 4) cannot be determined theoretically. It can **only be verified empirically through packet captures and NSS debugfs counter statistics** (`/sys/kernel/debug/qca-nss-drv/stats/`) on live physical hardware. In the absence of on-device instrumentation, all claims regarding exception rings or packet drops are categorized strictly as **`INFERRED`**.
+2. **Rejection of Proprietary EtherTypes:** When the Motorcomm switch inserts its proprietary 8-byte DSA tag (TPID `0x9988`), the NSS parser reads `0x9988` at offset 12. Because `0x9988` is not recognized by the NPU microcode, the parser flags the frame as **UNKNOWN L2 PAYLOAD**, cannot locate the IP header at expected offsets, and cannot extract the 5-tuple (`SrcIP`, `DstIP`, `Proto`, `SrcPort`, `DstPort`).
+3. **Unified Two-Stage Pipeline (Exception Ring $\rightarrow$ Software Fallback):**
+   In Qualcomm NSS architecture, "Software Fallback" and "Exception Ring" are **not mutually exclusive states**; they represent two sequential stages of the exact same error-handling path:
+   - **Stage 1 (Hardware DMA Exception):** When the NPU pipeline cannot parse a packet or lacks an active offload entry, it enqueues the buffer descriptor into the **NSS Exception Ring**.
+   - **Stage 2 (Host Driver Ingestion & Software Fallback):** The Linux host driver (`qca-nss-drv`) services the exception interrupt, dequeues the packet, strips NSS metadata, and injects the raw `sk_buff` into the standard Linux networking stack (`netif_receive_skb()`) for CPU-bound software routing.
+4. **Four Distinct Test Hypotheses (`TEST_HYPOTHESIS`):**
+   - **Hypothesis 1 (Direct NPU Hardware Acceleration):** NPU microcode parses EtherType `0x9988`, skips 8 bytes, extracts 5-tuple, and offloads flow to fast path. *(Unlikely on Qualcomm closed-source binary blob).*
+   - **Hypothesis 2 (Connection-Bypass Software Route):** ECM recognizes that DSA-tagged packets cannot be offloaded, avoids generating hardware rules, and leaves flows on the host CPU.
+   - **Hypothesis 3 (Two-Stage Exception Ring $\rightarrow$ Software Fallback):** Ingress packets enter NPU, trigger parsing faults, traverse the Exception Ring, and fallback to host CPU with high interrupt overhead.
+   - **Hypothesis 4 (Ingress Filter Drop):** NPU ingress logic classifies `0x9988` as a malformed L2 frame and silently discards it at the ingress FIFO.
+
+---
+
+### 3.3 Empirical On-Device Verification Matrix (`EMPIRICAL_TEST_MATRIX`)
+
+No definitive conclusion on NSS behavior can be established theoretically. The actual behavior on physical CR8818 hardware can only be determined through the following mandatory instrumentation matrix:
+
+| Metric / Test Domain | Tool / Command | Target Data / Indicators | Success / Diagnostic Criteria |
+|---|---|---|---|
+| **1. Wire Packet Capture** | `tcpdump -i eth1 -e -xx -c 100` / Hardware TAP | Ingress/egress L2 headers at GMAC | Detect whether 8-byte tag `0x9988` reaches host or is stripped. |
+| **2. NSS Statistics** | `cat /sys/kernel/debug/qca-nss-drv/stats/*` | `exceptions`, `rx_errors`, `pbuf_alloc_failed`, `tx_drops` | Differentiate between Exception Ring traversal vs Ingress Drops. |
+| **3. CPU Utilization** | `mpstat -P ALL 1 10`, `perf top -a` | Dual-core Cortex-A53 CPU load, ISR time | Distinguish pure software routing (50–65%) from NPU offload (<10%). |
+| **4. Packet Drop Counters** | `ip -s link show`, `ethtool -S <iface>` | Rx/Tx drops, FIFO overrun, CRC error | Confirm whether malformed frames trigger ingress drops. |
+| **5. Line-Rate Throughput** | `iperf3 -c <target> -P 4` (64B, 512B, 1518B) | Forwarding rate (Mbps / kpps) | Measure forwarding degradation under small 64B packet stress. |
+| **6. Latency & Packet Loss** | `ping -f -c 10000`, hardware timestamping | Round-trip latency, jitter, drop rate | Detect latency spikes caused by exception ring interrupt batching. |
+
+> [!CAUTION]
+> **Strict Governance Rule:** Until the above 6-point empirical matrix is executed on live CR8818 silicon with hardware traffic generators, **all NSS behaviors remain strictly categorized as `TEST_HYPOTHESIS`**. Claiming that NSS behavior is known or settled is prohibited.
 
 ---
 

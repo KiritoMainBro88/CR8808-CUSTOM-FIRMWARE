@@ -2,9 +2,9 @@
 
 - Version: `0.2.0-dev`
 - Date: 2026-11-11
-- Phase: P6/M7.1-Rev1.1 Final Evidence Reconciliation
+- Phase: P6/M7.1-Rev1.2 Final Evidence Audit
 - Current Branch: `feature/m7.1-evidence-corrections`
-- Overall status: `M7.1_REVISION_1_1_COMPLETE_AWAITING_REVIEW`
+- Overall status: `M7.1_REVISION_1_2_COMPLETE_AWAITING_REVIEW`
 - GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`, `feature/g1-corrections-round3`, `feature/g1-corrections-round4`, `feature/g1-corrections-round5`, `feature/g1-corrections-round5.1`, `feature/g1-corrections-round5.2`, `feature/nss-cr8818-research`, `feature/nss-cr8818-poc`, `feature/rust-userspace-strategy`, `feature/product-vision-hardening`, `feature/m5-daily-driver-build`, `feature/m6-full-source-build`, `feature/m7-architecture-selection`, `feature/m7.1-china-source-audit`, `feature/m7.1-evidence-corrections`)
 - Flash authorization: `NO-GO pending independent recovery validation (All artifacts classified NON_FLASHABLE_TEST_ARTIFACT)`
 - Initial Firmware Baseline Proposal: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Architecture Proposal under review; NOT yet approved for implementation by Product Owner)
@@ -13,7 +13,7 @@
   - `zcop/immortalwrt` (commit `c5ad88b702dc2374c9d67141693cc06cce742dc8`) — Register reverse-engineering reference for YT9215 (NSS offload on CR8818: `NSS_NOT_VERIFIED`)
 - Secondary Reference: `kuncy7/openwrt-nss-edma` — Low-memory profile reference (NSS tagger currently incompatible with YT9215)
 - WireGuard Target Engine: `BoringTun Rust 0.7.1` (Patched Issue #498, 2.88 MB VmRSS; 60-minute soak test COMPLETED with 2,907 pings, 0 drops, 29 rekeys, 0 kB leak; tested immune to Issue #495 & Issue #498)
-- Wi-Fi Target Mode: `5 GHz HE160 (160 MHz)` (Mandatory retention, 2402 Mbps link rate)
+- Wi-Fi Target Mode: `5 GHz HE160 (160 MHz)` (CONDITIONAL_ACCEPTANCE_TARGET, requires live RF validation)
 - Git History Remediation: `DRY_RUN_VALIDATED_CLEAN` (All commits verified 100% clean)
 - Firmware build: `BUILD_VERIFIED (Full OpenWrt 25.12.6 factory.ubi 10.12 MB, sysupgrade.bin 9.53 MB, rootfs 3.97 MB - NON_FLASHABLE_TEST_ARTIFACT)`
 - Hardware validation: `NOT_STARTED`
@@ -35,7 +35,7 @@
 - History cleanup dry-run executed on isolated clone: 100% elimination of netbios hostname and private IPs verified — `MEASURED`.
 - Port 8 Physical Link Speed: Strictly **1,000 Mbps SGMII** (`speed = <1000>`). Historical 2.5 Gbps claim formally retracted — `SOURCE_VERIFIED`.
 - Switch Register `0x8000c`: Defined as `YT921X_EXT_CPU_PORT` with `TAG_EN` (bit 15), `PORT_EN` (bit 14), `PORT_MASK` (bits 3:0). `0xc008` selects Port 8; `0xc004` selects Port 4. No bit-4 dual-conduit toggle exists — `SOURCE_VERIFIED`.
-- Winbond W25N01GV (3.3V) SPI NAND: JEDEC `0xef 0xaa 0x21` confirmed in saved device readback baseline. Integrated 1-bit on-die ECC engine per 512 bytes (`NAND_ECCREQ(1, 512)`). Previous "W25N01GW" (1.8V, `0xef 0xba 0x21`) label resolved as legacy community transcription error — `DEVICE_READBACK_RECONCILED` / `SOURCE_VERIFIED`.
+- Winbond W25N01GV family (3.3V) SPI NAND: JEDEC `0xef 0xaa 0x21` confirmed in saved device readback baseline. Integrated 1-bit on-die ECC engine per 512 bytes (`NAND_ECCREQ(1, 512)`). Specific package suffix (e.g. `ZEIG`) unverified without physical teardown. Previous "W25N01GW" (1.8V, `0xef 0xba 0x21`) label resolved as legacy community transcription error — `DEVICE_READBACK_RECONCILED` / `SOURCE_VERIFIED`.
 
 ## Reported / Unverified on-device
 - Motorcomm switch physical silicon suffix: `UNKNOWN / REPORTED_UNVERIFIED` (YT9215S vs YT9215SC unconfirmed).
@@ -116,5 +116,15 @@
   5. **Kernel Baseline Standardized (P0-5):** Clarified OpenWrt 25.12.6 as stable release series; standardized Track A Daily Driver on Linux 6.12.112 LTS (tracking 6.12.y); Track B on Linux 6.18.63 experimental.
   6. **Label Audit Completed (P0-6):** Rigorously audited all `SOURCE_VERIFIED` tags to ensure community forum claims are never passed off as upstream-verified. Deliverable: `docs/M7.1/M7.1_REV1_1_CORRECTION_LOG.md`.
   7. **Safety Affirmation:** ZERO router contact (0 SSH, 0 flashing, 0 NVRAM writes, test_wifi 100% untouched). Status updated to `M7.1_REVISION_1_1_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Developer / Research Engineer).
+- 2026-11-11: Milestone M7.1 Revision 1.2 (Final Evidence Audit & ADR Ratification) completed on branch `feature/m7.1-evidence-corrections` (base commit `cf9a709`).
+  1. **Dual-Track Architecture Formally Ratified (ADR-0005):** Chief Architect approved separation of Track A (Daily Driver: OpenWrt 25.12.6, Linux 6.12.112 LTS, clean upstream single-conduit DSA, software flowtable, BoringTun Rust) and Track B (Experimental: Linux 6.18.63 LTS, ZCOP enhanced DSA, NSS NPU research).
+  2. **NAND Part Family Standardization (P0-1):** Standardized part designation to `Winbond W25N01GV family – JEDEC EF AA 21 (3.3V, 1-bit on-die ECC)`. Package suffix (`ZEIG`) explicitly marked unverified without physical optical teardown.
+  3. **Caldata Reclassified as Opaque Blob (P0-2):** Confirmed host driver treats `0x1000` and `0x26800` (128 KB) as opaque raw binary blobs without internal parsing. The 6 analog RF parameters reclassified as `THEORETICAL_RF_PROPERTIES / UNVERIFIED_ON_DEVICE`.
+  4. **Upstream DFS WMI Event & Regulatory CAC (P0-3):** Corrected upstream symbol to `WMI_PDEV_DFS_RADAR_DETECTION_EVENTID`. Disambiguated IPQ5018 WPSS from QCN6102 target firmware. Added ETSI 10-minute CAC for 5600–5650 MHz weather radar and 30-minute NOP. Designated HE160 as `CONDITIONAL_ACCEPTANCE_TARGET`.
+  5. **NSS Test Hypotheses & Unified Exception Pipeline (P0-4):** Unified Exception Ring and Software Fallback into two sequential stages of the same error path. Reclassified parser outcomes as `TEST_HYPOTHESIS`. Established 6-point `EMPIRICAL_TEST_MATRIX`.
+  6. **Kernel Version Discipline (P0-5):** Pinned Track A to OpenWrt 25.12.6 / Linux 6.12.112 (tracking 6.12.y stable security fixes, e.g. 6.12.117); Track B to Linux 6.18.63. Banned arbitrary out-of-sync kernel upgrades.
+  7. **Dual-Conduit Silicon vs Driver Disambiguation (P0-6):** Clarified YT9215 silicon multi-MAC capability vs upstream driver single-port config (`0x8000c`). Bifurcated ZCOP into repo `SOURCE_VERIFIED` vs hardware `REPORTED_UNVERIFIED`.
+  8. **Correction Log & Manifest Pinned:** Authored itemized correction log `docs/M7.1/M7.1_REV1_2_CORRECTION_LOG.md`. Updated `manifests/m7.1-sources.lock.yaml`.
+  9. **Safety Affirmation:** ZERO router contact (0 SSH, 0 flashing, 0 NVRAM writes, test_wifi 100% untouched). Halted at Gate M7.1 Revision 1.2 awaiting Architecture Lead sign-off. Author: Gemini (Lead Developer / Research Engineer).
 
 

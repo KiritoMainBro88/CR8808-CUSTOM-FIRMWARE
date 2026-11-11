@@ -43,6 +43,30 @@ sources:
     license: "GPL-2.0"
     provenance: "Linux Kernel Mainline Repository"
 
+  linux_kernel_stable_6_12_117:
+    url: "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tag/?h=v6.12.117"
+    release_date: "2026-11-10"
+    author: "Greg Kroah-Hartman / Linux Stable Team"
+    role: "upstream_lts_maintenance_branch"
+    findings:
+      - "Latest stable maintenance release on 6.12.y LTS series"
+      - "Track A Daily Driver follows 6.12.112 as integrated by OpenWrt 25.12.6, tracking 6.12.y stable fixes without out-of-band kernel swaps"
+    verification_status: "SOURCE_VERIFIED"
+    license: "GPL-2.0"
+    provenance: "Official Linux Kernel Stable Tree (kernel.org)"
+
+  linux_kernel_stable_6_18_63:
+    url: "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tag/?h=v6.18.63"
+    release_date: "2026-11-10"
+    author: "Greg Kroah-Hartman / Linux Stable Team"
+    role: "experimental_lts_research_branch"
+    findings:
+      - "Designated research kernel baseline for Track B Experimental"
+      - "Used for NSS forward-porting, CAKE, and modern SerDes evaluation"
+    verification_status: "SOURCE_VERIFIED"
+    license: "GPL-2.0"
+    provenance: "Official Linux Kernel Stable Tree (kernel.org)"
+
   linux_spinand_winbond:
     url: "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git"
     pinned_commit: "9d36e2f18bc18be177b960bbf4ad7ef7d87b0a70"
@@ -59,11 +83,12 @@ sources:
     url: "https://www.winbond.com/resource-files/W25N01GV%20Rev%20L%20050918.pdf"
     release_date: "2018-05-09"
     author: "Winbond Electronics Corporation"
-    hardware_revision: "W25N01GVZEIG (3.3V 1Gb Serial SLC NAND Flash, JEDEC 0xef 0xaa 0x21)"
+    hardware_revision: "Winbond W25N01GV family (3.3V 1Gb Serial SLC NAND Flash, JEDEC 0xef 0xaa 0x21, package suffix unverified)"
     role: "authoritative_nand_hardware_specification"
     findings:
       - "Operating Voltage: 3.3V (2.7V - 3.6V)"
       - "JEDEC ID: 0xef 0xaa 0x21 (Matches CR8818 DEVICE_READBACK)"
+      - "Package Disambiguation: JEDEC ID only identifies W25N01GV family; package suffix (ZEIG, SFIF, TBIR) unverified without physical teardown"
       - "Page size: 2048 bytes + 64 bytes spare (OOB)"
       - "Internal on-die ECC engine: 1-bit ECC per 512-byte sector (NAND_ECCREQ(1, 512))"
       - "Blocks: 1024 blocks (128 MB total array)"
@@ -74,9 +99,11 @@ sources:
     url: "https://www.winbond.com/resource-files/W25N01GW%20Rev%20G%2005092019.pdf"
     release_date: "2019-05-09"
     author: "Winbond Electronics Corporation"
-    hardware_revision: "W25N01GWZEIG (1.8V 1Gb Serial SLC NAND Flash)"
+    hardware_revision: "Winbond W25N01GW family (1.8V 1Gb Serial SLC NAND Flash, JEDEC 0xef 0xba 0x21, package suffix unverified)"
     role: "authoritative_nand_hardware_specification"
     findings:
+      - "Operating Voltage: 1.8V (1.7V - 1.95V, Incompatible with CR8818 3.3V power domain)"
+      - "JEDEC ID: 0xef 0xba 0x21"
       - "Page size: 2048 bytes + 64 bytes spare (OOB)"
       - "Internal on-die ECC engine: 1-bit ECC per 512-byte sector"
       - "Blocks: 1024 blocks (128 MB total array)"

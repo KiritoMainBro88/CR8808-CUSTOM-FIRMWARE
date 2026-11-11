@@ -5,19 +5,22 @@
 - **Target Hardware:** Xiaomi CR8808 Ver.B (Codename `CR8818`, Qualcomm IPQ5018 + Motorcomm YT9215SC)
 - **Author:** Gemini 3.8 Flash High (Lead Developer / Research Engineer)
 - **Reporting Authority:** ChatGPT (Chief Architect / Architecture Lead)
-- **Status:** Complete Technical Code-Level Audit for Gate M7.1 Revision 1.1
-- **Evidence Classification:** `SOURCE_VERIFIED` (Upstream & ZCOP Code), `REPORTED_UNVERIFIED` (Hardware Forwarding).
+- **Status:** Complete Technical Code-Level Audit for Gate M7.1 Revision 1.2
+- **Evidence Classification:** `SOURCE_VERIFIED` (Upstream & ZCOP Repository Code), `REPORTED_UNVERIFIED` (Dual-Conduit Hardware Forwarding on CR8818).
 
 ---
 
 ## 1. Executive Summary & Code-Level Problem Statement
 
 As established by the Chief Architect:
-> *"Mã nguồn mainline yt921x.c tại yt921x_chip_setup_dsa() lấy CPU port đầu tiên bằng `__ffs(priv->cpu_ports_mask)` và ghi vào một thanh ghi `YT921X_EXT_CPU_PORT`. Như vậy, mã nguồn upstream hiện tại chưa chứng minh được khả năng sử dụng đồng thời hai CPU port theo kiến trúc dual-conduit mà Gemini mô tả. Phải kiểm tra riêng mã nguồn ZCOP, không được lấy upstream làm bằng chứng thay thế."*
+> *"Một điểm cần làm rõ: YT9215 có khả năng phần cứng hỗ trợ tối đa hai GMAC, nhưng driver upstream đang cấu hình một tagged CPU port. Không thể đồng nhất khả năng phần cứng với tính năng đã được driver triển khai.*
+> *Đối với ZCOP, cần tách hai trạng thái:*
+> *- Mã nguồn và cấu hình driver: có thể xác minh ở cấp repository.*
+> *- Hoạt động dual-conduit trên CR8808 thật: chưa xác minh."*
 
 This document presents a rigorous code-level comparison between **Upstream Linux Mainline (`drivers/net/dsa/yt921x.c` / David Yang's DTS)** and **ZCOP's Out-Of-Tree Enhanced Fork (`zcop/immortalwrt`)**. 
 
-The fundamental finding is: **Upstream Linux mainline DSA does NOT support dual-conduit on the Motorcomm YT9215.** Dual-conduit is exclusively an out-of-tree, experimental capability implemented by ZCOP via custom driver hooks and proprietary Device Tree bindings.
+The fundamental finding is: **Upstream Linux mainline DSA driver configures only a single CPU port on the Motorcomm YT9215.** While the silicon has hardware capability for two MAC connections, upstream Linux exposes only one. Dual-conduit is exclusively an out-of-tree, experimental capability implemented by ZCOP via custom driver hooks and proprietary Device Tree bindings.
 
 ---
 
@@ -107,20 +110,23 @@ ethernet-switch@1d {
 
 ## 4. Hardware Capability vs Driver Implementation
 
-To avoid conflation, the hardware capability must be clearly separated from software driver availability:
+To avoid conflation between raw silicon potential and software support, hardware capability must be rigorously distinguished from driver implementation:
 
-| Layer | Single-Conduit Baseline (David Yang Upstream) | Dual-Conduit Enhanced (ZCOP Out-Of-Tree) |
+| Architectural Layer | Single-Conduit Baseline (David Yang Upstream) | Dual-Conduit Enhanced (ZCOP Out-Of-Tree) |
 |---|---|---|
-| **Hardware Silicon Capability** | Supported (Port 8 SGMII connected to GMAC1) | Supported (Port 4 connected to GMAC0; Port 8 connected to GMAC1) |
-| **Driver Implementation** | **Upstream Linux Mainline (`drivers/net/dsa/yt921x.c`)** | **Out-of-tree vendor fork (`motorcomm,yt9215-enhanced`)** |
-| **CPU Port Allocation in Code** | Hardcoded single CPU port via `__ffs(cpu_ports_mask)` | Dynamic split via `secondary-conduit-user-mask` |
-| **Kernel Support** | Linux 6.12 LTS & Linux 6.18 LTS (Mainline clean) | Custom ImmortalWrt kernel tree only |
-| **Upstream Status** | Fully upstreamed to kernel.org | **UNUPSTREAMED / VENDOR FORK ONLY** |
-| **Hardware Verification on CR8818**| `SOURCE_VERIFIED` in mainline OpenWrt | `REPORTED_UNVERIFIED` on real physical device |
+| **Silicon Hardware Capability** | **Supported:** Switch silicon supports 2 MAC interfaces (Port 4 internal GE PHY & Port 8 SGMII). | **Supported:** Switch silicon supports 2 MAC interfaces (Port 4 internal GE PHY & Port 8 SGMII). |
+| **Driver Implementation** | **Upstream Linux Mainline (`drivers/net/dsa/yt921x.c`)**:<br>Restricts setup to **one tagged CPU port** (`0x8000c`). | **Out-of-tree vendor driver (`motorcomm,yt9215-enhanced`)**:<br>Custom VLAN/port isolation matrices and secondary conduit masks. |
+| **CPU Port Allocation in Code** | Hardcoded single CPU port via `__ffs(cpu_ports_mask)` | Dynamic split via `secondary-conduit-user-mask = <0x8>` |
+| **Repository Code Verification** | `SOURCE_VERIFIED` in Linux kernel.org and OpenWrt mainline | `SOURCE_VERIFIED` at repository level (`zcop/immortalwrt` commit `7b307fa`) |
+| **Physical Hardware Verification on CR8818** | `SOURCE_VERIFIED` via David Yang's working single-port DTS | **`REPORTED_UNVERIFIED`** (No line-rate switching captures or bi-directional multi-GMAC traces on CR8818) |
 
 ---
 
-## 5. Architectural Directive for Milestone M7.1 Revision 1.1
+## 5. Architectural Directive for Milestone M7.1 Revision 1.2
 
-1. **Track A (Daily Driver):** **Must use Single-Conduit Baseline (David Yang Upstream)** via Port 8 (`eth1`). It is 100% compliant with clean mainline DSA, requires zero out-of-tree switch patches, and delivers stable gigabit forwarding.
-2. **Track B (Experimental NSS):** Dual-conduit is categorized strictly as an **unupstreamed research prototype**. It cannot be claimed as `SOURCE_VERIFIED` for mainline OpenWrt. Any future evaluation of dual-conduit must be performed in an isolated sandbox tree tracking ZCOP's custom driver patches.
+1. **Silicon Capability $\neq$ Driver Feature:** While the Motorcomm YT9215 silicon physically routes two GMAC interfaces, the upstream Linux mainline driver deliberately configures only a single tagged CPU port. Hardware capability cannot be cited as proof of driver readiness.
+2. **Track A (Daily Driver):** **Must use Single-Conduit Baseline (David Yang Upstream)** via Port 8 (`eth1`). It is 100% compliant with clean mainline DSA, requires zero out-of-tree switch patches, and delivers stable gigabit forwarding.
+3. **Track B (Experimental NSS):** Dual-conduit is categorized strictly as an **unupstreamed research prototype**:
+   - Driver source & DTS bindings are **`SOURCE_VERIFIED`** at repository level.
+   - Live hardware execution on real CR8818 routers remains strictly **`REPORTED_UNVERIFIED`**.
+   - Any evaluation must proceed in an isolated sandbox tree tracking ZCOP's custom driver patches.

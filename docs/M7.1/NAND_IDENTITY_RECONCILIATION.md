@@ -41,17 +41,19 @@ Without initiating any new network contact or SSH sessions to the router, a fore
 
 According to official Winbond Electronics Corporation component datasheets and upstream Linux kernel source code (`drivers/mtd/nand/spi/winbond.c`):
 
-| Flash Part Model | JEDEC Manufacturer ID | JEDEC Device ID (Byte 1, Byte 2) | Operating Voltage ($V_{CC}$) | Package Suffix | Official Linux Driver Entry (`winbond.c`) |
+| Flash Part Family | JEDEC Manufacturer ID | JEDEC Device ID (Byte 1, Byte 2) | Operating Voltage ($V_{CC}$) | Ordering Suffixes (Package Specific) | Official Linux Driver Entry (`winbond.c`) |
 |---|:---:|:---:|:---:|:---:|---|
-| **Winbond W25N01GV** | `0xef` | **`0xaa 0x21`** | **3.3V (2.7V – 3.6V)** | `W25N01GVZEIG` / `W25N01GVZEIR` | `SPINAND_INFO("W25N01GV", SPINAND_ID(..., 0xaa, 0x21))` |
-| **Winbond W25N01GW** | `0xef` | **`0xba 0x21`** | **1.8V (1.7V – 1.95V)** | `W25N01GWZEIG` / `W25N01GWZEIR` | `SPINAND_INFO("W25N01GW", SPINAND_ID(..., 0xba, 0x21))` |
+| **Winbond W25N01GV family** | `0xef` | **`0xaa 0x21`** | **3.3V (2.7V – 3.6V)** | *Unverified without package teardown* (e.g. `ZEIG`, `SFIF`, `TBIR`) | `SPINAND_INFO("W25N01GV", SPINAND_ID(..., 0xaa, 0x21))` |
+| **Winbond W25N01GW family** | `0xef` | **`0xba 0x21`** | **1.8V (1.7V – 1.95V)** | *Unverified without package teardown* (e.g. `ZEIG`, `SFIF`, `TBIR`) | `SPINAND_INFO("W25N01GW", SPINAND_ID(..., 0xba, 0x21))` |
 
 ### Key Hardware Facts:
-1. **JEDEC ID `0xef 0xaa 0x21` is Exclusively W25N01GV (3.3V):**
-   The byte sequence `0xaa 0x21` is the unique silicon identifier for the 3.3V **W25N01GV** family.
-2. **Voltage Incompatibility:**
-   The router motherboard supplies a standard 3.3V I/O and core power rail to the QSPI flash circuit. A 1.8V part (`W25N01GW`, ID `0xba 0x21`) would suffer permanent electrical overstress and destruction if connected to a 3.3V power domain.
-3. **Root-Cause of Historical Misattribution:**
+1. **JEDEC ID `0xef 0xaa 0x21` is Exclusively the W25N01GV Family (3.3V):**
+   The byte sequence `0xaa 0x21` uniquely identifies the silicon architecture of the 3.3V **W25N01GV family** (Manufacturer: `0xef` = Winbond, Memory Type: `0xaa` = 3.3V Serial SLC NAND, Capacity: `0x21` = 1Gb).
+2. **Package Suffix Disambiguation (`ZEIG` vs Others):**
+   JEDEC SPI Read ID (`0x9F`) only returns manufacturer and silicon density/voltage information. It does **NOT** encode package geometry, temperature grades, or ordering suffixes (e.g. `ZEIG` = 8-pad WSON 8x6mm, `SFIF` = 16-pin SOIC 300mil, `TBIR` = 24-ball TFBGA). Therefore, asserting `W25N01GVZEIG` as a proven fact without physical optical inspection of the silicon package marking is unverified. All documentation must strictly refer to the part as **`Winbond W25N01GV family – JEDEC EF AA 21`**.
+3. **Voltage Incompatibility:**
+   The router motherboard supplies a standard 3.3V I/O and core power rail to the QSPI flash circuit. A 1.8V part (`W25N01GW family`, ID `0xba 0x21`) would suffer permanent electrical overstress and destruction if connected to a 3.3V power domain.
+4. **Root-Cause of Historical Misattribution:**
    Early community teardowns on Enshan frequently assumed "W25N01GW" by analogy with certain 1.8V Qualcomm reference designs (e.g. AP-DK01). When initial device telemetry captured the true JEDEC ID `0xef 0xaa 0x21`, the author transcribed the community string "W25N01GWZEIG" without cross-referencing the middle byte `0xaa` vs `0xba`.
 
 ---
@@ -76,11 +78,11 @@ Both the 3.3V W25N01GV and the 1.8V W25N01GW share the identical memory array or
 
 | Attribute | Previous Erroneous Claim | Reconciled Ground Truth | Evidence Level |
 |---|---|---|:---:|
-| **Component Model** | `Winbond W25N01GWZEIG` | **`Winbond W25N01GV` (e.g. `W25N01GVZEIG`)** | `DEVICE_READBACK_RECONCILED` |
+| **Component Family** | `Winbond W25N01GWZEIG` (Erroneous) | **`Winbond W25N01GV family` (Package suffix unverified)** | `DEVICE_READBACK_RECONCILED` |
 | **JEDEC ID** | `0xef 0xaa 0x21` | **`0xef 0xaa 0x21`** (Verified) | `DEVICE_READBACK` |
 | **Operating Voltage** | 1.8V (Implied by GW part) | **3.3V (2.7V – 3.6V)** | `SOURCE_VERIFIED` (Datasheet) |
 | **Array Geometry** | 2048B page + 64B OOB | **2048B page + 64B OOB, 128KB block** | `SOURCE_VERIFIED` (Datasheet) |
 | **Hardware ECC** | Mandatory 8-bit controller BCH | **1-bit per 512B on-die ECC (`NAND_ECCREQ(1, 512)`)** | `SOURCE_VERIFIED` (Driver & Spec) |
 
 ### Formal Directive for Project Documentation:
-All references to the SPI NAND flash across the repository are formally corrected to **Winbond W25N01GV (3.3V, JEDEC `0xef 0xaa 0x21`, 1-bit on-die ECC)**.
+All references to the SPI NAND flash across the repository are formally standardized to **`Winbond W25N01GV family – JEDEC EF AA 21 (3.3V, 1-bit on-die ECC)`**. Suffixes indicating specific packages (such as `ZEIG`) are explicitly omitted until physical microscopic verification of silicon markings.
