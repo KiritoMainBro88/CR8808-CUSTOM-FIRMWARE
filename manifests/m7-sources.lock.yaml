@@ -1,0 +1,144 @@
+schema_version: 1
+lock_status: SOURCE_LOCK_VERIFIED_M7
+milestone: M7.0
+target_device: xiaomi_cr8808_verb
+internal_model: CR8818
+board_profile: ap-mp03.3
+soc: qualcomm_ipq5018
+ram_capacity: "256MB DDR3L (~182MB usable)"
+switch_chip: motorcomm_yt9215sc
+wifi_5g_chip: qualcomm_qcn6102
+created_at: "2026-11-11T12:45:00+07:00"
+author: "Gemini 3.8 Flash High (Lead Developer / Research Engineer)"
+reporting_authority: "ChatGPT (Chief Architect / Architecture Lead)"
+approval_status: "M7_CANDIDATE_AUDIT_READY"
+
+sources:
+  openwrt_official:
+    url: "https://github.com/openwrt/openwrt"
+    tracked_branch: "openwrt-25.12"
+    pinned_commit: "64900e756efa667774214f9c6b17c113222e01f7"
+    release_tag: "v25.12.6"
+    commit_date: "2026-11-09T18:00:00Z"
+    role: "base_daily_driver_buildroot_lts"
+    kernel_version: "6.12.112 LTS"
+    package_manager: "apk-tools v3"
+    firewall: "nftables / firewall4"
+    verification_status: "BUILD_VERIFIED"
+    license: "GPL-2.0"
+    provenance: "Official OpenWrt Project Release"
+
+  immortalwrt_official:
+    url: "https://github.com/immortalwrt/immortalwrt"
+    tracked_branch: "openwrt-25.12"
+    pinned_commit: "4fc16f2985a358bd43bb522e43f05395fcbd6ed5"
+    release_tag: "v25.12.2"
+    commit_date: "2026-11-08T12:00:00Z"
+    role: "china_enhanced_openwrt_reference"
+    kernel_version: "6.12.x / 6.6.x"
+    verification_status: "SOURCE_VERIFIED"
+    license: "GPL-2.0"
+    provenance: "ImmortalWrt Project"
+
+  kuncy7_openwrt_nss_edma:
+    url: "https://github.com/kuncy7/openwrt-nss-edma"
+    tracked_branch: "c3po-tag-8021q"
+    pinned_commit: "28ffd42f68ee56f8c603859dca3aee085dcded3b"
+    commit_date: "2026-11-10T14:20:00Z"
+    role: "kernel_6_18_nss_glue_and_low_memory_profile"
+    kernel_version: "6.18 LTS"
+    key_features:
+      - "qualcommax stmmac data-plane claim API (patch 0956)"
+      - "ipq5018 nss.dtsi node and reserved memory"
+      - "qcom,ath11k-fw-memory-mode = <2> for 256MB RAM"
+      - "coherent_pool=512K DMA allocation"
+    verification_status: "SOURCE_VERIFIED"
+    license: "GPL-2.0"
+    provenance: "Julius Bairaktaris nss-edma-rework (vendor-nss-archive) -> kuncy7 IPQ50xx fork"
+
+  kuncy7_nss_packages:
+    url: "https://github.com/kuncy7/nss-packages"
+    tracked_branch: "ipq50xx-rebase"
+    pinned_commit: "c94a78031ddc7695b2b7a0c5b91421f7b032ed92"
+    commit_date: "2026-11-09T08:55:16Z"
+    role: "nss_driver_feed_and_firmware"
+    components:
+      - "qca-nss-drv (NPU communication driver)"
+      - "qca-dwmac-nss (stmmac runtime claim glue for IPQ5018)"
+      - "qca-nss-ecm (Enhanced Connection Manager flow offload)"
+      - "nss-firmware (firmware retail_router0.bin, NSS 12.5-210)"
+    verification_status: "SOURCE_VERIFIED"
+    license: "Mixed / Qualcomm Proprietary"
+    provenance: "Qualcomm QSDK -> OpenWrt community packaging feed"
+
+  zcop_immortalwrt:
+    url: "https://github.com/zcop/immortalwrt"
+    tracked_branch: "master"
+    pinned_commit: "7b307fa59b01e752e37c98b53ba80688020a5c49"
+    latest_release_tag: "v26-ipq50xx-20260513-ax3000-cr881x"
+    commit_date: "2026-11-11T02:15:00Z"
+    role: "authoritative_yt9215_register_map_and_dual_conduit"
+    key_components:
+      - "README.yt921x.md & docs/yt921x/ register reverse-engineering inventory"
+      - "target/linux/generic/files/drivers/net/dsa/yt921x_*.c (hardware regmap)"
+      - "target/linux/generic/files/net/dsa/tag_yt921x_enhanced.c"
+      - "target/linux/qualcommax/dts/ipq5018-cr881x-nss.dts (dual-conduit qcom,nss-dp)"
+    verification_status: "SOURCE_VERIFIED"
+    license: "GPL-2.0"
+    provenance: "Independent developer reverse engineering on live CR881x silicon"
+
+  yangfl_openwrt:
+    url: "https://github.com/yangfl/openwrt"
+    tracked_branch: "cr8818"
+    pinned_commit: "6729bbe9f082dc15449f17908832447caeec5065"
+    commit_date: "2025-09-14T02:19:28+08:00"
+    role: "authoritative_cr8818_device_tree_and_mainline_dsa_patches"
+    author: "David Yang (mmyangfl) - Linux mainline YT921x driver author"
+    key_components:
+      - "target/linux/qualcommax/dts/ipq5018-cr8818.dts (Authoritative CR8818 DTS)"
+      - "940-net-dsa-yt921x-Abuse-SGMII-for-REVSGMII.patch (Mandatory SerDes fix)"
+      - "11-ath11k-caldata (0:art offsets 0x1000 for 2.4G, 0x26800 for 5G)"
+      - "02_network (board.d network assignment)"
+    verification_status: "SOURCE_VERIFIED"
+    license: "GPL-2.0"
+    provenance: "Upstream-aligned OpenWrt port for CR8818"
+
+  fanha99_cr8806_nss:
+    url: "https://github.com/fanha99/openwrt-xiaomi-cr8806-nss"
+    tracked_branch: "main"
+    pinned_commit: "14875f61c892a2cb2f8385f83e9b235b1c02d457"
+    release_tag: "cr8806-nss-2026.11.10"
+    commit_date: "2026-11-10T08:42:43+07:00"
+    role: "cr8806_reference_ipq5018_kernel_6_18_nss"
+    key_components:
+      - "target/linux/qualcommax/dts/ipq5018-cr8806.dts (QCA8337 switch, QCN6122)"
+      - "kernel 6.18 LTS with stmmac NSS claim on IPQ5018"
+      - "256MB memory profile validation on IPQ5018 silicon"
+    hardware_divergence_warning: "CR8806 uses QCA8337 switch and QCN6122 Wi-Fi; NOT compatible with CR8808 YT9215SC switch!"
+    verification_status: "SOURCE_VERIFIED"
+    license: "GPL-2.0"
+    provenance: "fanha99 fork of kuncy7 openwrt-nss-edma"
+
+  cloudflare_boringtun:
+    url: "https://github.com/cloudflare/boringtun"
+    tracked_branch: "master"
+    pinned_commit: "6dcc889a95ad82400932f785d874421d70308195"
+    release_version: "0.7.1"
+    role: "sole_wireguard_userspace_engine"
+    local_patches:
+      - "patches/0001-boringtun-signalfd-selfpipe-fallback.patch"
+      - "patches/0002-boringtun-uapi-peer-update-no-panic.patch (Issue #498 fix)"
+    target_abi: "aarch64-unknown-linux-musl (static stripped 1.18 MB)"
+    verification_status: "FUNCTION_VERIFIED (60_MIN_SOAK_PASS)"
+    license: "BSD-3-Clause"
+    provenance: "Cloudflare Official Rust WireGuard implementation"
+
+  julius_bairaktaris_nss_edma:
+    url: "https://github.com/JuliusBairaktaris/openwrt-nss-edma"
+    archive_tag: "vendor-nss-archive"
+    pinned_commit: "4bf58252277d34a41753c15d5ec8964d47154562"
+    role: "historical_upstream_base_for_nss_edma"
+    status: "ARCHIVED (Moved to openwrt-ppe-nss for IPQ807x/IPQ60xx)"
+    verification_status: "SOURCE_VERIFIED"
+    license: "GPL-2.0"
+    provenance: "Julius Bairaktaris upstream project"

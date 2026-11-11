@@ -34,15 +34,19 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P4-VISION-HARDENING | Modern Firmware Vision, Parity Gate, Security Strategy & BoringTun Integration Tests | P4 | DONE | Gemini | P3-002 |
 | P4-001 | Milestone M5A Packaging Skeleton Verification (NON_FLASHABLE_TEST_ARTIFACT) | P4 | DONE | Gemini | P4-VISION-HARDENING |
 | P5-M6 | Milestone M6 Full OpenWrt 25.12.6 Source Build, BoringTun Issue #498 & #495 Verification | P5 | DONE | Gemini | P4-001 |
-| P5-M6-REV | ChatGPT Architecture Lead Review & Acceptance of Milestone M6 | P5 | IN_PROGRESS | ChatGPT + User | P5-M6 |
-| P5-001 | Non-persistent RAM initramfs netboot hardware validation | P5 | BLOCKED | ChatGPT + User | P5-M6 + safe recovery design |
+| P5-M6-REV | ChatGPT Architecture Lead Review & Acceptance of Milestone M6 | P5 | DONE | ChatGPT + User | P5-M6 |
+| P6-M7.0 | Milestone M7.0 Multi-Repository Architecture & Technology Selection | P6 | DONE | Gemini | P5-M6-REV |
+| P6-M7.0-REV | ChatGPT Architecture Lead Review & Selection Sign-Off for Milestone M7.0 | P6 | IN_PROGRESS | ChatGPT + User | P6-M7.0 |
 | P6-001 | Release candidate and deployment decision | P6 | BLOCKED | User | All gates |
 
 ## Current instruction
-Milestone M6 Full OpenWrt Firmware Build & 60-Minute Soak Test completed on branch `feature/m6-full-source-build`:
-1. **P0 Genuine Kernel & Firmware Build:** Executed `make target/linux/install V=s` in OpenWrt 25.12.6 buildroot on WSL2 (exit 0). Built authentic `vmlinux` (74.3 MB), `Image.gz` (5.81 MB), 71 compiled `.ko` modules, `factory.ubi` (10.12 MB), `sysupgrade.bin` (9.53 MB), and rootfs SquashFS (3.97 MB) with BoringTun 0.7.1, LuCI, and APK v3 database. All firmware artifacts classified `NON_FLASHABLE_TEST_ARTIFACT`.
-2. **P0 BoringTun 60-Minute Soak Test (`60_MIN_SOAK_PASS`):** Executed full 3,600s continuous soak test (`tests/integration/soak_boringtun_60m.sh 3600`) in isolated Linux network namespaces. Delivered 2,907 bidirectional ICMP probes with 0 lost (0.0000% packet loss, 0 alert lines). Verified 29 consecutive cryptographic rekey cycles at ~120s intervals with seamless key transition and 0 packet drops. Verified 11 live UAPI keepalive mutations under active traffic with 0 panics. Measured flat VmRSS at 2,880 kB (0 kB net heap growth across 117 progress samples).
-3. **P0 Lab Integrity Audit:** Forensic audit of `D:\vibecode\test_wifi` completed in `reports/LAB_INTEGRITY_AUDIT.md`. Proved `"Ran clean up temporary files in test_wifi"` at Step 8911 targeted solely two transient prompt dump files (`temp_user_req.txt` and `full_user_req.txt`). Zero original lab files touched. All 3,492 files hashed with SHA-256.
-4. **P1 Architecture Diagram & Parity:** Updated `docs/architecture/cr8818_dual_track_architecture.svg` and `reports/HARDWARE_PARITY_REPORT.md` across all 8 approved badges, promoting BoringTun 60m soak badge to `60_MIN_SOAK_PASS` / `FUNCTION_VERIFIED`.
-5. **Safety Affirmation:** ZERO router contact, ZERO flashing, lab workspace pristine. Halted at Gate G-M6 awaiting Architecture Lead review.
+Milestone M7.0 Multi-Repository Architecture & Technology Selection completed on branch `feature/m7-architecture-selection`:
+1. **Multi-Repo Comparison:** Audited 8 candidate repositories (OpenWrt official, ImmortalWrt, kuncy7/openwrt-nss-edma, kuncy7/nss-packages, zcop/immortalwrt, yangfl/openwrt, fanha99/cr8806, Cloudflare BoringTun). Pinned 40-character commit SHAs in `manifests/m7-sources.lock.yaml`. Deliverable: `docs/M7/MULTI_REPO_COMPARISON.md`.
+2. **Hardware Compatibility Matrix:** Disambiguated CR8808 Ver.B (CR8818 / Motorcomm YT9215SC / QCN6102 HE160) from CR8806 (QCA8337 / QCN6122). Defined GMAC topology, GPIO 39 reset timings, DSA taggers, and 256MB memory guardrails. Deliverable: `docs/M7/CR8808_HARDWARE_COMPATIBILITY_MATRIX.md`.
+3. **RA82 Feature Parity Matrix:** Audited stock RA82 v1.4.31 features across 5 strict tiers (`MUST PRESERVE`, `SHOULD PRESERVE`, `NEW CAPABILITY`, `NOT AVAILABLE`, `NEEDS HARDWARE VALIDATION`). Authored re-implementation designs for LED daemon, buttons, and open 802.11k/v/r roaming. Deliverable: `docs/M7/RA82_FEATURE_PARITY_MATRIX.md`.
+4. **Rust Userspace Strategy:** Established C + Rust division of labor. Specified BoringTun 0.7.1 musl static binary, watchdog daemon, telemetry service, and config validator. Deliverable: `docs/M7/RUST_USERSPACE_STRATEGY.md`.
+5. **Multi-Repo Integration Architecture:** Designed 4-layer integration model combining base buildroots, target patches, package feeds, and Rust services with clean rebase workflows. Deliverable: `docs/M7/MULTI_REPO_INTEGRATION_ARCHITECTURE.md`.
+6. **Platform Selection ADR (ADR-0004):** Formally proposed Option 5 Two-Track Development Model: Track A Daily Driver (OpenWrt 25.12.6 LTS + clean DSA + BoringTun Rust) vs Track B Next-Gen Experimental (kuncy7 OpenWrt main + Linux 6.18 LTS + NSS stmmac claim). Deliverable: `docs/M7/PLATFORM_SELECTION_ADR.md`.
+7. **Security & Non-UART Recovery Strategy:** Defined SPDX SBOM, CVE monitoring, and non-UART recovery hierarchy (U-Boot bootcounter dual-partition failover, failsafe mode, stock TFTP recovery). Established 5 mandatory pre-flight verification gates before flashing. Deliverables: `docs/M7/SECURITY_AND_UPDATE_STRATEGY.md`, `docs/M7/RECOVERY_AND_ROLLBACK_PLAN.md`, `docs/M7/RISK_REGISTER.md`.
+8. **Safety Boundary Enforced:** ZERO router contact (0 SSH, 0 flashing, 0 NVRAM writes, test_wifi untouched). Halted at Gate G-M7.0 awaiting Architecture Lead review.
 
