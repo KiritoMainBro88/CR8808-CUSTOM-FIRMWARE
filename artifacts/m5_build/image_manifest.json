@@ -1,0 +1,51 @@
+{
+  "project": "CR8808-CUSTOM-FIRMWARE",
+  "milestone": "M5",
+  "version": "25.12.6",
+  "build_date": "2026-11-11",
+  "target": "qualcommax/ipq50xx",
+  "device": "xiaomi_cr8818",
+  "soc": "Qualcomm IPQ5018 (Dual Cortex-A53 @ 1.0 GHz)",
+  "kernel_version": "6.12.112",
+  "package_manager": "apk (apk-tools v3)",
+  "flash_type": "128MB SPI NAND (2048B page, 128KiB block)",
+  "rootfs_partition_limit_mb": 40,
+  "artifacts": {
+    "dtb": {
+      "filename": "ipq5018-xiaomi-cr8818-daily.dtb",
+      "size_bytes": 26788,
+      "sha256": "56fe7befb6bf05b81eaa0d305793f51f6e85705d4a798db4cf612be3ba378edd"
+    },
+    "kernel_config": {
+      "filename": "kernel-6.12.112.config",
+      "sha256": "0e08633f672db27ed8bcbfac1c636220cad24d4bc4c0856e1d58f67edbd30372"
+    },
+    "fit_image": {
+      "filename": "uImage.itb",
+      "size_bytes": 4223676,
+      "sha256": "514bf364383925d8b2056aefcfbd4cd8d9f0333cda5b118168a73068701e131c"
+    },
+    "rootfs_squashfs": {
+      "filename": "openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-rootfs.squashfs",
+      "size_bytes": 573440,
+      "size_mb": .54,
+      "sha256": "1e92df9cf8592d082f4e6352970c1523958ca2b54330d650d3082100a04f99b6"
+    },
+    "factory_ubi": {
+      "filename": "openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-factory.ubi",
+      "size_bytes": 5373952,
+      "sha256": "b7e61f3ec9aa3c17f5771d0f4e3ec0e764fb7caab1386b7fa8e51b5f4e3f3250"
+    },
+    "sysupgrade_bin": {
+      "filename": "openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-sysupgrade.bin",
+      "size_bytes": 4802560,
+      "sha256": "6983cfc15ff935d24cb1f79b7e133d9914fda4d0c08618388fa8ea6e4c7a017c"
+    }
+  },
+  "verification_status": {
+    "pc_build_verified": true,
+    "device_boot_verified": false,
+    "hardware_functions_verified": false,
+    "flash_authorization": "NO-GO (Recovery validation pending)"
+  }
+}

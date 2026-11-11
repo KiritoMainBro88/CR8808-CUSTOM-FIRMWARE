@@ -1,0 +1,51 @@
+--- a/boringtun/src/device/mod.rs
++++ b/boringtun/src/device/mod.rs
+@@ -315,11 +315,27 @@ impl Device {
+             return self.remove_peer(&pub_key);
+         }
+ 
+-        // Update an existing peer
+-        if self.peers.get(&pub_key).is_some() {
+-            // We already have a peer, we need to merge the existing config into the newly created one
+-            panic!("Modifying existing peers is not yet supported. Remove and add again instead.");
+-        }
++        // Update an existing peer (resolves upstream Issue #498 / UAPI panic)
++        let (endpoint, allowed_ips_vec, keepalive, preshared_key) =
++            if let Some(existing_peer) = self.peers.get(&pub_key) {
++                tracing::warn!("Updating existing peer; cycling peer to apply new parameters without panic");
++                let p = existing_peer.lock();
++                let ep = endpoint.or(p.endpoint().addr);
++                let ips = if !allowed_ips.is_empty() || _replace_ips {
++                    allowed_ips.to_vec()
++                } else {
++                    p.allowed_ips()
++                        .map(|(addr, cidr)| AllowedIP { addr, cidr })
++                        .collect()
++                };
++                let ka = keepalive.or_else(|| p.persistent_keepalive());
++                let psk = preshared_key.or_else(|| p.preshared_key().copied());
++                drop(p);
++                self.remove_peer(&pub_key);
++                (ep, ips, ka, psk)
++            } else {
++                (endpoint, allowed_ips.to_vec(), keepalive, preshared_key)
++            };
+ 
+         let next_index = self.next_index();
+         let device_key_pair = self
+@@ -336,13 +352,13 @@ impl Device {
+             None,
+         );
+ 
+-        let peer = Peer::new(tunn, next_index, endpoint, allowed_ips, preshared_key);
++        let peer = Peer::new(tunn, next_index, endpoint, &allowed_ips_vec, preshared_key);
+ 
+         let peer = Arc::new(Mutex::new(peer));
+         self.peers.insert(pub_key, Arc::clone(&peer));
+         self.peers_by_idx.insert(next_index, Arc::clone(&peer));
+ 
+-        for AllowedIP { addr, cidr } in allowed_ips {
++        for AllowedIP { addr, cidr } in &allowed_ips_vec {
+             self.peers_by_ip
+                 .insert(*addr, *cidr as _, Arc::clone(&peer));
+         }

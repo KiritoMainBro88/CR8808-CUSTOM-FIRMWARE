@@ -1,0 +1,1925 @@
+# 0 "/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/ipq5018-xiaomi-cr8818-daily.dts"
+# 0 "<built-in>"
+# 0 "<command-line>"
+# 1 "/root/sources/zcop_immortalwrt/target/linux/qualcommax/files/include/dt-bindings/net/qca-uniphy.h" 1
+# 0 "<command-line>" 2
+# 1 "/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/ipq5018-xiaomi-cr8818-daily.dts"
+/dts-v1/;
+
+# 1 "/root/sources/yangfl_openwrt/target/linux/qualcommax/dts/ipq5018-xiaomi-base.dtsi" 1
+# 1 "/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi" 1
+
+
+
+
+
+
+
+# 1 "/root/linux-dts/include/dt-bindings/clock/qcom,apss-ipq.h" 1
+# 9 "/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi" 2
+# 1 "/root/linux-dts/include/dt-bindings/clock/qcom,gcc-ipq5018.h" 1
+# 10 "/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi" 2
+# 1 "/root/linux-dts/include/dt-bindings/clock/qcom,ipq5018-cmn-pll.h" 1
+# 11 "/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi" 2
+# 1 "/root/linux-dts/include/dt-bindings/interrupt-controller/arm-gic.h" 1
+# 9 "/root/linux-dts/include/dt-bindings/interrupt-controller/arm-gic.h"
+# 1 "/root/linux-dts/include/dt-bindings/interrupt-controller/irq.h" 1
+# 10 "/root/linux-dts/include/dt-bindings/interrupt-controller/arm-gic.h" 2
+# 12 "/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi" 2
+# 1 "/root/sources/yangfl_openwrt/target/linux/qualcommax/files/include/dt-bindings/net/qca-uniphy.h" 1
+# 13 "/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi" 2
+# 1 "/root/linux-dts/include/dt-bindings/reset/qcom,gcc-ipq5018.h" 1
+# 14 "/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi" 2
+# 1 "/root/linux-dts/include/dt-bindings/thermal/thermal.h" 1
+# 15 "/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi" 2
+
+/ {
+ interrupt-parent = <&intc>;
+ #address-cells = <2>;
+ #size-cells = <2>;
+
+ clocks {
+  gephy_rx_clk: gephy-rx-clk {
+   compatible = "fixed-clock";
+   clock-frequency = <125000000>;
+   #clock-cells = <0>;
+  };
+
+  gephy_tx_clk: gephy-tx-clk {
+   compatible = "fixed-clock";
+   clock-frequency = <125000000>;
+   #clock-cells = <0>;
+  };
+
+  ref_96mhz_clk: ref-96mhz-clk {
+   compatible = "fixed-factor-clock";
+   clocks = <&xo_clk>;
+   #clock-cells = <0>;
+   clock-div = <1>;
+   clock-mult = <2>;
+  };
+
+  sleep_clk: sleep-clk {
+   compatible = "fixed-clock";
+   #clock-cells = <0>;
+  };
+
+  xo_board_clk: xo-board-clk {
+   compatible = "fixed-factor-clock";
+   clocks = <&ref_96mhz_clk>;
+   #clock-cells = <0>;
+  };
+
+  xo_clk: xo-clk {
+   compatible = "fixed-clock";
+   #clock-cells = <0>;
+   clock-frequency = <48000000>;
+  };
+ };
+
+ cpus {
+  #address-cells = <1>;
+  #size-cells = <0>;
+
+  cpu0: cpu@0 {
+   device_type = "cpu";
+   compatible = "arm,cortex-a53";
+   reg = <0x0>;
+   enable-method = "psci";
+   next-level-cache = <&l2_0>;
+   clocks = <&apcs_glb 1>;
+   operating-points-v2 = <&cpu_opp_table>;
+   #cooling-cells = <2>;
+  };
+
+  cpu1: cpu@1 {
+   device_type = "cpu";
+   compatible = "arm,cortex-a53";
+   reg = <0x1>;
+   enable-method = "psci";
+   next-level-cache = <&l2_0>;
+   clocks = <&apcs_glb 1>;
+   operating-points-v2 = <&cpu_opp_table>;
+   #cooling-cells = <2>;
+  };
+
+  l2_0: l2-cache {
+   compatible = "cache";
+   cache-level = <2>;
+   cache-size = <0x80000>;
+   cache-unified;
+  };
+ };
+
+ cpu_opp_table: opp-table-cpu {
+  compatible = "operating-points-v2";
+  opp-shared;
+
+  opp-1008000000 {
+   opp-hz = /bits/ 64 <1008000000>;
+   opp-microvolt = <1100000>;
+   clock-latency-ns = <200000>;
+  };
+ };
+
+ firmware {
+  scm {
+   compatible = "qcom,scm-ipq5018", "qcom,scm";
+   qcom,dload-mode = <&tcsr 0x6100>;
+   qcom,sdi-enabled;
+  };
+ };
+
+ memory@40000000 {
+  device_type = "memory";
+
+  reg = <0x0 0x40000000 0x0 0x0>;
+ };
+
+ pmu {
+  compatible = "arm,cortex-a53-pmu";
+  interrupts = <1 7 ((((1 << (4)) - 1) << 8) | 4)>;
+ };
+
+ psci {
+  compatible = "arm,psci-1.0";
+  method = "smc";
+ };
+
+ reserved-memory {
+  #address-cells = <2>;
+  #size-cells = <2>;
+  ranges;
+
+  tz_apps@4a400000 {
+   reg = <0x0 0x4a400000 0x0 0x400000>;
+   no-map;
+  };
+
+  bootloader@4a800000 {
+   reg = <0x0 0x4a800000 0x0 0x200000>;
+   no-map;
+  };
+
+  sbl@4aa00000 {
+   reg = <0x0 0x4aa00000 0x0 0x100000>;
+   no-map;
+  };
+
+  smem@4ab00000 {
+   compatible = "qcom,smem";
+   reg = <0x0 0x4ab00000 0x0 0x100000>;
+   no-map;
+
+   hwlocks = <&tcsr_mutex 3>;
+  };
+
+  tz_region: tz@4ac00000 {
+   reg = <0x0 0x4ac00000 0x0 0x200000>;
+   no-map;
+  };
+
+  q6_region: wcss@4b000000 {
+   reg = <0x0 0x4b000000 0x0 0x1b00000>;
+   no-map;
+  };
+ };
+
+ soc: soc@0 {
+  compatible = "simple-bus";
+  #address-cells = <1>;
+  #size-cells = <1>;
+  ranges = <0 0 0 0xffffffff>;
+
+  usbphy0: phy@5b000 {
+   compatible = "qcom,ipq5018-usb-hsphy";
+   reg = <0x0005b000 0x120>;
+
+   clocks = <&gcc 119>;
+
+   resets = <&gcc 79>;
+
+   #phy-cells = <0>;
+
+   status = "disabled";
+  };
+
+  usbphy1: phy@5d000 {
+   compatible = "qcom,ipq5018-uniphy-usb3-phy";
+   reg = <0x0005d000 0x800>;
+
+   clocks = <&gcc 119>,
+     <&gcc 169>;
+
+   resets = <&gcc 99>;
+
+   #clock-cells = <0>;
+   #phy-cells = <0>;
+
+   qcom,phy-usb-mux-sel = <&tcsr 0x10540>;
+
+   status = "disabled";
+  };
+
+  pcie1_phy: phy@7e000 {
+   compatible = "qcom,ipq5018-uniphy-pcie-phy";
+   reg = <0x0007e000 0x800>;
+
+   clocks = <&gcc 66>;
+
+   resets = <&gcc 47>,
+     <&gcc 48>;
+
+   #clock-cells = <0>;
+   #phy-cells = <0>;
+
+   num-lanes = <1>;
+
+   status = "disabled";
+  };
+
+  pcie0_phy: phy@86000 {
+   compatible = "qcom,ipq5018-uniphy-pcie-phy";
+   reg = <0x00086000 0x1000>;
+
+   clocks = <&gcc 60>;
+
+   resets = <&gcc 35>,
+     <&gcc 36>;
+
+   #clock-cells = <0>;
+   #phy-cells = <0>;
+
+   num-lanes = <2>;
+
+   status = "disabled";
+  };
+
+  mdio0: mdio@88000 {
+   compatible = "qcom,ipq5018-mdio", "qcom,ipq40xx-mdio";
+   reg = <0x00088000 0x64>,
+         <0x019475c4 0x4>;
+   #address-cells = <1>;
+   #size-cells = <0>;
+
+   clocks = <&gcc 53>;
+   clock-names = "gcc_mdio_ahb_clk";
+
+   status = "disabled";
+
+   ge_phy: ethernet-phy@7 {
+    compatible = "ethernet-phy-id004d.d0c0";
+    reg = <7>;
+
+    resets = <&gcc 111>;
+   };
+  };
+
+  mdio1: mdio@90000 {
+   compatible = "qcom,ipq5018-mdio";
+   reg = <0x00090000 0x64>;
+   #address-cells = <1>;
+   #size-cells = <0>;
+
+   clocks = <&gcc 54>;
+   clock-names = "gcc_mdio_ahb_clk";
+
+   status = "disabled";
+  };
+
+  uniphy0: ethernet-pcs@98000 {
+   compatible = "qualcomm,ipq5018-uniphy";
+   reg = <0x00098000 0x800>;
+   #clock-cells = <1>;
+   clocks = <&gcc 110>,
+     <&gcc 112>,
+     <&gcc 111>,
+     <&gcc 113>,
+     <&cmn_pll 3>;
+   clock-names = "ahb",
+          "sys",
+          "port5_rx",
+          "port5_tx",
+          "ref";
+   clock-output-names = "uniphy0_gcc_rx_clk",
+          "uniphy0_gcc_tx_clk",
+          "uniphy0_ref_clk";
+   resets = <&gcc 110>;
+   reset-names = "soft";
+   #pcs-cells = <0>;
+   status = "disabled";
+  };
+
+  cmn_pll: clock-controller@9b000 {
+   compatible = "qcom,ipq5018-cmn-pll";
+   reg = <0x0009b000 0x800>;
+   clocks = <&ref_96mhz_clk>,
+     <&gcc 29>,
+     <&gcc 30>;
+   clock-names = "ref",
+          "ahb",
+          "sys";
+   #clock-cells = <1>;
+   assigned-clocks = <&cmn_pll 0>;
+   assigned-clock-rates-u64 = /bits/ 64 <9600000000>;
+  };
+
+  qfprom: qfprom@a0000 {
+   compatible = "qcom,ipq5018-qfprom", "qcom,qfprom";
+   reg = <0x000a0000 0x1000>;
+   #address-cells = <1>;
+   #size-cells = <1>;
+
+   tsens_mode: mode@249 {
+    reg = <0x249 0x1>;
+    bits = <0 3>;
+   };
+
+   tsens_base1: base1@249 {
+    reg = <0x249 0x2>;
+    bits = <3 8>;
+   };
+
+   tsens_base2: base2@24a {
+    reg = <0x24a 0x2>;
+    bits = <3 8>;
+   };
+
+   tsens_s0_p1: s0-p1@24b {
+    reg = <0x24b 0x2>;
+    bits = <2 6>;
+   };
+
+   tsens_s0_p2: s0-p2@24c {
+    reg = <0x24c 0x1>;
+    bits = <1 6>;
+   };
+
+   tsens_s1_p1: s1-p1@24c {
+    reg = <0x24c 0x2>;
+    bits = <7 6>;
+   };
+
+   tsens_s1_p2: s1-p2@24d {
+    reg = <0x24d 0x2>;
+    bits = <5 6>;
+   };
+
+   tsens_s2_p1: s2-p1@24e {
+    reg = <0x24e 0x2>;
+    bits = <3 6>;
+   };
+
+   tsens_s2_p2: s2-p2@24f {
+    reg = <0x24f 0x1>;
+    bits = <1 6>;
+   };
+
+   tsens_s3_p1: s3-p1@24f {
+    reg = <0x24f 0x2>;
+    bits = <7 6>;
+   };
+
+   tsens_s3_p2: s3-p2@250 {
+    reg = <0x250 0x2>;
+    bits = <5 6>;
+   };
+
+   tsens_s4_p1: s4-p1@251 {
+    reg = <0x251 0x2>;
+    bits = <3 6>;
+   };
+
+   tsens_s4_p2: s4-p2@254 {
+    reg = <0x254 0x1>;
+    bits = <0 6>;
+   };
+  };
+
+  prng: rng@e3000 {
+   compatible = "qcom,prng-ee";
+   reg = <0x000e3000 0x1000>;
+   clocks = <&gcc 67>;
+   clock-names = "core";
+   status = "disabled";
+  };
+
+  tsens: thermal-sensor@4a9000 {
+   compatible = "qcom,ipq5018-tsens";
+   reg = <0x004a9000 0x1000>,
+         <0x004a8000 0x1000>;
+
+   nvmem-cells = <&tsens_mode>,
+          <&tsens_base1>,
+          <&tsens_base2>,
+          <&tsens_s0_p1>,
+          <&tsens_s0_p2>,
+          <&tsens_s1_p1>,
+          <&tsens_s1_p2>,
+          <&tsens_s2_p1>,
+          <&tsens_s2_p2>,
+          <&tsens_s3_p1>,
+          <&tsens_s3_p2>,
+          <&tsens_s4_p1>,
+          <&tsens_s4_p2>;
+
+   nvmem-cell-names = "mode",
+        "base1",
+        "base2",
+        "s0_p1",
+        "s0_p2",
+        "s1_p1",
+        "s1_p2",
+        "s2_p1",
+        "s2_p2",
+        "s3_p1",
+        "s3_p2",
+        "s4_p1",
+        "s4_p2";
+
+   interrupts = <0 184 1>;
+   interrupt-names = "uplow";
+   #qcom,sensors = <5>;
+   #thermal-sensor-cells = <1>;
+  };
+
+  cryptobam: dma-controller@704000 {
+   compatible = "qcom,bam-v1.7.4", "qcom,bam-v1.7.0";
+   reg = <0x00704000 0x20000>;
+   interrupts = <0 207 4>;
+
+   clocks = <&gcc 31>;
+   clock-names = "bam_clk";
+
+   #dma-cells = <1>;
+   qcom,ee = <1>;
+   qcom,controlled-remotely;
+  };
+
+  crypto: crypto@73a000 {
+   compatible = "qcom,crypto-v5.1";
+   reg = <0x0073a000 0x6000>;
+
+   clocks = <&gcc 31>,
+     <&gcc 32>,
+     <&gcc 33>;
+   clock-names = "iface",
+          "bus",
+          "core";
+
+   dmas = <&cryptobam 2>,
+          <&cryptobam 3>;
+   dma-names = "rx",
+        "tx";
+  };
+
+  tlmm: pinctrl@1000000 {
+   compatible = "qcom,ipq5018-tlmm";
+   reg = <0x01000000 0x300000>;
+   interrupts = <0 208 4>;
+   gpio-controller;
+   #gpio-cells = <2>;
+   gpio-ranges = <&tlmm 0 0 47>;
+   interrupt-controller;
+   #interrupt-cells = <2>;
+
+   uart1_pins: uart1-state {
+    pins = "gpio31", "gpio32", "gpio33", "gpio34";
+    function = "blsp1_uart1";
+    drive-strength = <8>;
+    bias-pull-down;
+   };
+  };
+
+  gcc: clock-controller@1800000 {
+   compatible = "qcom,gcc-ipq5018";
+   reg = <0x01800000 0x80000>;
+   clocks = <&xo_board_clk>,
+     <&sleep_clk>,
+     <&pcie0_phy>,
+     <&pcie1_phy>,
+     <&usbphy1>,
+     <&gephy_rx_clk>,
+     <&gephy_tx_clk>,
+     <&uniphy0 0>,
+     <&uniphy0 1>;
+   #clock-cells = <1>;
+   #reset-cells = <1>;
+  };
+
+  tcsr_mutex: hwlock@1905000 {
+   compatible = "qcom,tcsr-mutex";
+   reg = <0x01905000 0x20000>;
+   #hwlock-cells = <1>;
+  };
+
+  tcsr: syscon@1937000 {
+   compatible = "qcom,tcsr-ipq5018", "syscon";
+   reg = <0x01937000 0x21000>;
+  };
+
+  pwm: pwm@1941010 {
+   compatible = "qcom,ipq5018-pwm", "qcom,ipq6018-pwm";
+   reg = <0x01941010 0x20>;
+   clocks = <&gcc 18>;
+   assigned-clocks = <&gcc 18>;
+   assigned-clock-rates = <100000000>;
+   #pwm-cells = <3>;
+   status = "disabled";
+  };
+
+  sdhc_1: mmc@7804000 {
+   compatible = "qcom,ipq5018-sdhci", "qcom,sdhci-msm-v5";
+   reg = <0x7804000 0x1000>;
+   reg-names = "hc";
+
+   interrupts = <0 123 4>,
+         <0 138 4>;
+   interrupt-names = "hc_irq", "pwr_irq";
+
+   clocks = <&gcc 89>,
+     <&gcc 90>,
+     <&xo_board_clk>;
+   clock-names = "iface", "core", "xo";
+   non-removable;
+   status = "disabled";
+  };
+
+  blsp_dma: dma-controller@7884000 {
+   compatible = "qcom,bam-v1.7.0";
+   reg = <0x07884000 0x1d000>;
+   interrupts = <0 238 4>;
+   clocks = <&gcc 19>;
+   clock-names = "bam_clk";
+   #dma-cells = <1>;
+   qcom,ee = <0>;
+  };
+
+  blsp1_uart1: serial@78af000 {
+   compatible = "qcom,msm-uartdm-v1.4", "qcom,msm-uartdm";
+   reg = <0x078af000 0x200>;
+   interrupts = <0 107 4>;
+   clocks = <&gcc 26>,
+     <&gcc 19>;
+   clock-names = "core", "iface";
+   status = "disabled";
+  };
+
+  blsp1_uart2: serial@78b0000 {
+   compatible = "qcom,msm-uartdm-v1.4", "qcom,msm-uartdm";
+   reg = <0x078b0000 0x200>;
+   interrupts = <0 108 4>;
+   clocks = <&gcc 27>,
+     <&gcc 19>;
+   clock-names = "core", "iface";
+   status = "disabled";
+  };
+
+  blsp1_spi1: spi@78b5000 {
+   compatible = "qcom,spi-qup-v2.2.1";
+   #address-cells = <1>;
+   #size-cells = <0>;
+   reg = <0x078b5000 0x600>;
+   interrupts = <0 95 4>;
+   clocks = <&gcc 21>,
+     <&gcc 19>;
+   clock-names = "core", "iface";
+   dmas = <&blsp_dma 4>, <&blsp_dma 5>;
+   dma-names = "tx", "rx";
+   status = "disabled";
+  };
+
+  blsp1_i2c3: i2c@78b7000 {
+   compatible = "qcom,i2c-qup-v2.2.1";
+   reg = <0x078b7000 0x600>;
+   #address-cells = <1>;
+   #size-cells = <0>;
+   interrupts = <0 97 4>;
+   clocks = <&gcc 24>,
+     <&gcc 19>;
+   clock-names = "core", "iface";
+   clock-frequency = <400000>;
+   dmas = <&blsp_dma 9>, <&blsp_dma 8>;
+   dma-names = "tx", "rx";
+   status = "disabled";
+  };
+
+  qpic_bam: dma-controller@7984000 {
+   compatible = "qcom,bam-v1.7.4", "qcom,bam-v1.7.0";
+   reg = <0x07984000 0x1c000>;
+
+   interrupts = <0 146 4>;
+
+   clocks = <&gcc 86>;
+   clock-names = "bam_clk";
+
+   #dma-cells = <1>;
+   qcom,ee = <0>;
+
+   status = "disabled";
+  };
+
+  qpic_nand: spi@79b0000 {
+   compatible = "qcom,ipq5018-snand", "qcom,ipq9574-snand";
+   reg = <0x079b0000 0x10000>;
+   #address-cells = <1>;
+   #size-cells = <0>;
+
+   clocks = <&gcc 87>,
+     <&gcc 86>,
+     <&gcc 88>;
+   clock-names = "core",
+          "aon",
+          "iom";
+
+   dmas = <&qpic_bam 0>,
+          <&qpic_bam 1>,
+          <&qpic_bam 2>;
+   dma-names = "tx",
+        "rx",
+        "cmd";
+
+   status = "disabled";
+  };
+
+  usb: usb@8a00000 {
+   compatible = "qcom,ipq5018-dwc3", "qcom,snps-dwc3";
+   reg = <0x08a00000 0xfc100>;
+
+   clocks = <&gcc 117>,
+     <&gcc 102>,
+     <&gcc 120>,
+     <&gcc 118>,
+     <&gcc 114>,
+     <&gcc 116>;
+   clock-names = "core",
+          "iface",
+          "sleep",
+          "mock_utmi",
+          "aux",
+          "lfps";
+   assigned-clocks = <&gcc 118>;
+   assigned-clock-rates = <60000000>;
+
+   interrupts = <0 140 4>,
+         <0 134 4>,
+         <0 121 4>,
+         <0 120 4>;
+   interrupt-names = "dwc_usb3",
+       "pwr_event",
+       "dp_hs_phy_irq",
+       "dm_hs_phy_irq";
+
+   resets = <&gcc 98>;
+
+   phys = <&usbphy0>, <&usbphy1>;
+   phy-names = "usb2-phy", "usb3-phy";
+
+   tx-fifo-resize;
+   snps,is-utmi-l1-suspend;
+   snps,hird-threshold = /bits/ 8 <0x0>;
+   snps,dis_u2_susphy_quirk;
+   snps,dis_u3_susphy_quirk;
+
+   status = "disabled";
+  };
+
+  intc: interrupt-controller@b000000 {
+   compatible = "qcom,msm-qgic2";
+   reg = <0x0b000000 0x1000>,
+         <0x0b002000 0x2000>,
+         <0x0b001000 0x1000>,
+         <0x0b004000 0x2000>;
+   interrupts = <1 9 ((((1 << (4)) - 1) << 8) | 4)>;
+   interrupt-controller;
+   #interrupt-cells = <3>;
+   #address-cells = <1>;
+   #size-cells = <1>;
+   ranges = <0 0x0b00a000 0x1ffa>;
+
+   v2m0: v2m@0 {
+    compatible = "arm,gic-v2m-frame";
+    reg = <0x00000000 0xff8>;
+    msi-controller;
+   };
+
+   v2m1: v2m@1000 {
+    compatible = "arm,gic-v2m-frame";
+    reg = <0x00001000 0xff8>;
+    msi-controller;
+   };
+  };
+
+  watchdog: watchdog@b017000 {
+   compatible = "qcom,apss-wdt-ipq5018", "qcom,kpss-wdt";
+   reg = <0x0b017000 0x40>;
+   interrupts = <0 3 1>;
+   clocks = <&sleep_clk>;
+  };
+
+  apcs_glb: mailbox@b111000 {
+   compatible = "qcom,ipq5018-apcs-apps-global",
+         "qcom,ipq6018-apcs-apps-global";
+   reg = <0x0b111000 0x1000>;
+   #clock-cells = <1>;
+   clocks = <&a53pll>, <&xo_board_clk>, <&gcc 1>;
+   clock-names = "pll", "xo", "gpll0";
+   #mbox-cells = <1>;
+  };
+
+  a53pll: clock@b116000 {
+   compatible = "qcom,ipq5018-a53pll";
+   reg = <0x0b116000 0x40>;
+   #clock-cells = <0>;
+   clocks = <&xo_board_clk>;
+   clock-names = "xo";
+  };
+
+  timer@b120000 {
+   compatible = "arm,armv7-timer-mem";
+   reg = <0x0b120000 0x1000>;
+   #address-cells = <1>;
+   #size-cells = <1>;
+   ranges;
+
+   frame@b120000 {
+    reg = <0x0b121000 0x1000>,
+          <0x0b122000 0x1000>;
+    interrupts = <0 8 4>,
+          <0 7 4>;
+    frame-number = <0>;
+   };
+
+   frame@b123000 {
+    reg = <0xb123000 0x1000>;
+    interrupts = <0 9 4>;
+    frame-number = <1>;
+    status = "disabled";
+   };
+
+   frame@b124000 {
+    frame-number = <2>;
+    interrupts = <0 10 4>;
+    reg = <0x0b124000 0x1000>;
+    status = "disabled";
+   };
+
+   frame@b125000 {
+    reg = <0x0b125000 0x1000>;
+    interrupts = <0 11 4>;
+    frame-number = <3>;
+    status = "disabled";
+   };
+
+   frame@b126000 {
+    reg = <0x0b126000 0x1000>;
+    interrupts = <0 12 4>;
+    frame-number = <4>;
+    status = "disabled";
+   };
+
+   frame@b127000 {
+    reg = <0x0b127000 0x1000>;
+    interrupts = <0 13 4>;
+    frame-number = <5>;
+    status = "disabled";
+   };
+
+   frame@b128000 {
+    reg = <0x0b128000 0x1000>;
+    interrupts = <0 14 4>;
+    frame-number = <6>;
+    status = "disabled";
+   };
+  };
+
+  wifi: wifi@c000000 {
+   compatible = "qcom,ipq5018-wifi";
+   reg = <0x0c000000 0x1000000>;
+
+   interrupts = <0 288 1>,
+         <0 289 1>,
+         <0 290 1>,
+         <0 291 1>,
+         <0 292 1>,
+         <0 293 1>,
+         <0 294 1>,
+         <0 295 1>,
+         <0 296 1>,
+         <0 297 1>,
+         <0 298 1>,
+         <0 299 1>,
+         <0 300 1>,
+         <0 301 1>,
+         <0 302 1>,
+         <0 303 1>,
+         <0 304 1>,
+         <0 305 1>,
+         <0 306 1>,
+         <0 307 1>,
+         <0 308 1>,
+         <0 309 1>,
+         <0 310 1>,
+         <0 311 1>,
+         <0 334 1>,
+         <0 313 1>,
+         <0 314 1>,
+         <0 315 1>,
+         <0 316 1>,
+         <0 317 1>,
+         <0 318 1>,
+         <0 319 1>,
+         <0 320 1>,
+         <0 321 1>,
+         <0 322 1>,
+         <0 323 1>,
+         <0 324 1>,
+         <0 325 1>,
+         <0 326 1>,
+         <0 327 1>,
+         <0 328 1>,
+         <0 329 1>,
+         <0 330 1>,
+         <0 331 1>,
+         <0 332 1>,
+         <0 333 1>,
+         <0 312 1>,
+         <0 335 1>,
+         <0 336 1>,
+         <0 337 1>,
+         <0 338 1>,
+         <0 339 1>;
+   interrupt-names = "misc-pulse1",
+       "misc-latch",
+       "sw-exception",
+       "watchdog",
+       "ce0",
+       "ce1",
+       "ce2",
+       "ce3",
+       "ce4",
+       "ce5",
+       "ce6",
+       "ce7",
+       "ce8",
+       "ce9",
+       "ce10",
+       "ce11",
+       "host2wbm-desc-feed",
+       "host2reo-re-injection",
+       "host2reo-command",
+       "host2rxdma-monitor-ring3",
+       "host2rxdma-monitor-ring2",
+       "host2rxdma-monitor-ring1",
+       "reo2ost-exception",
+       "wbm2host-rx-release",
+       "reo2host-status",
+       "reo2host-destination-ring4",
+       "reo2host-destination-ring3",
+       "reo2host-destination-ring2",
+       "reo2host-destination-ring1",
+       "rxdma2host-monitor-destination-mac3",
+       "rxdma2host-monitor-destination-mac2",
+       "rxdma2host-monitor-destination-mac1",
+       "ppdu-end-interrupts-mac3",
+       "ppdu-end-interrupts-mac2",
+       "ppdu-end-interrupts-mac1",
+       "rxdma2host-monitor-status-ring-mac3",
+       "rxdma2host-monitor-status-ring-mac2",
+       "rxdma2host-monitor-status-ring-mac1",
+       "host2rxdma-host-buf-ring-mac3",
+       "host2rxdma-host-buf-ring-mac2",
+       "host2rxdma-host-buf-ring-mac1",
+       "rxdma2host-destination-ring-mac3",
+       "rxdma2host-destination-ring-mac2",
+       "rxdma2host-destination-ring-mac1",
+       "host2tcl-input-ring4",
+       "host2tcl-input-ring3",
+       "host2tcl-input-ring2",
+       "host2tcl-input-ring1",
+       "wbm2host-tx-completions-ring3",
+       "wbm2host-tx-completions-ring2",
+       "wbm2host-tx-completions-ring1",
+       "tcl2host-status-ring";
+
+   status = "disabled";
+  };
+
+  q6v5_wcss: remoteproc@cd00000 {
+   compatible = "qcom,ipq5018-wcss-sec-pil";
+   reg = <0x0cd00000 0x10000>;
+   firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mbn";
+   interrupts-extended = <&intc 0 291 1>,
+           <&wcss_smp2p_in 0 0>,
+           <&wcss_smp2p_in 1 0>,
+           <&wcss_smp2p_in 2 0>,
+           <&wcss_smp2p_in 3 0>;
+   interrupt-names = "wdog",
+       "fatal",
+       "ready",
+       "handover",
+       "stop-ack";
+
+   clocks = <&gcc 91>,
+     <&gcc 103>;
+   clock-names = "sleep",
+          "interconnect";
+
+   qcom,smem-states = <&wcss_smp2p_out 0>,
+        <&wcss_smp2p_out 1>;
+   qcom,smem-state-names = "shutdown",
+      "stop";
+
+   memory-region = <&q6_region>;
+
+   glink-edge {
+    interrupts = <0 179 1>;
+    label = "rtr";
+    qcom,remote-pid = <1>;
+    mboxes = <&apcs_glb 8>;
+   };
+  };
+
+  pcie1: pcie@80000000 {
+   compatible = "qcom,pcie-ipq5018";
+   reg = <0x80000000 0xf1d>,
+         <0x80000f20 0xa8>,
+         <0x80001000 0x1000>,
+         <0x00078000 0x3000>,
+         <0x80100000 0x1000>,
+         <0x0007b000 0x1000>;
+   reg-names = "dbi",
+        "elbi",
+        "atu",
+        "parf",
+        "config",
+        "mhi";
+   device_type = "pci";
+   linux,pci-domain = <1>;
+   bus-range = <0x00 0xff>;
+   num-lanes = <1>;
+   #address-cells = <3>;
+   #size-cells = <2>;
+
+
+   max-link-speed = <2>;
+
+   phys = <&pcie1_phy>;
+   phy-names = "pciephy";
+
+   ranges = <0x01000000 0 0x00000000 0x80200000 0 0x00100000>,
+     <0x02000000 0 0x80300000 0x80300000 0 0x10000000>;
+
+   msi-map = <0x0 &v2m0 0x0 0xff8>;
+
+   interrupts = <0 111 4>,
+         <0 112 4>,
+         <0 113 4>,
+         <0 114 4>,
+         <0 115 4>,
+         <0 116 4>,
+         <0 117 4>,
+         <0 118 4>,
+         <0 119 4>;
+   interrupt-names = "msi0",
+       "msi1",
+       "msi2",
+       "msi3",
+       "msi4",
+       "msi5",
+       "msi6",
+       "msi7",
+       "global";
+
+   #interrupt-cells = <1>;
+   interrupt-map-mask = <0 0 0 0x7>;
+   interrupt-map = <0 0 0 1 &intc 0 0 142 4>,
+     <0 0 0 2 &intc 0 0 143 4>,
+     <0 0 0 3 &intc 0 0 144 4>,
+     <0 0 0 4 &intc 0 0 145 4>;
+
+   clocks = <&gcc 100>,
+     <&gcc 63>,
+     <&gcc 65>,
+     <&gcc 61>,
+     <&gcc 62>,
+     <&gcc 64>;
+   clock-names = "iface",
+          "axi_m",
+          "axi_s",
+          "ahb",
+          "aux",
+          "axi_bridge";
+
+   resets = <&gcc 49>,
+     <&gcc 50>,
+     <&gcc 51>,
+     <&gcc 52>,
+     <&gcc 53>,
+     <&gcc 54>,
+     <&gcc 55>,
+     <&gcc 56>;
+   reset-names = "pipe",
+          "sleep",
+          "sticky",
+          "axi_m",
+          "axi_s",
+          "ahb",
+          "axi_m_sticky",
+          "axi_s_sticky";
+
+   status = "disabled";
+
+   pcie@0 {
+    device_type = "pci";
+    reg = <0x0 0x0 0x0 0x0 0x0>;
+    bus-range = <0x01 0xff>;
+
+    #address-cells = <3>;
+    #size-cells = <2>;
+    ranges;
+   };
+  };
+
+  pcie0: pcie@a0000000 {
+   compatible = "qcom,pcie-ipq5018";
+   reg = <0xa0000000 0xf1d>,
+         <0xa0000f20 0xa8>,
+         <0xa0001000 0x1000>,
+         <0x00080000 0x3000>,
+         <0xa0100000 0x1000>,
+         <0x00083000 0x1000>;
+   reg-names = "dbi",
+        "elbi",
+        "atu",
+        "parf",
+        "config",
+        "mhi";
+   device_type = "pci";
+   linux,pci-domain = <0>;
+   bus-range = <0x00 0xff>;
+   num-lanes = <2>;
+   #address-cells = <3>;
+   #size-cells = <2>;
+
+
+   max-link-speed = <2>;
+
+   phys = <&pcie0_phy>;
+   phy-names = "pciephy";
+
+   ranges = <0x01000000 0 0x00000000 0xa0200000 0 0x00100000>,
+     <0x02000000 0 0xa0300000 0xa0300000 0 0x10000000>;
+
+   msi-map = <0x0 &v2m0 0x0 0xff8>;
+
+   interrupts = <0 52 4>,
+         <0 55 4>,
+         <0 56 4>,
+         <0 57 4>,
+         <0 59 4>,
+         <0 63 4>,
+         <0 68 4>,
+         <0 72 4>,
+         <0 51 4>;
+   interrupt-names = "msi0",
+       "msi1",
+       "msi2",
+       "msi3",
+       "msi4",
+       "msi5",
+       "msi6",
+       "msi7",
+       "global";
+
+   #interrupt-cells = <1>;
+   interrupt-map-mask = <0 0 0 0x7>;
+   interrupt-map = <0 0 0 1 &intc 0 0 75 4>,
+     <0 0 0 2 &intc 0 0 78 4>,
+     <0 0 0 3 &intc 0 0 79 4>,
+     <0 0 0 4 &intc 0 0 83 4>;
+
+   clocks = <&gcc 99>,
+     <&gcc 57>,
+     <&gcc 59>,
+     <&gcc 55>,
+     <&gcc 56>,
+     <&gcc 58>;
+   clock-names = "iface",
+          "axi_m",
+          "axi_s",
+          "ahb",
+          "aux",
+          "axi_bridge";
+
+   resets = <&gcc 37>,
+     <&gcc 38>,
+     <&gcc 39>,
+     <&gcc 40>,
+     <&gcc 41>,
+     <&gcc 42>,
+     <&gcc 43>,
+     <&gcc 44>;
+   reset-names = "pipe",
+          "sleep",
+          "sticky",
+          "axi_m",
+          "axi_s",
+          "ahb",
+          "axi_m_sticky",
+          "axi_s_sticky";
+
+   status = "disabled";
+
+   pcie@0 {
+    device_type = "pci";
+    reg = <0x0 0x0 0x0 0x0 0x0>;
+    bus-range = <0x01 0xff>;
+
+    #address-cells = <3>;
+    #size-cells = <2>;
+    ranges;
+   };
+  };
+ };
+
+ thermal-zones {
+  cpu-thermal {
+   thermal-sensors = <&tsens 2>;
+
+   trips {
+    cpu-critical {
+     temperature = <120000>;
+     hysteresis = <1000>;
+     type = "critical";
+    };
+
+    cpu_alert: cpu-passive {
+     temperature = <100000>;
+     hysteresis = <1000>;
+     type = "passive";
+    };
+   };
+
+   cooling-maps {
+    map0 {
+     trip = <&cpu_alert>;
+     cooling-device = <&cpu0 (~0) (~0)>,
+        <&cpu1 (~0) (~0)>;
+    };
+   };
+  };
+
+  gephy-thermal {
+   thermal-sensors = <&tsens 4>;
+
+   trips {
+    gephy-critical {
+     temperature = <120000>;
+     hysteresis = <1000>;
+     type = "critical";
+    };
+   };
+  };
+
+  top-glue-thermal {
+   thermal-sensors = <&tsens 3>;
+
+   trips {
+    top-glue-critical {
+     temperature = <120000>;
+     hysteresis = <1000>;
+     type = "critical";
+    };
+   };
+  };
+
+  ubi32-thermal {
+   thermal-sensors = <&tsens 1>;
+
+   trips {
+    ubi32-critical {
+     temperature = <120000>;
+     hysteresis = <1000>;
+     type = "critical";
+    };
+   };
+  };
+ };
+
+ timer {
+  compatible = "arm,armv8-timer";
+  interrupts = <1 2 ((((1 << (4)) - 1) << 8) | 8)>,
+        <1 3 ((((1 << (4)) - 1) << 8) | 8)>,
+        <1 4 ((((1 << (4)) - 1) << 8) | 8)>,
+        <1 1 ((((1 << (4)) - 1) << 8) | 8)>;
+ };
+
+ wcss: smp2p-wcss {
+  compatible = "qcom,smp2p";
+  qcom,smem = <435>, <428>;
+
+  interrupt-parent = <&intc>;
+  interrupts = <0 177 1>;
+
+  mboxes = <&apcs_glb 9>;
+
+  qcom,local-pid = <0>;
+  qcom,remote-pid = <1>;
+
+  wcss_smp2p_out: master-kernel {
+   qcom,entry-name = "master-kernel";
+   #qcom,smem-state-cells = <1>;
+  };
+
+  wcss_smp2p_in: slave-kernel {
+   qcom,entry-name = "slave-kernel";
+   interrupt-controller;
+   #interrupt-cells = <2>;
+  };
+ };
+};
+# 2 "/root/sources/yangfl_openwrt/target/linux/qualcommax/dts/ipq5018-xiaomi-base.dtsi" 2
+# 1 "/root/sources/yangfl_openwrt/target/linux/qualcommax/files/arch/arm64/boot/dts/qcom/ipq5018-ess.dtsi" 1
+&soc {
+ gmac0: ethernet@39c00000 {
+  compatible = "qcom,ipq5018-gmac", "snps,dwmac";
+  reg = <0x39c00000 0x10000>;
+  reg-names = "stmmaceth";
+  clocks = <&gcc 41>,
+    <&gcc 38>,
+    <&gcc 39>,
+    <&gcc 92>,
+    <&gcc 93>,
+    <&gcc 40>,
+    <&gcc 42>;
+  clock-names = "stmmaceth",
+         "pclk",
+         "ptp_ref",
+         "ahb",
+         "axi",
+         "rx",
+         "tx";
+  assigned-clocks = <&gcc 41>,
+      <&gcc 38>,
+      <&gcc 39>,
+      <&gcc 92>,
+      <&gcc 93>;
+  assigned-clock-rates = <240000000>,
+           <240000000>,
+           <240000000>,
+           <240000000>,
+           <240000000>;
+  resets = <&gcc 22>;
+  reset-names = "stmmaceth";
+  interrupts = <0 101 4>;
+  interrupt-names = "macirq";
+
+  phy-handle = <&ge_phy>;
+  phy-mode = "sgmii";
+
+  status = "disabled";
+ };
+
+ gmac1: ethernet@39d00000 {
+  compatible = "qcom,ipq5018-gmac", "snps,dwmac";
+  reg = <0x39d00000 0x10000>;
+  reg-names = "stmmaceth";
+  clocks = <&gcc 46>,
+    <&gcc 43>,
+    <&gcc 44>,
+    <&gcc 94>,
+    <&gcc 95>,
+    <&gcc 45>,
+    <&gcc 47>;
+  clock-names = "stmmaceth",
+         "pclk",
+         "ptp_ref",
+         "ahb",
+         "axi",
+         "rx",
+         "tx";
+  assigned-clocks = <&gcc 46>,
+      <&gcc 43>,
+      <&gcc 44>,
+      <&gcc 94>,
+      <&gcc 95>;
+  assigned-clock-rates = <240000000>,
+           <240000000>,
+           <240000000>,
+           <240000000>,
+           <240000000>;
+  resets = <&gcc 25>;
+  reset-names = "stmmaceth";
+  interrupts = <0 109 4>;
+  interrupt-names = "macirq";
+
+  pcs-handle = <&uniphy0>;
+
+  status = "disabled";
+ };
+};
+# 3 "/root/sources/yangfl_openwrt/target/linux/qualcommax/dts/ipq5018-xiaomi-base.dtsi" 2
+
+# 1 "/root/linux-dts/include/dt-bindings/gpio/gpio.h" 1
+# 5 "/root/sources/yangfl_openwrt/target/linux/qualcommax/dts/ipq5018-xiaomi-base.dtsi" 2
+# 1 "/root/linux-dts/include/dt-bindings/input/input.h" 1
+# 13 "/root/linux-dts/include/dt-bindings/input/input.h"
+# 1 "/root/linux-dts/include/dt-bindings/input/linux-event-codes.h" 1
+# 14 "/root/linux-dts/include/dt-bindings/input/input.h" 2
+# 6 "/root/sources/yangfl_openwrt/target/linux/qualcommax/dts/ipq5018-xiaomi-base.dtsi" 2
+# 1 "/root/linux-dts/include/dt-bindings/leds/common.h" 1
+# 7 "/root/sources/yangfl_openwrt/target/linux/qualcommax/dts/ipq5018-xiaomi-base.dtsi" 2
+
+/ {
+
+ aliases {
+  serial0 = &blsp1_uart1;
+ };
+
+ chosen {
+
+
+
+
+  bootargs-append = " ubi.mtd=rootfs root=/dev/ubiblock0_0 coherent_pool=2M";
+  stdout-path = "serial0:115200n8";
+ };
+};
+
+&sleep_clk {
+ clock-frequency = <32000>;
+};
+
+&xo_board_clk {
+ clock-div = <4>;
+ clock-mult = <1>;
+};
+
+&blsp1_uart1 {
+ status = "okay";
+
+ pinctrl-0 = <&serial_0_pins>;
+ pinctrl-names = "default";
+};
+
+&prng {
+ status = "okay";
+};
+
+&qfprom {
+ status = "okay";
+};
+
+&qpic_bam {
+ status = "okay";
+};
+
+&qpic_nand {
+ pinctrl-0 = <&qpic_pins>;
+ pinctrl-names = "default";
+ status = "okay";
+
+ nand@0 {
+  compatible = "spi-nand";
+  reg = <0>;
+  nand-ecc-engine = <&qpic_nand>;
+  nand-bus-width = <8>;
+
+  partitions {
+   compatible = "fixed-partitions";
+   #address-cells = <1>;
+   #size-cells = <1>;
+
+   partition@0 {
+    label = "0:sbl1";
+    reg = <0x00000000 0x80000>;
+    read-only;
+   };
+
+   partition@80000 {
+    label = "0:mibib";
+    reg = <0x00080000 0x80000>;
+    read-only;
+   };
+
+   partition@100000 {
+    label = "0:bootconfig";
+    reg = <0x00100000 0x40000>;
+    read-only;
+   };
+
+   partition@140000 {
+    label = "0:bootconfig1";
+    reg = <0x00140000 0x40000>;
+    read-only;
+   };
+
+   partition@180000 {
+    label = "0:qsee";
+    reg = <0x00180000 0x100000>;
+    read-only;
+   };
+
+   partition@280000 {
+    label = "0:qsee_1";
+    reg = <0x00280000 0x100000>;
+    read-only;
+   };
+
+   partition@380000 {
+    label = "0:devcfg";
+    reg = <0x00380000 0x40000>;
+    read-only;
+   };
+
+   partition@3c0000 {
+    label = "0:devcfg_1";
+    reg = <0x003c0000 0x40000>;
+    read-only;
+   };
+
+   partition@400000 {
+    label = "0:cdt";
+    reg = <0x00400000 0x40000>;
+    read-only;
+   };
+
+   partition@440000 {
+    label = "0:cdt_1";
+    reg = <0x00440000 0x40000>;
+    read-only;
+   };
+
+   partition@480000 {
+    label = "0:appsblenv";
+    reg = <0x00480000 0x80000>;
+   };
+
+   partition@500000 {
+    label = "0:appsbl";
+    reg = <0x00500000 0x140000>;
+    read-only;
+   };
+
+   partition@640000 {
+    label = "0:appsbl_1";
+    reg = <0x00640000 0x140000>;
+    read-only;
+   };
+
+   art: partition@780000 {
+    label = "0:art";
+    reg = <0x00780000 0x100000>;
+    read-only;
+   };
+
+   partition@880000 {
+    label = "0:training";
+    reg = <0x00880000 0x80000>;
+    read-only;
+   };
+
+   partition@900000 {
+    label = "bdata";
+    reg = <0x00900000 0x80000>;
+   };
+
+   partition@980000 {
+    label = "crash";
+    reg = <0x00980000 0x80000>;
+   };
+
+   partition@a00000 {
+    label = "crash_syslog";
+    reg = <0x00a00000 0x80000>;
+   };
+
+   partition@a80000 {
+    label = "ubi_kernel";
+    reg = <0x00a80000 0x2400000>;
+   };
+
+   partition@2e80000 {
+    label = "rootfs";
+    reg = <0x02e80000 0x5180000>;
+    linux,rootfs;
+   };
+  };
+ };
+};
+
+&tlmm {
+ mdio1_pins: mdio-state {
+  mdc-pins {
+   pins = "gpio36";
+   function = "mdc";
+   drive-strength = <8>;
+   bias-pull-up;
+  };
+
+  mdio-pins {
+   pins = "gpio37";
+   function = "mdio";
+   drive-strength = <8>;
+   bias-pull-up;
+  };
+ };
+
+ qpic_pins: qpic-state {
+  clock-pins {
+   pins = "gpio9";
+   function = "qspi_clk";
+   drive-strength = <8>;
+   bias-disable;
+  };
+
+  cs-pins {
+   pins = "gpio8";
+   function = "qspi_cs";
+   drive-strength = <8>;
+   bias-disable;
+  };
+
+  data-pins {
+   pins = "gpio4", "gpio5", "gpio6", "gpio7";
+   function = "qspi_data";
+   drive-strength = <8>;
+   bias-disable;
+  };
+ };
+
+ serial_0_pins: uart0-state {
+  pins = "gpio20", "gpio21";
+  function = "blsp0_uart0";
+  bias-disable;
+ };
+};
+# 4 "/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/ipq5018-xiaomi-cr8818-daily.dts" 2
+# 1 "/root/sources/yangfl_openwrt/target/linux/qualcommax/dts/ipq5018-qcn6122.dtsi" 1
+
+
+
+
+
+
+
+&q6_region {
+ reg = <0x0 0x4b000000 0x0 0x3000000>;
+};
+
+&q6v5_wcss {
+ compatible = "qcom,ipq5018-q6-mpd";
+
+ firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
+   "ath11k/IPQ5018/hw1.0/m3_fw.mdt",
+    "ath11k/QCN6122/hw1.0/m3_fw.mdt";
+
+
+ q6_wcss_pd1: pd-1 {
+  firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt";
+
+  interrupts-extended =
+   <&wcss_smp2p_in 8 0>,
+   <&wcss_smp2p_in 9 0>,
+   <&wcss_smp2p_in 12 0>,
+   <&wcss_smp2p_in 11 0>;
+  interrupt-names =
+   "fatal",
+   "ready",
+   "spawn-ack",
+   "stop-ack";
+
+  qcom,smem-states =
+   <&wcss_smp2p_out 8>,
+   <&wcss_smp2p_out 9>,
+   <&wcss_smp2p_out 10>;
+  qcom,smem-state-names =
+   "shutdown",
+   "stop",
+   "spawn";
+ };
+
+
+ q6_wcss_pd2: pd-2 {
+  firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt";
+
+  interrupts-extended =
+   <&wcss_smp2p_in 16 0>,
+   <&wcss_smp2p_in 17 0>,
+   <&wcss_smp2p_in 20 0>,
+   <&wcss_smp2p_in 19 0>;
+  interrupt-names =
+   "fatal",
+   "ready",
+   "spawn-ack",
+   "stop-ack";
+
+  qcom,smem-states =
+   <&wcss_smp2p_out 16>,
+   <&wcss_smp2p_out 17>,
+   <&wcss_smp2p_out 18>;
+  qcom,smem-state-names =
+   "shutdown",
+   "stop",
+   "spawn";
+ };
+
+
+ q6_wcss_pd3: pd-3 {
+  firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt";
+
+  interrupts-extended =
+   <&wcss_smp2p_in 24 0>,
+   <&wcss_smp2p_in 25 0>,
+   <&wcss_smp2p_in 28 0>,
+   <&wcss_smp2p_in 27 0>;
+  interrupt-names =
+   "fatal",
+   "ready",
+   "spawn-ack",
+   "stop-ack";
+
+  qcom,smem-states =
+   <&wcss_smp2p_out 24>,
+   <&wcss_smp2p_out 25>,
+   <&wcss_smp2p_out 26>;
+  qcom,smem-state-names =
+   "shutdown",
+   "stop",
+   "spawn";
+ };
+};
+
+&soc {
+
+ wifi1: wifi@b00a040 {
+  reg = <0x0b00a040 0x0>;
+  compatible = "qcom,qcn6122-wifi";
+  interrupts = <0 416 1>,
+        <0 417 1>,
+        <0 418 1>,
+        <0 419 1>,
+        <0 420 1>,
+        <0 421 1>,
+        <0 422 1>,
+        <0 423 1>,
+        <0 424 1>,
+        <0 425 1>,
+        <0 426 1>,
+        <0 427 1>,
+        <0 428 1>;
+  status = "disabled";
+ };
+
+
+ wifi2: wifi@b00b040 {
+  reg = <0x0b00b040 0x0>;
+  compatible = "qcom,qcn6122-wifi";
+  interrupts = <0 448 1>,
+        <0 449 1>,
+        <0 450 1>,
+        <0 451 1>,
+        <0 452 1>,
+        <0 453 1>,
+        <0 454 1>,
+        <0 455 1>,
+        <0 456 1>,
+        <0 457 1>,
+        <0 458 1>,
+        <0 459 1>,
+        <0 460 1>;
+  status = "disabled";
+ };
+};
+# 5 "/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/ipq5018-xiaomi-cr8818-daily.dts" 2
+
+/ {
+ model = "Xiaomi CR8818";
+ compatible = "xiaomi,cr8818", "qcom,ipq5018";
+
+ aliases {
+  label-mac-device = &gmac0;
+  led-boot = &led_system_blue;
+  led-failsafe = &led_system_red;
+  led-running = &led_system_blue;
+  led-upgrade = &led_system_red;
+ };
+
+ keys {
+  compatible = "gpio-keys";
+
+  pinctrl-0 = <&button_pins>;
+  pinctrl-names = "default";
+
+  reset-button {
+   label = "reset";
+   gpios = <&tlmm 38 1>;
+   linux,code = <0x198>;
+  };
+
+  mesh-button {
+   label = "mesh";
+   gpios = <&tlmm 28 1>;
+   linux,code = <0x100>;
+  };
+ };
+
+ leds {
+  compatible = "gpio-leds";
+
+  pinctrl-0 = <&leds_pins>;
+  pinctrl-names = "default";
+
+  led_system_blue: system-blue {
+   color = <3>;
+   function = "power";
+   gpios = <&tlmm 24 0>;
+  };
+
+  led_system_red: system-red {
+   color = <1>;
+   function = "power";
+   gpios = <&tlmm 25 0>;
+  };
+
+  led_internet_blue: internet-blue {
+   color = <3>;
+   function = "wan";
+   gpios = <&tlmm 26 0>;
+  };
+
+  led_internet_red: internet-red {
+   color = <1>;
+   function = "wan";
+   gpios = <&tlmm 27 0>;
+  };
+ };
+};
+
+&art {
+ nvmem-layout {
+  compatible = "fixed-layout";
+  #address-cells = <1>;
+  #size-cells = <1>;
+
+  mac_addr_gmac0: macaddr@0 {
+   reg = <0x0 0x6>;
+  };
+
+  mac_addr_gmac1: macaddr@6 {
+   reg = <0x6 0x6>;
+  };
+ };
+};
+
+&uniphy0 {
+ status = "okay";
+
+ assigned-clocks = <&uniphy0 2>;
+ assigned-clock-rates = <50000000>;
+};
+
+
+&gmac0 {
+ status = "okay";
+ label = "wan";
+ nvmem-cells = <&mac_addr_gmac0 0>;
+ nvmem-cell-names = "mac-address";
+};
+
+
+&gmac1 {
+ status = "okay";
+ phy-mode = "2500base-x";
+ nvmem-cells = <&mac_addr_gmac1 0>;
+ nvmem-cell-names = "mac-address";
+
+ fixed-link {
+  speed = <2500>;
+  full-duplex;
+  pause;
+  asym-pause;
+ };
+};
+
+&mdio0 {
+ status = "okay";
+};
+
+&ge_phy {
+ qcom,dac-preset-short-cable;
+};
+
+&mdio1 {
+ status = "okay";
+ pinctrl-0 = <&mdio1_pins>;
+ pinctrl-names = "default";
+ reset-gpios = <&tlmm 39 1>;
+
+
+ ethernet-switch@1d {
+  compatible = "motorcomm,yt9215";
+  reg = <0x1d>;
+
+  mdio {
+   #address-cells = <1>;
+   #size-cells = <0>;
+
+   sw_phy0: phy@0 { reg = <0x0>; };
+   sw_phy1: phy@1 { reg = <0x1>; };
+   sw_phy2: phy@2 { reg = <0x2>; };
+   sw_phy3: phy@3 { reg = <0x3>; };
+   sw_phy4: phy@4 { reg = <0x4>; };
+  };
+
+  ethernet-ports {
+   #address-cells = <1>;
+   #size-cells = <0>;
+
+   ethernet-port@0 {
+    reg = <0>;
+    label = "lan1";
+    phy-mode = "internal";
+    phy-handle = <&sw_phy0>;
+   };
+
+   ethernet-port@1 {
+    reg = <1>;
+    label = "lan2";
+    phy-mode = "internal";
+    phy-handle = <&sw_phy1>;
+   };
+
+   ethernet-port@2 {
+    reg = <2>;
+    label = "lan3";
+    phy-mode = "internal";
+    phy-handle = <&sw_phy2>;
+   };
+
+   ethernet-port@3 {
+    reg = <3>;
+    label = "sw-wan";
+    phy-mode = "internal";
+    phy-handle = <&sw_phy3>;
+   };
+
+   ethernet-port@4 {
+    reg = <4>;
+    label = "sw-cpu";
+    phy-mode = "internal";
+    phy-handle = <&sw_phy4>;
+   };
+
+   ethernet-port@8 {
+    reg = <8>;
+    phy-mode = "2500base-x";
+    ethernet = <&gmac1>;
+
+    fixed-link {
+     speed = <2500>;
+     full-duplex;
+     pause;
+     asym-pause;
+    };
+   };
+  };
+ };
+};
+
+&tlmm {
+ button_pins: button-state {
+  pins = "gpio38", "gpio28";
+  function = "gpio";
+  drive-strength = <8>;
+  bias-pull-up;
+ };
+
+ leds_pins: leds-state {
+  pins = "gpio24", "gpio25", "gpio26", "gpio27";
+  function = "gpio";
+  drive-strength = <8>;
+  bias-pull-down;
+ };
+};
+
+
+&wifi {
+ status = "okay";
+ qcom,rproc = <&q6_wcss_pd1>;
+ qcom,ath11k-calibration-variant = "Xiaomi-CR8818";
+ qcom,ath11k-fw-memory-mode = <1>;
+ qcom,bdf-addr = <0x4c400000>;
+};
+
+
+&wifi1 {
+ status = "okay";
+ qcom,rproc = <&q6_wcss_pd2>;
+ qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
+ qcom,ath11k-calibration-variant = "Xiaomi-CR8818";
+ qcom,ath11k-fw-memory-mode = <1>;
+ qcom,bdf-addr = <0x4d100000>;
+ qcom,m3-dump-addr = <0x4df00000>;
+};

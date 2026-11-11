@@ -47,4 +47,5 @@ target/
 # Do not ignore M4 audit logs and DTBs
 !artifacts/m4_logs/**
 !artifacts/m4_dtb/**
+!artifacts/m5_build/**
 

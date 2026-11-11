@@ -1,0 +1,48 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "CR8808-CUSTOM-FIRMWARE-DailyDriver-25.12.6",
+  "documentNamespace": "https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE/spdx/m5-daily",
+  "creationInfo": {
+    "created": "2026-11-11T01:30:43Z",
+    "creators": ["Tool: CR8808-M5-Build-Pipeline", "Organization: CR8808 Firmware Engineering Team"]
+  },
+  "packages": [
+    {
+      "name": "linux-kernel",
+      "SPDXID": "SPDXRef-Package-Linux",
+      "versionInfo": "6.12.112",
+      "downloadLocation": "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.112.tar.xz",
+      "licenseConcluded": "GPL-2.0-only"
+    },
+    {
+      "name": "openwrt-base",
+      "SPDXID": "SPDXRef-Package-OpenWrt",
+      "versionInfo": "25.12.6",
+      "downloadLocation": "https://git.openwrt.org/openwrt/openwrt.git",
+      "licenseConcluded": "GPL-2.0"
+    },
+    {
+      "name": "boringtun",
+      "SPDXID": "SPDXRef-Package-BoringTun",
+      "versionInfo": "0.7.1",
+      "downloadLocation": "https://github.com/cloudflare/boringtun/archive/refs/tags/boringtun-cli-0.7.1.tar.gz",
+      "licenseConcluded": "BSD-3-Clause"
+    },
+    {
+      "name": "apk-tools",
+      "SPDXID": "SPDXRef-Package-ApkTools",
+      "versionInfo": "3.0.0_pre6",
+      "downloadLocation": "https://gitlab.alpinelinux.org/alpine/apk-tools",
+      "licenseConcluded": "GPL-2.0-only"
+    },
+    {
+      "name": "ath11k-firmware",
+      "SPDXID": "SPDXRef-Package-Ath11kFirmware",
+      "versionInfo": "WLAN.HK.2.4.c8-00047-QCAHKSWPL_SILICONZ-1",
+      "downloadLocation": "https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git",
+      "licenseConcluded": "LicenseRef-Qualcomm-Redistributable"
+    }
+  ]
+}

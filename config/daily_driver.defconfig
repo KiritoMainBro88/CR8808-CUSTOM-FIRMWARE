@@ -1,33 +1,44 @@
 # OpenWrt 25.12.6 Daily Driver Configuration for Xiaomi CR8808 Ver.B (CR8818)
 # Target Architecture: Qualcomm Atheros IPQ50xx (AArch64 Cortex-A53)
+# Kernel Baseline: Linux 6.12.112 LTS (Dec 2028 EOL)
+# Note: Linux 6.18 LTS is quarantined to the separate Experimental development platform.
 CONFIG_TARGET_qualcommax=y
 CONFIG_TARGET_qualcommax_ipq50xx=y
 CONFIG_TARGET_qualcommax_ipq50xx_DEVICE_xiaomi_cr8818=y
+
+# Package Management: OpenWrt 25.12 apk (apk-tools v3)
+CONFIG_USE_APK=y
+CONFIG_PACKAGE_apk-tools=y
+# CONFIG_PACKAGE_opkg is not set
 
 # Base System & Storage Layout (128MB SPI NAND, 40MB rootfs_1 SquashFS)
 CONFIG_TARGET_ROOTFS_SQUASHFS=y
 CONFIG_TARGET_ROOTFS_PARTSIZE=40
 CONFIG_RUST_TOOLCHAIN_PREBUILT=y
 
-# Ethernet Switching & DSA Subsystem (Motorcomm YT9215SC)
+# Ethernet Switching & DSA Subsystem (Motorcomm YT9215SC, Clean Upstream DSA)
 CONFIG_PACKAGE_kmod-dsa=y
 CONFIG_PACKAGE_kmod-dsa-tag-yt921x=y
 CONFIG_PACKAGE_kmod-motorcomm-phy=y
-CONFIG_PACKAGE_kmod-sched-cake=y
 
-# Wireless Subsystem (Wi-Fi 6 802.11ax, 2.4GHz IPQ5018 + 5GHz QCN6102 HE160)
+# Traffic Shaping & Heavy Service Quarantine (256MB Physical RAM Constraint)
+# CAKE at near Gigabit speeds saturates dual Cortex-A53 CPUs; quarantined pending physical hardware measurement
+# CONFIG_PACKAGE_kmod-sched-cake is not set
+# CONFIG_PACKAGE_adguardhome is not set
+
+# Wireless Subsystem (Wi-Fi 6 802.11ax, 2.4GHz IPQ5018 + 5GHz QCN6102 HE160 160MHz)
 CONFIG_PACKAGE_kmod-ath11k=y
 CONFIG_PACKAGE_kmod-ath11k-pci=y
 CONFIG_PACKAGE_ath11k-firmware-ipq5018=y
 CONFIG_PACKAGE_ath11k-firmware-qcn6102=y
 CONFIG_PACKAGE_wpad-mbedtls=y
 
-# Firewall & Offload (firewall4 nftables flowtable)
+# Firewall & Offload (firewall4 nftables flowtable software offload)
 CONFIG_PACKAGE_firewall4=y
 CONFIG_PACKAGE_nftables=y
 CONFIG_PACKAGE_kmod-nft-flow-offload=y
 
-# Rust VPN Subsystem (BoringTun 0.7.1 Userspace WireGuard)
+# Rust VPN Subsystem (BoringTun 0.7.1 Userspace WireGuard, Patched for Issue #498 & #495)
 CONFIG_PACKAGE_boringtun=y
 CONFIG_PACKAGE_kmod-tun=y
 CONFIG_PACKAGE_wireguard-tools=y

@@ -1,0 +1,7 @@
+32a8d9cbcaa78e5d6a00cfebf6f0b73b6c36836a3db76d3fe447a672de70ff10  ipq5018-xiaomi-cr8818-daily.dts
+56fe7befb6bf05b81eaa0d305793f51f6e85705d4a798db4cf612be3ba378edd  ipq5018-xiaomi-cr8818-daily.dtb
+0e08633f672db27ed8bcbfac1c636220cad24d4bc4c0856e1d58f67edbd30372  kernel-6.12.112.config
+514bf364383925d8b2056aefcfbd4cd8d9f0333cda5b118168a73068701e131c  uImage.itb
+1e92df9cf8592d082f4e6352970c1523958ca2b54330d650d3082100a04f99b6  openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-rootfs.squashfs
+b7e61f3ec9aa3c17f5771d0f4e3ec0e764fb7caab1386b7fa8e51b5f4e3f3250  openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-factory.ubi
+6983cfc15ff935d24cb1f79b7e133d9914fda4d0c08618388fa8ea6e4c7a017c  openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-sysupgrade.bin

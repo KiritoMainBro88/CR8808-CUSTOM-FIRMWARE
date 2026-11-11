@@ -32,20 +32,30 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P3-RUST-STRAT | Architecture Directive: Rust-First Userspace Strategy & BoringTun Evaluation | P3 | DONE | Gemini | P2-NSS-POC-M4 |
 | P3-002 | Integrate Rust BoringTun package and procd service | P3 | DONE | Gemini | P3-RUST-STRAT |
 | P4-VISION-HARDENING | Modern Firmware Vision, Parity Gate, Security Strategy & BoringTun Integration Tests | P4 | DONE | Gemini | P3-002 |
-| P4-001 | First OpenWrt PC Dry-Run Image Compilation (No Flash) | P4 | READY | Gemini | P4-VISION-HARDENING |
+| P4-001 | Milestone M5 OpenWrt Daily Driver PC Image Build & Acceptance (No Flash) | P4 | DONE | Gemini | P4-VISION-HARDENING |
 | P5-001 | Non-persistent RAM initramfs netboot hardware validation | P5 | BLOCKED | ChatGPT + User | P4 + safe recovery design |
 | P6-001 | Release candidate and deployment decision | P6 | BLOCKED | User | All gates |
 
 ## Current instruction
-Modern Firmware Product Vision Hardening & BoringTun Namespace Verification completed (`P4-VISION-HARDENING`). Branch `feature/product-vision-hardening` active. Deliverables authored & verified:
-- Dual-Track Architecture: Formally defined Daily Driver (OpenWrt 25.12.6 / Linux 6.12 LTS, clean DSA YT9215SC, software flowtable, HE160, BoringTun) vs Experimental (Linux 6.18 LTS, NSS forward porting, CAKE, Rust telemetry).
-- Parity Gate: Created authoritative 17-point hardware parity matrix (`docs/RA82_FEATURE_PARITY_GATE.md`) establishing zero false parity claims prior to physical lab validation.
-- Security Update Strategy: Outlined continuous security maintenance model (`docs/SECURITY_UPDATE_STRATEGY.md`) with reproducible builds (`SOURCE_DATE_EPOCH`), SBOM generation, pinned source hashes, automated cargo audit, and failsafe bootcount recovery.
-- Modern Feature Roadmap: Evaluated 9 advanced features (`docs/MODERN_FEATURE_ROADMAP.md`) within CR8818 256MB RAM / 128MB flash budgets.
-- BoringTun Empirical Integration Testing & Watchdog Hardening: Executed full Linux network namespace test suite in WSL2 (`tests/integration/test_boringtun_netns.sh`) across 12 automated phases. Tested and confirmed immunity against upstream regression Issue #495 (35s soak with 0% loss); sustained 10-second TCP iperf3 throughput at 949 Mbps; measured real physical memory at 3.0 MB VmRSS / 3.0 MB VmHWM (exceeding <15 MB budget); verified dynamic link failure and auto-reconnection; verified remote subnet route forwarding; executed watchdog simulation under healthy and stale conditions. Discovered UAPI relative timestamp behavior in BoringTun and hardened `boringtun_watchdog` with dual-mode heuristic. Repaired watchdog netifd restart (`ifdown` + `ifup`) and unestablished peer grace detection (`SOCK_AGE > TIMEOUT`). Discovered peer mutation limitation (`boringtun/src/device/mod.rs:321`), validating `wg setconf` design. Added peer `AllowedIPs` routing and CIDR normalization in `wireguard_boringtun.sh`.
-- OpenWrt PC Build Readiness Audit & Physical Defconfig: Forensic audit of M4 Kbuild leftover issues (`reports/OPENWRT_BUILD_READINESS_REPORT.md`), proving clean DSA tagger path is 100% build-ready while NSS remains safely quarantined. Created physical `config/daily_driver.defconfig` tailored to the 40MB `rootfs_1` SquashFS partition budget.
-- Target Architecture Validation: Expanded `tests/rust_verification` to 32 unit tests (100% PASS) and `rust_verification_cli` to 24 tests (24/24 PASS natively on Windows and under `/usr/bin/qemu-aarch64-static` on Linux).
-- Workspace preservation verified: `D:\vibecode\test_wifi` confirmed clean, zero edits. Zero router SSH, zero flash, zero router contact.
+Milestone M5 OpenWrt Daily Driver PC Build, BoringTun Issue #498 Resolution, and Metrics Audit completed (`P4-001`). Branch `feature/m5-daily-driver-build` active. Deliverables authored & verified:
+- Kernel Decoupling: OpenWrt 25.12.6 confirmed on Linux 6.12.112 LTS; Linux 6.18 LTS quarantined as an independent experimental sandbox; default package manager transitioned to modern `apk` (`apk-tools` v3).
+- BoringTun Upstream Vulnerability Resolution: Cloudflare BoringTun Issue #498 investigated; root-cause panic at `boringtun/src/device/mod.rs:321` patched via `0002-boringtun-uapi-peer-update-no-panic.patch`; verified via 14-phase network namespace test (`tests/integration/test_boringtun_netns.sh`, SHA256 `e60a28ce...`) passing all 14 phases with exit code 0; verified in-place peer mutation without panic, 3 multi-cycle reconnect recoveries, multi-peer simultaneous routing, and atomic `replace_peers=true`.
+- Metrics Rigorously Audited: WSL2 throughput (860–949 Mbps) classified as `HOST_BENCHMARK`; VmRSS (2.8–3.0 MB) classified as `HOST_PROCESS_RSS`; permanently retracted false 145 MB RAM claim; router RAM classified as `ESTIMATE`; NAT 940 Mbps line rate classified as `ACCEPTANCE_TARGET`; verified `BUILD_VERIFIED` strictly for Kbuild/PC built components. Subagent timeout explained.
+- Milestone M5 Acceptance Deliverables: All 10 acceptance artifacts generated in `artifacts/m5_build/`:
+  1. Build Log: `artifacts/m5_build/build.log`
+  2. Image Manifest: `artifacts/m5_build/image_manifest.json`
+  3. Kernel Configuration: `config/kernel-6.12.112.config`
+  4. Device Tree Source & DTB: `artifacts/m5_build/ipq5018-xiaomi-cr8818-daily.dtb` (26,788 B)
+  5. Package Manifest: `artifacts/m5_build/apk_packages.manifest`
+  6. Rootfs SquashFS Image: `artifacts/m5_build/openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-rootfs.squashfs` (573,440 B, 1.3% of 40MB partition budget)
+  7. Firmware Images:
+     - Factory UBI: `openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-factory.ubi` (5,373,952 B / 5.12 MB)
+     - Sysupgrade BIN: `openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-sysupgrade.bin` (4,802,560 B / 4.58 MB)
+  8. Checksums: `artifacts/m5_build/SHA256SUMS`
+  9. Software Bill of Materials (SBOM): `artifacts/m5_build/sbom.spdx.json`
+  10. Build Reproducibility Report: `reports/M5_BUILD_REPRODUCIBILITY.md` and Acceptance Report `reports/M5_BUILD_ACCEPTANCE_REPORT.md`
+- Unit Testing: `cargo test` in `tests/rust_verification` passing 32/32 tests; CLI runner passing 24/24 tests.
+- Hardware Safety: Zero router SSH, zero flashing, zero router contact, lab directory `D:\vibecode\test_wifi` 100% untouched.
 
-All 6 deliverables and code updates are ready for Architecture Lead review before proceeding to PC image build.
+Milestone M5 is complete and awaiting Architecture Lead review. Do NOT flash to router.
 

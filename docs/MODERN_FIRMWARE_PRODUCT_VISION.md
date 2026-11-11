@@ -48,19 +48,22 @@ To resolve the tension between software freshness and hardware stability, the fi
 
 ### 2.1 The Daily Driver Track (Production & Stability First)
 - **Target Audience:** Daily home/office router deployment where downtime, packet loss, or wireless glitches are unacceptable.
-- **Upstream Base:** OpenWrt 25.12.x Stable Release Series (specifically OpenWrt 25.12.6, released October 18, 2026, Linux Kernel 6.12 LTS).
-- **Core Kernel:** Linux 6.12 LTS (tested, verified OpenWrt target patches).
+- **Upstream Base:** OpenWrt 25.12.x Stable Release Series (specifically OpenWrt 25.12.6, Linux Kernel 6.12.112 LTS).
+- **Core Kernel:** Linux 6.12.112 LTS (tested, verified OpenWrt target patches, EOL Dec 2028).
+- **Package Manager:** `apk` (`apk-tools` v3, Alpine-derived OpenWrt 25.12 package management).
 - **Network Datapath:** Clean Linux Distributed Switch Architecture (DSA) using the upstreamed Motorcomm YT9215SC driver (`tag_yt921x.c`) and Linux software flowtable offload (`nftables` / `flow offload`).
-- **Hardware Parity Acceptance:**
+- **Heavy Services Quarantine:** SQM/CAKE and AdGuardHome are decoupled and quarantined from default daily inclusion due to CR8808's 256MB RAM and dual Cortex-A53 CPU limits (CAKE near Gigabit saturates dual A53 cores; AdGuardHome requires 60-100MB RAM).
+- **Hardware Parity Acceptance Targets:**
   - 1x WAN + 3x LAN independent gigabit addressing.
   - Wi-Fi 6 (802.11ax) on 2.4 GHz (574 Mbps) and 5 GHz with **HE160 160 MHz channel width (2402 Mbps)**.
-  - Gigabit line-rate NAT (940+ Mbps) with <60% host CPU utilization under software flowtable.
-  - Qualcomm NSS offload is integrated **only if** hardware verification shows zero memory exhaustion or kernel panics; otherwise clean software flowtable is the production default.
+  - Gigabit line-rate NAT (940+ Mbps) with <60% host CPU utilization under software flowtable (`ACCEPTANCE_TARGET`).
+  - Qualcomm NSS offload is strictly excluded from Daily Driver and quarantined in the Experimental track.
 - **Userspace Services:**
   - `firewall4` (`nftables` backend).
-  - BoringTun Rust (`boringtun-cli 0.7.1`) as the userspace WireGuard engine (measured 3.0 MB physical RSS).
+  - BoringTun Rust (`boringtun-cli 0.7.1` with signalfd and Issue #498 peer update patches) as the userspace WireGuard engine.
   - Modern LuCI web administration with HTTPS/TLS.
   - Failsafe boot and automated configuration rollback.
+- **Safety Boundary:** PC build and network namespace verification ONLY. Flash authorization remains strictly `NO-GO` pending independent non-UART recovery validation.
 
 ### 2.2 The Experimental Track (Technology & Performance Frontier)
 - **Target Audience:** Engineering laboratory, performance benchmarking, and out-of-tree hardware acceleration research.
@@ -122,14 +125,16 @@ Firmware cannot transition from Experimental to Daily Driver without passing eve
 | Dimension                | Daily Driver Track           | Experimental Track           |
 +--------------------------+------------------------------+------------------------------+
 | Release Target           | OpenWrt 25.12.6 Stable       | OpenWrt Git Master Snapshot  |
-| Kernel Version           | Linux 6.12 LTS               | Linux 6.18 LTS (EOL 2028)    |
+| Kernel Version           | Linux 6.12.112 LTS (EOL 2028)| Linux 6.18 LTS (EOL 2028)    |
+| Package Manager          | apk (apk-tools v3)           | apk (apk-tools v3)           |
 | DSA Driver               | Clean YT9215SC DSA (upstream)| Enhanced Switchdev YT9215SC  |
 | Offload Architecture     | Software Flowtable (nftables)| Qualcomm NSS Acceleration    |
 | Wi-Fi Stack              | ath11k (upstream mac80211)   | ath11k + NSS Wi-Fi Offload   |
 | Wi-Fi 5GHz Link Rate     | HE160 2402 Mbps Verified     | HE160 2402 Mbps Verified     |
 | VPN Subsystem            | BoringTun Rust (musl static) | BoringTun Rust + eBPF Tun    |
-| Quality of Service       | Standard FQ-CoDel            | CAKE SQM Hardware Paced      |
-| Host Memory Usage        | < 85 MB Idle RSS             | < 120 MB Idle RSS (NSS alloc)|
-| Deployment Status        | Flashable Image (Post-P4)    | PC Build & Namespaces ONLY   |
+| Quality of Service       | Standard FQ-CoDel            | CAKE SQM (Quarantined)       |
+| Host Memory Profile      | ESTIMATE: 140-150MB free     | ESTIMATE: ~120MB free        |
+| NAT Throughput Target    | ACCEPTANCE_TARGET: 940+ Mbps | ACCEPTANCE_TARGET: Line-rate |
+| Deployment Status        | PC Build Complete (NO-GO)    | PC Build & Namespaces ONLY   |
 +--------------------------+------------------------------+------------------------------+
 ```
