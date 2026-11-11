@@ -71,12 +71,18 @@ let (endpoint, allowed_ips_vec, keepalive, preshared_key) =
         tracing::warn!("Updating existing peer; cycling peer to apply new parameters without panic");
         let p = existing_peer.lock();
         let ep = endpoint.or(p.endpoint().addr);
-        let ips = if !allowed_ips.is_empty() || _replace_ips {
+        let ips = if _replace_ips {
             allowed_ips.to_vec()
         } else {
-            p.allowed_ips()
+            let mut current_ips: Vec<AllowedIP> = p.allowed_ips()
                 .map(|(addr, cidr)| AllowedIP { addr, cidr })
-                .collect()
+                .collect();
+            for ip in allowed_ips {
+                if !current_ips.contains(ip) {
+                    current_ips.push(*ip);
+                }
+            }
+            current_ips
         };
         let ka = keepalive.or_else(|| p.persistent_keepalive());
         let psk = preshared_key.or_else(|| p.preshared_key().copied());
@@ -87,28 +93,42 @@ let (endpoint, allowed_ips_vec, keepalive, preshared_key) =
         (endpoint, allowed_ips.to_vec(), keepalive, preshared_key)
     };
 ```
+> **Critical Companion Fix (AllowedIP Append Semantics):** The initial implementation erroneously used `if !allowed_ips.is_empty() || _replace_ips`, which caused incremental `allowed-ips` appends (without `replace_allowed_ips=true`) to wipe out existing allowed IPs. The corrected logic strictly adheres to WireGuard cross-platform UAPI specifications by checking `_replace_ips` directly and merging non-duplicate IPs when appending.
+
 ### 3.3 Verification of Fix:
-In Step 10 of our empirical namespace test, an active, handshaken peer was updated in-place via:
+In Step 10 and Step 12 of our empirical namespace test:
+1. An active peer was updated in-place via:
 ```bash
 ip netns exec ns-router wg set wg0 peer "$PEER_PUB" endpoint 10.0.0.2:51821 persistent-keepalive 30
 ```
 - **Exit Code:** `0` (Success).
 - **Process Health:** Router BoringTun PID remained fully alive and responsive.
-- **Traffic Continuity:** Immediate 3-packet ping verification through the modified peer passed with **0% packet loss** (rtt avg = 0.38 ms).
+- **Traffic Continuity:** Immediate 3-packet ping verification through the modified peer passed with **0% packet loss**.
+2. Incremental AllowedIP append was verified via direct UAPI injection (`test_allowed_ips.sh` and Step 12), confirming both initial tunnel IP and newly appended subnet (`192.168.100.2/32 192.168.200.0/24`) remained registered and routable.
 
 ---
 
-## 4. Deep Investigation: Issue #495 (Keepalive & Timer Desynchronization)
+## 4. Deep Investigation: Issue #495 (Keepalive, Timers & Rekey Verification)
 
 ### 4.1 What is Issue #495?
 - **Issue Reference:** `cloudflare/boringtun#495` (*"0.7.1 regression: sessions go one-way deaf ~15-30s after handshake"*).
 - **Root Cause:** In BoringTun's internal noise state machine (`boringtun/src/noise/timers.rs`), at $T = 15$ seconds (`KEEPALIVE_TIMEOUT` (10s) + `REKEY_TIMEOUT` (5s)), `update_timers()` returns `TunnResult::WriteToNetwork(packet)` requesting a keepalive/handshake transmission. In embedded library usage, if the host application fails to service timers or fails to send the packet, session keys expire (`REJECT_AFTER_TIME`), causing one-way deafness.
 
-### 4.2 Why `boringtun-cli` on CR8818 is Immune
-In `boringtun-cli`, daemon execution is managed by `Device` and `EventPoll` (`boringtun/src/device/mod.rs`):
-- A dedicated timer event fires every **250 ms**, continuously driving `update_timers()` across all active peers.
-- Any resulting `WriteToNetwork` packet is immediately dispatched to the bound UDP socket.
-- Our empirical test soaked the connection across 20s and 35s idle periods, followed by 3 multi-cycle link disconnects and reconnects. **0% packet loss occurred.**
+### 4.2 Reviewer Feedback & The 120-Second Rekey Reality
+The Architecture Review correctly criticized previous conclusions that claimed complete immunity to Issue #495 based solely on a 35-second test. In WireGuard protocol:
+- Initial keepalive occurs at $T = 10\text{–}25$s.
+- `REKEY_AFTER_TIME` is **120 seconds**.
+- `REJECT_AFTER_TIME` is **180 seconds**.
+
+A 35-second test tests the initial timer window, but **never reaches a cryptographic rekey**. To provide empirical evidence of rekey survival:
+1. **Dedicated Rekey Verification Suite (`tests/integration/test_rekey.sh`):**
+   - Active bidirectional traffic was streamed continuously across the 120s threshold.
+   - At **T = 122 seconds**, a live cryptographic rekey was observed: `latest-handshake` relative timestamp cleanly reset to 0s.
+   - All 61 pings during the transition succeeded with **0% packet loss**.
+2. **Extended 60-Minute Soak Suite (`tests/integration/soak_boringtun_60m.sh`):**
+   - Implemented an automated standalone test executing continuous bidirectional ping and iperf3 traffic for up to 3,600 seconds (60 minutes).
+   - Tracks rekey cycle counts, VmRSS memory growth, and periodic UAPI mutations under continuous traffic.
+   - **Root Cause of Prior Task Termination:** In previous runs, unmonitored commands exceeding interactive CLI execution limits triggered task termination. Hardened scripts now employ deterministic, bounded iteration with structured telemetry.
 
 ---
 
@@ -116,13 +136,12 @@ In `boringtun-cli`, daemon execution is managed by `Device` and `EventPoll` (`bo
 
 ### 5.1 Test Execution Metadata
 - **Script:** `/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/tests/integration/test_boringtun_netns.sh`
-- **Script SHA256:** `e60a28ce0f59712c155a030002262861e067c41c6c0daac2d18eb8da19e6e5b3`
-- **Start Time:** 2026-11-11T01:22:38Z
-- **Total Test Duration:** 85 seconds
+- **Script SHA256:** `03d54aea4c59690a52552c581f80fedec756623c07baffa65a511f2f06c31634`
+- **Total Test Duration:** 156 seconds across 15 test phases
 - **Final Exit Code:** 0
 
 ### 5.2 Raw Process Status (`/proc/PID/status`)
-**Idle State (PID 444):**
+**Idle State (PID 447):**
 ```text
 Name:	boringtun-cli
 State:	S (sleeping)
@@ -194,6 +213,11 @@ Three consecutive physical link outages (`veth-r down` -> sleep -> `veth-r up` -
 - Verified Peer 2 was atomically removed from the active device table (`wg show wg0 peers | wc -l == 1`).
 - Verified Peer 1 communication remained operational with 0% packet loss.
 
+### 5.7 Live Cryptographic Rekey Verification (REKEY_AFTER_TIME >= 120s)
+- In dedicated rekey verification (`tests/integration/test_rekey.sh`), continuous bidirectional ping traffic was transmitted across the 120-second threshold.
+- At **T = 122 seconds**, a cryptographic rekey was observed: `latest-handshake` relative timestamp cleanly reset to 0 seconds.
+- All 61 packets transmitted across the transition were received with **0% packet loss**.
+
 ---
 
 ## 6. Summary of Acceptance Criteria vs. Actuals
@@ -205,9 +229,12 @@ Three consecutive physical link outages (`veth-r down` -> sleep -> `veth-r up` -
 | **Throughput (TCP iperf3)** | Line rate capability | **859.95 Mbps** (1.07 GB sent) | `HOST_BENCHMARK` | **PASS** |
 | **Host CPU Utilization** | Informational | **2.12% Total** | `HOST_BENCHMARK` | **PASS** |
 | **Issue #498 (UAPI Update)** | Zero panic, zero crash | **Exit Code 0, 0% packet loss** | `EMPIRICAL_TEST` | **PASS** |
-| **Issue #495 (Soak 35s)** | Zero packet loss | **0% loss** (3/3 received, RTT 0.20 ms) | `EMPIRICAL_TEST` | **PASS** |
+| **UAPI AllowedIP Append** | WireGuard UAPI compliance | **`192.168.100.2/32 192.168.200.0/24`** | `EMPIRICAL_TEST` | **PASS** |
+| **Issue #495 Initial Window (35s)** | Zero packet loss | **0% loss** (3/3 received, RTT 0.17 ms) | `EMPIRICAL_TEST` | **PASS (Initial Window)** |
+| **Cryptographic Rekey (T>=120s)** | Seamless key rotation | **Rekey at T=122s, 0% loss (61/61)** | `EMPIRICAL_TEST` | **PASS (Live Rekey)** |
 | **Multi-Cycle Reconnect** | 3 consecutive outages | **3/3 cycles recovered (0% loss)** | `EMPIRICAL_TEST` | **PASS** |
 | **Multi-Peer Routing** | Simultaneous 2-peer traffic | **2/2 peers reachable (0% loss)** | `EMPIRICAL_TEST` | **PASS** |
 | **Remote Subnet Forwarding** | Route encapsulation | **0% loss** (3/3 received, RTT 0.34 ms) | `EMPIRICAL_TEST` | **PASS** |
 | **replace_peers Semantics** | Atomic peer flush | **Verified via wg setconf (1 peer)** | `EMPIRICAL_TEST` | **PASS** |
 | **Watchdog Stale Detection** | Detects timeout & grace | **Verified (zero false alarms)** | `EMPIRICAL_TEST` | **PASS** |
+| **Extended Soak Suite (60m)** | Multi-rekey soak architecture | **Automated script `soak_boringtun_60m.sh`** | `TEST_SUITE` | **LANDED** |

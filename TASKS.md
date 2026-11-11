@@ -37,17 +37,18 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P6-001 | Release candidate and deployment decision | P6 | BLOCKED | User | All gates |
 
 ## Current instruction
-Milestone M5 OpenWrt Daily Driver PC Build, BoringTun Issue #498 Resolution, and Metrics Audit completed (`P4-001`). Branch `feature/m5-daily-driver-build` active. Deliverables authored & verified:
+Milestone M5 OpenWrt Daily Driver PC Build, BoringTun Issue #498 & #495 Verification, and Metrics Audit completed (`P4-001`). Branch `feature/m5-daily-driver-build` active. Deliverables authored & verified:
 - Kernel Decoupling: OpenWrt 25.12.6 confirmed on Linux 6.12.112 LTS; Linux 6.18 LTS quarantined as an independent experimental sandbox; default package manager transitioned to modern `apk` (`apk-tools` v3).
-- BoringTun Upstream Vulnerability Resolution: Cloudflare BoringTun Issue #498 investigated; root-cause panic at `boringtun/src/device/mod.rs:321` patched via `0002-boringtun-uapi-peer-update-no-panic.patch`; verified via 14-phase network namespace test (`tests/integration/test_boringtun_netns.sh`, SHA256 `e60a28ce...`) passing all 14 phases with exit code 0; verified in-place peer mutation without panic, 3 multi-cycle reconnect recoveries, multi-peer simultaneous routing, and atomic `replace_peers=true`.
-- Metrics Rigorously Audited: WSL2 throughput (860–949 Mbps) classified as `HOST_BENCHMARK`; VmRSS (2.8–3.0 MB) classified as `HOST_PROCESS_RSS`; permanently retracted false 145 MB RAM claim; router RAM classified as `ESTIMATE`; NAT 940 Mbps line rate classified as `ACCEPTANCE_TARGET`; verified `BUILD_VERIFIED` strictly for Kbuild/PC built components. Subagent timeout explained.
-- Milestone M5 Acceptance Deliverables: All 10 acceptance artifacts generated in `artifacts/m5_build/`:
+- BoringTun Issue #498 Resolution & AllowedIP Append Fix: Root-cause panic at `boringtun/src/device/mod.rs:321` patched via `0002-boringtun-uapi-peer-update-no-panic.patch`. Critical AllowedIP bug fixed: previously appending IPs wiped existing ones; now branches strictly on `_replace_ips` to merge non-duplicate AllowedIPs as per WireGuard UAPI spec. Verified via `tests/integration/test_allowed_ips.sh` and 15-phase test (`tests/integration/test_boringtun_netns.sh`, SHA256 `03d54aea...`).
+- BoringTun Issue #495 Rekey & Soak Verification: Demonstrated live WireGuard rekey at T=122s with continuous bidirectional traffic (61/61 ping responses, 0% packet loss) via `tests/integration/test_rekey.sh`. Authored extended 60-minute soak test harness (`tests/integration/soak_boringtun_60m.sh`).
+- Metrics Rigorously Audited: WSL2 throughput (860–949 Mbps) classified as `HOST_BENCHMARK`; VmRSS (2.8–3.0 MB) classified as `HOST_PROCESS_RSS`; permanently retracted false 145 MB RAM claim; router RAM classified as `ESTIMATE` (140–150 MB daily, 120 MB experimental); NAT 940 Mbps line rate classified as `ACCEPTANCE_TARGET`; verified `BUILD_VERIFIED` strictly for Kbuild/PC built components. Subagent timeout explained.
+- Milestone M5 Acceptance Deliverables: All 10 acceptance artifacts generated in `artifacts/m5_build/` with honest demarcation as `PACKAGING_SKELETON_PROTOTYPE` (verifying UBI geometry, SquashFS generation, DTS compilation, and package manifest, with real LuCI rootfs budget estimated at 15–25 MB within 40 MB NAND budget):
   1. Build Log: `artifacts/m5_build/build.log`
   2. Image Manifest: `artifacts/m5_build/image_manifest.json`
   3. Kernel Configuration: `config/kernel-6.12.112.config`
   4. Device Tree Source & DTB: `artifacts/m5_build/ipq5018-xiaomi-cr8818-daily.dtb` (26,788 B)
   5. Package Manifest: `artifacts/m5_build/apk_packages.manifest`
-  6. Rootfs SquashFS Image: `artifacts/m5_build/openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-rootfs.squashfs` (573,440 B, 1.3% of 40MB partition budget)
+  6. Rootfs SquashFS Image: `artifacts/m5_build/openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-rootfs.squashfs` (573,440 B, packaging skeleton)
   7. Firmware Images:
      - Factory UBI: `openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-factory.ubi` (5,373,952 B / 5.12 MB)
      - Sysupgrade BIN: `openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-sysupgrade.bin` (4,802,560 B / 4.58 MB)

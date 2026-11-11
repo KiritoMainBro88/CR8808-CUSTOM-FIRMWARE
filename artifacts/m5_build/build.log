@@ -352,3 +352,231 @@ MILESTONE M5 DAILY DRIVER BUILD COMPLETE
 Total Build Time: 8 seconds
 All Artifacts Successfully Landed at: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build
 ====================================================================
+====================================================================
+Milestone M5: Full PC-Side OpenWrt Daily Driver Build Pipeline
+Project: CR8808-CUSTOM-FIRMWARE (AArch64 Cortex-A53)
+Target Platform: OpenWrt 25.12.6 / Linux 6.12.112
+Package Manager: apk (apk-tools v3, Alpine-derived OpenWrt 25.12)
+Hardware Profile: Xiaomi CR8808 Ver.B (CR8818)
+Build Host: Linux WSL2 6.6.87.2-microsoft-standard-WSL2 x86_64
+Started At: 2026-11-11T01:59:22Z
+====================================================================
+
+--- Step 1: Compiling Daily Driver Device Tree (ipq5018-cr8818-daily.dtb) ---
+/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi:313.25-316.6: Warning (unique_unit_address): /soc@0/qfprom@a0000/mode@249: duplicate unit-address (also used in node /soc@0/qfprom@a0000/base1@249)
+/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi:333.27-336.6: Warning (unique_unit_address): /soc@0/qfprom@a0000/s0-p2@24c: duplicate unit-address (also used in node /soc@0/qfprom@a0000/s1-p1@24c)
+/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi:353.27-356.6: Warning (unique_unit_address): /soc@0/qfprom@a0000/s2-p2@24f: duplicate unit-address (also used in node /soc@0/qfprom@a0000/s3-p1@24f)
+/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi:456.25-472.5: Warning (interrupt_provider): /soc@0/pinctrl@1000000: Missing #address-cells in interrupt provider
+  also defined at /root/sources/yangfl_openwrt/target/linux/qualcommax/dts/ipq5018-xiaomi-base.dtsi:186.7-231.3
+  also defined at /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/ipq5018-xiaomi-cr8818-daily.dts:200.7-214.3
+/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi:1215.31-1219.5: Warning (interrupt_provider): /smp2p-wcss/slave-kernel: Missing #address-cells in interrupt provider
+DTB compiled: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/ipq5018-xiaomi-cr8818-daily.dtb (26788 bytes)
+
+--- Step 2: Generating Kernel 6.12.112 Configuration ---
+Kernel configuration generated at /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/kernel-6.12.112.config (80 lines)
+
+--- Step 3: Assembling OpenWrt 25.12.6 Root Filesystem Tree ---
+[PROTOTYPE NOTE] Rootfs contains real patched BoringTun daemon and authoritative OpenWrt configuration/netifd scripts, with placeholder stubs for base utilities. Full OpenWrt distribution buildroot compilation is required for physical boot.
+
+--- Step 4: Compressing SquashFS Root Filesystem (XZ, 256k blocks) ---
+Parallel mksquashfs: Using 24 processors
+Creating 4.0 filesystem on /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-rootfs.squashfs, block size 262144.
+[=================================================================|] 17/17 100%
+
+Exportable Squashfs 4.0 filesystem, xz compressed, data block size 262144
+	compressed data, compressed metadata, compressed fragments,
+	compressed xattrs, compressed ids
+	duplicates are removed
+Filesystem size 556.93 Kbytes (0.54 Mbytes)
+	35.19% of uncompressed filesystem size (1582.48 Kbytes)
+Inode table size 402 bytes (0.39 Kbytes)
+	21.68% of uncompressed inode table size (1854 bytes)
+Directory table size 590 bytes (0.58 Kbytes)
+	63.85% of uncompressed directory table size (924 bytes)
+Number of duplicate files found 19
+Number of inodes 57
+Number of files 30
+Number of fragments 1
+Number of symbolic links 0
+Number of device nodes 0
+Number of fifo nodes 0
+Number of socket nodes 0
+Number of directories 27
+Number of ids (unique uids + gids) 1
+Number of uids 1
+	root (0)
+Number of gids 1
+	root (0)
+Rootfs Image created: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-rootfs.squashfs
+  Size: 573440 bytes (.54 MB)
+  Flash Budget (rootfs_1): 40 MB
+  [PASS] Rootfs prototype fits within 40MB SPI NAND partition (utilization: 1.3%)
+
+--- Step 5: Generating U-Boot FIT Image (uImage.itb) ---
+[PROTOTYPE NOTE] FIT image wraps compiled Device Tree Blob (ipq5018-xiaomi-cr8818-daily.dtb) with synthetic kernel test payload. Full Kbuild compilation of Linux 6.12.112 LTS is decoupled and preserved in config/kernel-6.12.112.config.
+FIT description: ARM64 OpenWrt FIT (Flattened Image Tree)
+Created:         Wed Nov 11 08:59:28 2026
+ Image 0 (kernel-1)
+  Description:  ARM64 OpenWrt Linux-6.12.112
+  Created:      Wed Nov 11 08:59:28 2026
+  Type:         Kernel Image
+  Compression:  gzip compressed
+  Data Size:    4194983 Bytes = 4096.66 KiB = 4.00 MiB
+  Architecture: AArch64
+  OS:           Linux
+  Load Address: 0x44000000
+  Entry Point:  0x44000000
+  Hash algo:    crc32
+  Hash value:   175f78b7
+  Hash algo:    sha1
+  Hash value:   9880886b499544b9da2aef9e1d19f3deb72a34e9
+ Image 1 (fdt-1)
+  Description:  ARM64 OpenWrt Xiaomi CR8818 device tree blob
+  Created:      Wed Nov 11 08:59:28 2026
+  Type:         Flat Device Tree
+  Compression:  uncompressed
+  Data Size:    26788 Bytes = 26.16 KiB = 0.03 MiB
+  Architecture: AArch64
+  Hash algo:    crc32
+  Hash value:   f314c3df
+  Hash algo:    sha1
+  Hash value:   06524b98f3d50e937ace3751504185049649762f
+ Default Configuration: 'config-1'
+ Configuration 0 (config-1)
+  Description:  OpenWrt Xiaomi CR8818
+  Kernel:       kernel-1
+  FDT:          fdt-1
+FIT Image created: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/uImage.itb (4223676 bytes)
+
+--- Step 6: Assembling UBI Images (ubinize) ---
+Factory UBI Image: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-factory.ubi (5373952 bytes)
+Sysupgrade Image:  /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-sysupgrade.bin (4802560 bytes)
+
+--- Step 7: Generating Manifests, Checksums, SBOM & Reproducibility Report ---
+32a8d9cbcaa78e5d6a00cfebf6f0b73b6c36836a3db76d3fe447a672de70ff10  ipq5018-xiaomi-cr8818-daily.dts
+56fe7befb6bf05b81eaa0d305793f51f6e85705d4a798db4cf612be3ba378edd  ipq5018-xiaomi-cr8818-daily.dtb
+0e08633f672db27ed8bcbfac1c636220cad24d4bc4c0856e1d58f67edbd30372  kernel-6.12.112.config
+b275d8c59ccfbcbd1e4c06c932d43e7db053be0aa72bd22d8bc3f61d5f775313  uImage.itb
+c9b341bd57cef349366ef1b8976e0a1b7b6a5ea550f49c8b83e6464f65f93543  openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-rootfs.squashfs
+e8c8f6ffb31531982508a25cd927b5e604fbcae650ec79170cbc06abcc33554a  openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-factory.ubi
+e7b95da215bf449818b6fe3a1936ff69aff0485a0d1bc3a21c5a7756ad90248d  openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-sysupgrade.bin
+
+====================================================================
+MILESTONE M5 DAILY DRIVER BUILD COMPLETE
+Total Build Time: 7 seconds
+All Artifacts Successfully Landed at: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build
+====================================================================
+====================================================================
+Milestone M5: Full PC-Side OpenWrt Daily Driver Build Pipeline
+Project: CR8808-CUSTOM-FIRMWARE (AArch64 Cortex-A53)
+Target Platform: OpenWrt 25.12.6 / Linux 6.12.112
+Package Manager: apk (apk-tools v3, Alpine-derived OpenWrt 25.12)
+Hardware Profile: Xiaomi CR8808 Ver.B (CR8818)
+Build Host: Linux WSL2 6.6.87.2-microsoft-standard-WSL2 x86_64
+Started At: 2026-11-11T02:07:54Z
+====================================================================
+
+--- Step 1: Compiling Daily Driver Device Tree (ipq5018-cr8818-daily.dtb) ---
+/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi:313.25-316.6: Warning (unique_unit_address): /soc@0/qfprom@a0000/mode@249: duplicate unit-address (also used in node /soc@0/qfprom@a0000/base1@249)
+/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi:333.27-336.6: Warning (unique_unit_address): /soc@0/qfprom@a0000/s0-p2@24c: duplicate unit-address (also used in node /soc@0/qfprom@a0000/s1-p1@24c)
+/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi:353.27-356.6: Warning (unique_unit_address): /soc@0/qfprom@a0000/s2-p2@24f: duplicate unit-address (also used in node /soc@0/qfprom@a0000/s3-p1@24f)
+/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi:456.25-472.5: Warning (interrupt_provider): /soc@0/pinctrl@1000000: Missing #address-cells in interrupt provider
+  also defined at /root/sources/yangfl_openwrt/target/linux/qualcommax/dts/ipq5018-xiaomi-base.dtsi:186.7-231.3
+  also defined at /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/ipq5018-xiaomi-cr8818-daily.dts:200.7-214.3
+/root/linux-dts/arch/arm64/boot/dts/qcom/ipq5018.dtsi:1215.31-1219.5: Warning (interrupt_provider): /smp2p-wcss/slave-kernel: Missing #address-cells in interrupt provider
+DTB compiled: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/ipq5018-xiaomi-cr8818-daily.dtb (26788 bytes)
+
+--- Step 2: Generating Kernel 6.12.112 Configuration ---
+Kernel configuration generated at /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/kernel-6.12.112.config (80 lines)
+
+--- Step 3: Assembling OpenWrt 25.12.6 Root Filesystem Tree ---
+[PROTOTYPE NOTE] Rootfs contains real patched BoringTun daemon and authoritative OpenWrt configuration/netifd scripts, with placeholder stubs for base utilities. Full OpenWrt distribution buildroot compilation is required for physical boot.
+
+--- Step 4: Compressing SquashFS Root Filesystem (XZ, 256k blocks) ---
+Parallel mksquashfs: Using 24 processors
+Creating 4.0 filesystem on /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-rootfs.squashfs, block size 262144.
+[=================================================================|] 17/17 100%
+
+Exportable Squashfs 4.0 filesystem, xz compressed, data block size 262144
+	compressed data, compressed metadata, compressed fragments,
+	compressed xattrs, compressed ids
+	duplicates are removed
+Filesystem size 556.93 Kbytes (0.54 Mbytes)
+	35.19% of uncompressed filesystem size (1582.48 Kbytes)
+Inode table size 402 bytes (0.39 Kbytes)
+	21.68% of uncompressed inode table size (1854 bytes)
+Directory table size 590 bytes (0.58 Kbytes)
+	63.85% of uncompressed directory table size (924 bytes)
+Number of duplicate files found 19
+Number of inodes 57
+Number of files 30
+Number of fragments 1
+Number of symbolic links 0
+Number of device nodes 0
+Number of fifo nodes 0
+Number of socket nodes 0
+Number of directories 27
+Number of ids (unique uids + gids) 1
+Number of uids 1
+	root (0)
+Number of gids 1
+	root (0)
+Rootfs Image created: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-rootfs.squashfs
+  Size: 573440 bytes (.54 MB)
+  Flash Budget (rootfs_1): 40 MB
+  [PASS] Rootfs prototype fits within 40MB SPI NAND partition (utilization: 1.3%)
+
+--- Step 5: Generating U-Boot FIT Image (uImage.itb) ---
+[PROTOTYPE NOTE] FIT image wraps compiled Device Tree Blob (ipq5018-xiaomi-cr8818-daily.dtb) with synthetic kernel test payload. Full Kbuild compilation of Linux 6.12.112 LTS is decoupled and preserved in config/kernel-6.12.112.config.
+FIT description: ARM64 OpenWrt FIT (Flattened Image Tree)
+Created:         Wed Nov 11 09:08:00 2026
+ Image 0 (kernel-1)
+  Description:  ARM64 OpenWrt Linux-6.12.112
+  Created:      Wed Nov 11 09:08:00 2026
+  Type:         Kernel Image
+  Compression:  gzip compressed
+  Data Size:    4194983 Bytes = 4096.66 KiB = 4.00 MiB
+  Architecture: AArch64
+  OS:           Linux
+  Load Address: 0x44000000
+  Entry Point:  0x44000000
+  Hash algo:    crc32
+  Hash value:   9e524645
+  Hash algo:    sha1
+  Hash value:   d61efaec1be85093e3453bfeff590477496b37a8
+ Image 1 (fdt-1)
+  Description:  ARM64 OpenWrt Xiaomi CR8818 device tree blob
+  Created:      Wed Nov 11 09:08:00 2026
+  Type:         Flat Device Tree
+  Compression:  uncompressed
+  Data Size:    26788 Bytes = 26.16 KiB = 0.03 MiB
+  Architecture: AArch64
+  Hash algo:    crc32
+  Hash value:   f314c3df
+  Hash algo:    sha1
+  Hash value:   06524b98f3d50e937ace3751504185049649762f
+ Default Configuration: 'config-1'
+ Configuration 0 (config-1)
+  Description:  OpenWrt Xiaomi CR8818
+  Kernel:       kernel-1
+  FDT:          fdt-1
+FIT Image created: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/uImage.itb (4223676 bytes)
+
+--- Step 6: Assembling UBI Images (ubinize) ---
+Factory UBI Image: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-factory.ubi (5373952 bytes)
+Sysupgrade Image:  /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build/openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-sysupgrade.bin (4802560 bytes)
+
+--- Step 7: Generating Manifests, Checksums, SBOM & Reproducibility Report ---
+32a8d9cbcaa78e5d6a00cfebf6f0b73b6c36836a3db76d3fe447a672de70ff10  ipq5018-xiaomi-cr8818-daily.dts
+56fe7befb6bf05b81eaa0d305793f51f6e85705d4a798db4cf612be3ba378edd  ipq5018-xiaomi-cr8818-daily.dtb
+0e08633f672db27ed8bcbfac1c636220cad24d4bc4c0856e1d58f67edbd30372  kernel-6.12.112.config
+f6763cf263700ef3cfaad3f51261344a0e64f62249f5daa0756b979ea3fa2117  uImage.itb
+d47af07a314dab227331864f6d93ab5342bd88aa81171f4a142164cde76c520b  openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-rootfs.squashfs
+a288b2e563e41533c7bcdcfe3bdae389303689c54dcfb2c23280a013f0735950  openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-factory.ubi
+60edf3e38026002ff2944ac74a67b33df9e2a533b008baa7be7d12ef6be55d1c  openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-sysupgrade.bin
+
+====================================================================
+MILESTONE M5 DAILY DRIVER BUILD COMPLETE
+Total Build Time: 7 seconds
+All Artifacts Successfully Landed at: /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m5_build
+====================================================================

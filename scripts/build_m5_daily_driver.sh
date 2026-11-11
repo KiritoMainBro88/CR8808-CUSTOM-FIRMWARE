@@ -539,7 +539,8 @@ chmod 0755 "$ROOTFS_DIR/lib/netifd/proto/wireguard_boringtun.sh"
 cp "$REPO_ROOT/package/network/services/boringtun/files/boringtun_watchdog" "$ROOTFS_DIR/usr/bin/boringtun_watchdog"
 chmod 0755 "$ROOTFS_DIR/usr/bin/boringtun_watchdog"
 
-# Create Busybox dummy symlinks to make a complete functional rootfs
+# Create Busybox dummy symlinks to make a complete structural rootfs skeleton
+echo "[PROTOTYPE NOTE] Rootfs contains real patched BoringTun daemon and authoritative OpenWrt configuration/netifd scripts, with placeholder stubs for base utilities. Full OpenWrt distribution buildroot compilation is required for physical boot."
 for b in sh ash ls cp mv rm cat grep ps top ping ip wg; do
     touch "$ROOTFS_DIR/bin/$b"
     chmod 0755 "$ROOTFS_DIR/bin/$b"
@@ -564,10 +565,11 @@ if [ "$ROOTFS_SIZE_BYTES" -gt $((ROOTFS_PARTSIZE_MB * 1048576)) ]; then
     echo "ERROR: Rootfs exceeds $ROOTFS_PARTSIZE_MB MB flash partition limit!"
     exit 1
 fi
-echo "  [PASS] Rootfs fits within 40MB SPI NAND partition (utilization: $(echo "scale=1; $ROOTFS_SIZE_BYTES * 100 / ($ROOTFS_PARTSIZE_MB * 1048576)" | bc)%)"
+echo "  [PASS] Rootfs prototype fits within 40MB SPI NAND partition (utilization: $(echo "scale=1; $ROOTFS_SIZE_BYTES * 100 / ($ROOTFS_PARTSIZE_MB * 1048576)" | bc)%)"
 
 # Step 5: Kernel FIT Image Generation (uImage.itb)
 echo -e "\n--- Step 5: Generating U-Boot FIT Image (uImage.itb) ---"
+echo "[PROTOTYPE NOTE] FIT image wraps compiled Device Tree Blob (ipq5018-xiaomi-cr8818-daily.dtb) with synthetic kernel test payload. Full Kbuild compilation of Linux 6.12.112 LTS is decoupled and preserved in config/kernel-6.12.112.config."
 # Create compressed Linux kernel image (Image.gz)
 KERNEL_DUMMY="$OUT_DIR/vmlinux-6.12.112.bin"
 dd if=/dev/urandom of="$KERNEL_DUMMY" bs=1024 count=4096 2>/dev/null
@@ -690,8 +692,13 @@ cat << EOF > "$OUT_DIR/image_manifest.json"
       "sha256": "$(sha256sum "$SYSUPGRADE_BIN" | awk '{print $1}')"
     }
   },
+  "build_type": "PACKAGING_SKELETON_PROTOTYPE",
   "verification_status": {
-    "pc_build_verified": true,
+    "packaging_layout_verified": true,
+    "dtb_compiled": true,
+    "boringtun_daemon_compiled": true,
+    "kernel_payload_status": "SYNTHETIC_TEST_PAYLOAD",
+    "rootfs_status": "SKELETON_PACKAGING_PROTOTYPE",
     "device_boot_verified": false,
     "hardware_functions_verified": false,
     "flash_authorization": "NO-GO (Recovery validation pending)"
@@ -701,6 +708,10 @@ EOF
 
 # Package Manifest in OpenWrt 25.12 apk format
 cat << 'EOF' > "$OUT_DIR/apk_packages.manifest"
+# OpenWrt 25.12.6 Target Package Manifest for Xiaomi CR8808 Ver.B (CR8818)
+# Packaging Target: aarch64_cortex-a53 (qualcommax/ipq50xx)
+# Note: In Milestone M5 skeleton, BoringTun daemon and OpenWrt netifd/uci configs are real;
+# base POSIX utilities are modeled for target package inventory and flash budgeting.
 base-files 25.12.6-r2512
 apk-tools 3.0.0_pre6-r1
 busybox 1.36.1-r1

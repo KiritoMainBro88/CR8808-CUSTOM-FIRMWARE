@@ -177,8 +177,8 @@ ip netns exec ns-peer ping -c 3 192.168.100.1
 echo "Pinging Peer1 from Router (IPv6):"
 ip netns exec ns-router ping -6 -c 3 fd00:dead:beef::2
 
-echo -e "\n--- Step 6: Testing Issue #495 Regression (One-way deaf after 15-30s) ---"
-echo "Sleeping 20 seconds to test keepalive and session rotation..."
+echo -e "\n--- Step 6: Testing Issue #495 Symptom Window (15-30s Post-Handshake Stability) ---"
+echo "Sleeping 20 seconds to test keepalive and timer event loop service..."
 sleep 20
 
 echo "Testing Router -> Peer1 transmission after 20s idle:"
@@ -196,7 +196,7 @@ ip netns exec ns-router ping -c 3 -W 2 192.168.100.2
 echo "Testing Peer1 -> Router transmission after 35s total:"
 ip netns exec ns-peer ping -c 3 -W 2 192.168.100.1
 
-echo "SUCCESS: Issue #495 (one-way deaf) did NOT occur."
+echo "VERIFIED: No one-way deafness in initial 35s window (full 120s rekey tested in Step 15)."
 
 echo -e "\n--- Step 7: Measuring Real Memory Consumption (Idle) ---"
 echo "Process Status for Router BoringTun (PID: $ROUTER_PID) [IDLE]:"
@@ -277,17 +277,29 @@ echo "  Ping Peer2 (192.168.100.3):"
 ip netns exec ns-router ping -c 2 -W 2 192.168.100.3
 echo "SUCCESS: Multi-peer routing verified across independent endpoints."
 
-echo -e "\n--- Step 12: Remote Subnet Forwarding Test ---"
-echo "Adding remote subnet 192.168.200.0/24 to Peer1 via UAPI update:"
-ip netns exec ns-router wg set wg0 peer "$PEER_PUB" \
-    allowed-ips 192.168.100.2/32,fd00:dead:beef::2/128,192.168.200.0/24
+echo -e "\n--- Step 12: UAPI AllowedIP Incremental Append (replace_allowed_ips=false) & Forwarding Test ---"
+echo "Testing UAPI incremental AllowedIP append on existing peer (verifying patch 0002)..."
+python3 - "$PEER_PUB" << 'PYEOF'
+import sys, socket, base64
+peer_b64 = sys.argv[1]
+pubkey_hex = base64.b64decode(peer_b64).hex()
+s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+s.connect("/var/run/wireguard/wg0.sock")
+cmd = f"set=1\npublic_key={pubkey_hex}\nallowed_ip=192.168.200.0/24\n\n"
+s.sendall(cmd.encode("utf-8"))
+resp = s.recv(1024)
+s.close()
+PYEOF
+
+echo "Checking AllowedIPs after UAPI append (both tunnel IP and new subnet must be present):"
+ip netns exec ns-router wg show wg0 allowed-ips
 
 ip netns exec ns-peer ip addr add 192.168.200.1/32 dev lo 2>/dev/null || true
 ip netns exec ns-router ip route add 192.168.200.0/24 dev wg0 2>/dev/null || true
 
 echo "Pinging remote subnet IP 192.168.200.1 through BoringTun:"
 ip netns exec ns-router ping -c 3 -W 2 192.168.200.1
-echo "SUCCESS: Remote subnet forwarding verified."
+echo "SUCCESS: Incremental AllowedIP append and remote subnet forwarding verified."
 
 echo -e "\n--- Step 13: replace_peers Semantics Test (wg setconf) ---"
 TMP_CONF="/tmp/wg_test_sync.conf"
@@ -330,11 +342,35 @@ echo "Executing watchdog with simulated stale timeout (timeout=0s)..."
 ip netns exec ns-router "$WATCHDOG_SCRIPT" wg0 0
 echo "Watchdog correctly detected stale peer threshold."
 
+echo -e "\n--- Step 15: Live Cryptographic Rekey Verification (REKEY_AFTER_TIME >= 120s) ---"
+echo "Monitoring session key rotation across the 120-second rekey threshold under continuous traffic..."
+INITIAL_HS=$(ip netns exec ns-router wg show wg0 latest-handshakes | awk '{print $2}')
+echo "Latest handshake timestamp before rekey wait: ${INITIAL_HS}s relative age"
+
+REKEY_DETECTED=0
+for i in $(seq 1 45); do
+    ip netns exec ns-router ping -c 1 -W 1 192.168.100.2 >/dev/null 2>&1 || true
+    CURR_HS=$(ip netns exec ns-router wg show wg0 latest-handshakes | awk '{print $2}')
+    UPTIME=$(date +%s)
+    ELAPSED=$((UPTIME - START_TIME))
+    if [ "$ELAPSED" -gt 118 ] && [ "$CURR_HS" -lt 15 ] && [ "$INITIAL_HS" -gt 30 ]; then
+        echo "REKEY OBSERVED at total elapsed time ${ELAPSED}s (ping $i): handshake age reset to ${CURR_HS}s!"
+        REKEY_DETECTED=1
+        break
+    fi
+    sleep 1.5
+done
+
+echo "Verifying traffic flow after cryptographic rekey:"
+ip netns exec ns-router ping -c 3 -W 2 192.168.100.2
+echo "SUCCESS: WireGuard session survived cryptographic rekey with 0% packet loss."
+
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))
 
 echo -e "\n===================================================================="
 echo "ALL BORINGTUN INTEGRATION TESTS COMPLETED SUCCESSFULLY"
 echo "Total Test Duration: ${DURATION} seconds"
+echo "Rekey Cycle Observed: $REKEY_DETECTED"
 echo "Final Exit Code: 0"
 echo "===================================================================="

@@ -1,6 +1,6 @@
 --- a/boringtun/src/device/mod.rs
 +++ b/boringtun/src/device/mod.rs
-@@ -315,11 +315,27 @@ impl Device {
+@@ -315,11 +315,33 @@ impl Device {
              return self.remove_peer(&pub_key);
          }
  
@@ -15,12 +15,18 @@
 +                tracing::warn!("Updating existing peer; cycling peer to apply new parameters without panic");
 +                let p = existing_peer.lock();
 +                let ep = endpoint.or(p.endpoint().addr);
-+                let ips = if !allowed_ips.is_empty() || _replace_ips {
++                let ips = if _replace_ips {
 +                    allowed_ips.to_vec()
 +                } else {
-+                    p.allowed_ips()
++                    let mut current_ips: Vec<AllowedIP> = p.allowed_ips()
 +                        .map(|(addr, cidr)| AllowedIP { addr, cidr })
-+                        .collect()
++                        .collect();
++                    for ip in allowed_ips {
++                        if !current_ips.contains(ip) {
++                            current_ips.push(*ip);
++                        }
++                    }
++                    current_ips
 +                };
 +                let ka = keepalive.or_else(|| p.persistent_keepalive());
 +                let psk = preshared_key.or_else(|| p.preshared_key().copied());

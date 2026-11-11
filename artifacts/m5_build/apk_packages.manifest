@@ -1,3 +1,7 @@
+# OpenWrt 25.12.6 Target Package Manifest for Xiaomi CR8808 Ver.B (CR8818)
+# Packaging Target: aarch64_cortex-a53 (qualcommax/ipq50xx)
+# Note: In Milestone M5 skeleton, BoringTun daemon and OpenWrt netifd/uci configs are real;
+# base POSIX utilities are modeled for target package inventory and flash budgeting.
 base-files 25.12.6-r2512
 apk-tools 3.0.0_pre6-r1
 busybox 1.36.1-r1
