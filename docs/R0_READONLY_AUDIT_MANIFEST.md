@@ -46,6 +46,10 @@ Even within read-only operations, commands carry different levels of bus interac
 | **R0-08** | `lsmod \| grep -E "yt\|qca\|nss"` | Loaded kernel modules (`yt_switch.ko`, `qca-ssdk.ko`, `nss-dp.ko`) | Low | `command -v lsmod >/dev/null` | None. |
 | **R0-09** | `uci show wireless \| grep -E "channel\|band\|htmode\|disabled"; iwconfig 2>/dev/null \| grep -E "IEEE\|Mode"` | Wi-Fi 5 GHz HE160 operating mode and channel bandwidth (Replaces OpenWrt `iwinfo` which does not exist on QSDK) | Low | `command -v uci >/dev/null` | Redact SSIDs, passwords (`key`), and BSSIDs. |
 | **R0-10** | `ip addr show; ip route show` | Network interface topology (`br-lan`, `eth0`, `eth1`, `wan`) and routing table | Low | `command -v ip >/dev/null` | Redact public WAN IP address and hardware MACs. |
+| **R0-11** | `for pid in $(pgrep -E "wg_server|messagingagent|trafficd|cab_meshd|smartcontroller"); do echo "PID $pid:"; cat /proc/$pid/status 2>/dev/null \| grep -E "^(Name\|VmSize\|VmRSS\|RssAnon\|RssFile):"; done` | Process memory profiling: exact VmRSS, RssAnon, and RssFile | Low | Check `/proc` entries | None (Standard memory integers). |
+| **R0-12** | `sh /tmp/measure_cpu_deltas.sh 10` | Time-bounded differential CPU, softirq, and interrupt profiling | Low | Check script presence | None (Differential counters). |
+| **R0-13** | `netstat -tlpn 2>/dev/null \| grep -E "56789\|51820\|53"` | Socket listening bindings (Dropbear, WireGuard, dnsmasq) | Low | `command -v netstat >/dev/null` | None (Local port numbers). |
+| **R0-14** | `cat /sys/kernel/debug/qca-nss-drv/stats/ipv4 2>/dev/null \| head -n 30` | NSS hardware offload statistics and rule match counters | Low | File existence check | None (Packet and byte counters). |
 
 ---
 
@@ -77,5 +81,6 @@ Before any output from the commands above is saved to disk or pasted into conver
 1. **MAC Addresses:** Replaced with `[REDACTED_MAC]`.
 2. **Public WAN IP:** Replaced with `[REDACTED_WAN_IP]`.
 3. **Serial Numbers:** Replaced with `[REDACTED_SERIAL]`.
-4. **Wi-Fi SSIDs / PSKs:** Replaced with `[REDACTED_SSID]` / `[REDACTED_PSK]`.
-5. **Private Keys:** Commands are crafted to never query keys or configuration stores containing credentials.
+4. **Wi-Fi SSIDs / PSKs:** Replaced with `[REDACTED_SSID]` / `[REDACTED_WIFI_KEY]`.
+5. **Private Keys / Tunnel Secrets:** Explicit redaction filter replacing `-srvkey <key>` and `-clientkey <key>` with `[REDACTED_WG_PRIVATE_KEY]` / `[REDACTED_WG_CLIENT_KEY]`.
+6. **Automation:** All audit commands executed via automated wrappers must pipe through dual-layer `sed` sanitizers before writing to persistent storage.

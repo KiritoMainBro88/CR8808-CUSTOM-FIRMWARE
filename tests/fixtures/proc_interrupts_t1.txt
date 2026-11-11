@@ -1,0 +1,5 @@
+           CPU0       CPU1       
+ 18:   19355792   19355789       GIC  20 Edge      arch_timer
+ 20:      14507          0       GIC 139 Level     msm_serial0
+ 28:  203457809          0       GIC 431 Edge      nss_queue0
+ 29:          0     752612       GIC 430 Edge      nss_queue1

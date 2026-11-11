@@ -2,9 +2,9 @@
 
 - Version: `0.2.0-dev`
 - Date: 2026-11-11
-- Phase: P10/M11.0.1 Security Incident Containment & Evidence Correction (Track A Primary)
-- Current Branch: `feature/m11-ra82-optimization-audit`
-- Overall status: `M11_0_1_CONTAINMENT_AND_CORRECTION_COMPLETE_AWAITING_REVIEW`
+- Phase: P10/M11.0.2 RA82 Optimization Readiness & Safe Trial Preflight (Track A Primary)
+- Current Branch: `feature/m11-0-2-ra82-optimization-preflight`
+- Overall status: `M11_0_2_PREFLIGHT_COMPLETE_AWAITING_REVIEW`
 - GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE`
 - Flash authorization: `STRICT NO-GO FLASH (Live read-only device audit, static partition verification & optimization analysis only)`
 - Initial Firmware Baseline: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Single-conduit Port 8 SGMII 1000M, Linux 6.12.112 LTS verified)
@@ -170,6 +170,14 @@
   5. **BoringTun Validation Aligned:** Enforced strict adherence to `docs/09_WIREGUARD_RUST_PLAN.md`. Mandated that live `/data/wg_server` on `wg0` remains untouched. Defined isolated sandbox trial on `wg1` / port 51821 with multi-gate qualification.
   6. **Proposal Dispositions Standardized:** Formalized 8 proposals into `GO` (6.1 WAN SSH hardening), `HOLD` (1.1 RPS, 2.1 Daemons, 3.1 BoringTun sandbox, 4.1 OFDMA, 4.2 Roaming), and `REJECT` (5.1 Conntrack timeouts dismissed at 3.37% load; 5.2 TCP buffer dismissed at BDP=2.5MB). Deliverable: `docs/M11_1_APPROVED_TRIAL_PLAN.md`.
   7. **Deliverables & Safety Protocol:** Authored `reports/M11_0_1_SECURITY_INCIDENT_REPORT.md` and `reports/M11_0_1_EVIDENCE_CORRECTION.md`. STRICT `NO-GO FLASH` maintained. Zero router writes executed. Lab directory `D:\vibecode\test_wifi` 100% untouched. Status: `M11_0_1_CONTAINMENT_AND_CORRECTION_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Developer / Research Engineer).
+- 2026-11-11: Milestone M11.0.2 RA82 Optimization Readiness & Safe Trial Preflight completed on branch `feature/m11-0-2-ra82-optimization-preflight`.
+  1. **Security Remediation Audit (Task A):** Verified 0 exposed credentials in working tree (`git grep` clean). Prepared dry-run history rewrite plan via `git-filter-repo` (0 unauthorized force pushes). Documented mandatory owner rotation actions. Reassessed WAN SSH under double-NAT (confirmed critical attack surface via upstream ONT subnet/DMZ). Designed fail-safe 180s automatic watchdog rollback script.
+  2. **CPU & RAM Optimization Preflight (Task B):** Validated `scripts/measure_cpu_deltas.sh` against synthetic test fixtures on PC/WSL2 with BusyBox ash and BusyBox awk (4/4 assertions passed with 100% mathematical accuracy). Formulated time-bounded differential equations. Decomposed memory into `VmRSS`, `RssAnon`, `RssFile`; proved `SUnreclaim` (57.9 MiB) is vital kernel DMA/SKB slab. Audited dependencies of the 4 vendor daemons (~6.8 MB RssAnon; placed on `HOLD`). Reclassified RPS to `HOLD` with strict CPU0 $\ge 80\%$ trigger gate.
+  3. **WireGuard Rust Migration (Task C):** Grounded target ABI strictly in 32-bit `armv7l` (`armv7-unknown-linux-musleabihf` static). Audited BoringTun 0.7.1, 64-bit atomics, and `signalfd` fallback patch. Structured isolated sandbox trial on `wg1` / UDP 51821 with zero impact on production `wg0`. Established 5 quantitative acceptance criteria ($\le 4.0\text{ MB}$ RSS, $\ge 95\%$ throughput). Formulated cutover and instant rollback runbook.
+  4. **Network, Wi-Fi 6, DNS & Bufferbloat (Task D):** Documented NSS hardware forwarding mechanics (96.85% internal match ratio, ECM bypass). Reconciled 2,401.9 Mbps Wi-Fi PHY link rate against physical 1 GbE WAN port bottleneck. Designed dnsmasq cache expansion and DoH/DoT privacy integration via `dnsproxy`. Rejected CAKE QoS (forces NSS bypass, collapsing throughput to ~400 Mbps). Rejected conntrack and TCP buffer reductions.
+  5. **Kernel Security & Userspace Boundaries (Task E):** Audited Linux 4.4.60 CVE exposure vs Qualcomm 2023 QSDK build. Separated kernel binary replacement (`NO-GO` under strict safety rules) from non-destructive static userspace enhancements in `/data`.
+  6. **Master Optimization Matrix Produced:** Authored 13-item master matrix classifying proposals into `GO` (OPT-SEC-01), `HOLD` (VPN, RPS, Daemons, Wi-Fi tuning, DNS), and `REJECT` (QoS, Conntrack, TCP buffers, live kernel upgrade).
+  7. **Deliverables & Strict Safety Affirmation:** Authored `reports/M11_0_2_RA82_OPTIMIZATION_REPORT.md`, `docs/RA82_OPTIMIZATION_MATRIX.md`, `tests/test_measure_cpu_deltas.sh`, synthetic fixtures `tests/fixtures/`, and updated `docs/R0_READONLY_AUDIT_MANIFEST.md`. Maintained workstation-only execution (0 router SSH, 0 uploads, 0 router commands, 0 NAND writes). Lab directory `D:\vibecode\test_wifi` 100% untouched. Status: `M11_0_2_PREFLIGHT_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Systems Engineer).
 
 
 
