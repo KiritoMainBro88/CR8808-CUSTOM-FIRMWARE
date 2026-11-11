@@ -1,0 +1,1205 @@
+================================================================================
+SECTION 1: SYSTEM, KERNEL & MEMORY BASELINE
+================================================================================
+--- UNAME & VERSION ---
+Linux XiaoQiang 4.4.60 #0 SMP PREEMPT Tue Jul 25 13:31:40 2023 armv7l GNU/Linux
+Linux version 4.4.60 (jenkins@2fb299296942) (gcc version 5.5.0 (OpenWrt GCC 5.5.0 unknown) ) #0 SMP PREEMPT Tue Jul 25 13:31:40 2023
+ 02:30:20 up 2 days,  5:45,  load average: 1.90, 1.61, 1.55
+1.91 1.62 1.56 2/137 3515
+--- CPU INFO ---
+processor	: 0
+model name	: ARMv7 Processor rev 4 (v7l)
+BogoMIPS	: 48.00
+Features	: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt vfpd32 lpae evtstrm aes pmull sha1 sha2 crc32 
+CPU implementer	: 0x51
+CPU architecture: 7
+CPU variant	: 0xa
+CPU part	: 0x801
+CPU revision	: 4
+
+processor	: 1
+model name	: ARMv7 Processor rev 4 (v7l)
+BogoMIPS	: 48.00
+Features	: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt vfpd32 lpae evtstrm aes pmull sha1 sha2 crc32 
+CPU implementer	: 0x51
+CPU architecture: 7
+CPU variant	: 0xa
+CPU part	: 0x801
+CPU revision	: 4
+
+Hardware	: Generic DT based system
+Revision	: 0000
+Serial		: 0000000000000000
+--- MEMINFO ---
+MemTotal:         186920 kB
+MemFree:           23692 kB
+MemAvailable:      11096 kB
+Buffers:            3152 kB
+Cached:            29836 kB
+SwapCached:            0 kB
+Active:            49384 kB
+Inactive:           9180 kB
+Active(anon):      43112 kB
+Inactive(anon):     2264 kB
+Active(file):       6272 kB
+Inactive(file):     6916 kB
+Unevictable:        2704 kB
+Mlocked:               0 kB
+SwapTotal:             0 kB
+SwapFree:              0 kB
+Dirty:                 0 kB
+Writeback:             0 kB
+AnonPages:         28272 kB
+Mapped:             2684 kB
+Shmem:             17104 kB
+Slab:              60504 kB
+SReclaimable:       2572 kB
+SUnreclaim:        57932 kB
+KernelStack:        1120 kB
+PageTables:          752 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:       93460 kB
+Committed_AS:     134252 kB
+VmallocTotal:    1818624 kB
+VmallocUsed:           0 kB
+VmallocChunk:          0 kB
+--- SLAB INFO (Top 25) ---
+--- LOADED KERNEL MODULES ---
+asf                     5148  2 qca_ol,umac
+ath_pktlog             11446  0 
+bonding               127545  1 qca_nss_pppoe
+bootconfig              3001  0 
+button_hotplug          3400  0 
+cfg80211              233882  2 umac,qdf
+cls_fw                  3967  0 
+cls_u32                 7051  0 
+compat_xtables           830  0 
+crc_ccitt               1169  1 ppp_async
+crc32c_generic          1657  1 
+dbm                     7617  1 dwc3_qcom
+dwc3_qcom              10142  0 
+ecb                     1875  0 
+ecm                   656294  0 
+enid                    7407  0 
+gpio_button_hotplug     7540  0 
+gre                     1696  2 pptp,ip_gre
+input_core             27573  1 button_hotplug
+ip_account             95562  0 
+ip_gre                  9739  0 
+ip_set                 26115 16 xt_set,ip_set_list_set,ip_set_hash_netiface,ip_set_hash_netport,ip_set_hash_netnet,ip_set_hash_net,ip_set_hash_netportnet,ip_set_hash_mac,ip_set_hash_ipportnet,ip_set_hash_ipportip,ip_set_hash_ipport,ip_set_hash_ipmark,ip_set_hash_ip,ip_set_bitmap_port,ip_set_bitmap_ipmac,ip_set_bitmap_ip
+ip_set_bitmap_ip        6758  0 
+ip_set_bitmap_ipmac     6474  0 
+ip_set_bitmap_port      5822  0 
+ip_set_hash_ip         20445  0 
+ip_set_hash_ipmark     20541  0 
+ip_set_hash_ipport     21181  0 
+ip_set_hash_ipportip   22003  0 
+ip_set_hash_ipportnet   26714  0 
+ip_set_hash_mac        11069  0 
+ip_set_hash_net        23800  2 
+ip_set_hash_netiface   24895  0 
+ip_set_hash_netnet     26377  0 
+ip_set_hash_netport    25380  0 
+ip_set_hash_netportnet   27573  0 
+ip_set_list_set         6991  0 
+ip_tables              10956  3 iptable_nat,iptable_mangle,iptable_filter
+ip_tunnel              12022  1 ip_gre
+ip6_gre                16427  0 
+ip6_tables             10250  3 ip6table_nat,ip6table_mangle,ip6table_filter
+ip6_tunnel             20293  1 ip6_gre
+ip6_udp_tunnel          1789  1 l2tp_core
+ip6t_MASQUERADE          946  0 
+ip6t_NPT                1863  0 
+ip6t_REJECT             1393  0 
+ip6t_ah                 2582  0 
+ip6t_eui64              1091  0 
+ip6t_frag               3226  0 
+ip6t_hbh                3096  0 
+ip6t_ipv6header         1427  0 
+ip6t_mh                 1456  0 
+ip6t_rt                 4540  0 
+ip6table_filter         1098  0 
+ip6table_mangle         1482  0 
+ip6table_nat            1492  0 
+ipt_ECN                 1731  0 
+ipt_MASQUERADE          1342  2 
+ipt_REJECT              1327  4 
+iptable_filter          1160  1 
+iptable_mangle          1288  1 
+iptable_nat             1506  1 
+l2tp_core              18964  3 l2tp_ppp,qca_nss_l2tpv2,l2tp_netlink
+l2tp_netlink            8218  1 l2tp_ppp
+l2tp_ppp               17179  1 ecm
+leds_gpio               3331  0 
+libcrc32c                957  1 nf_nat_proto_sctp
+mem_manager             7512  2 qca_ol,umac
+nf_conntrack           69063 36 ecm,nf_nat_pptp,nf_nat_ipv6,nf_nat_ipv4,nf_conntrack_pptp,nf_conntrack_ipv6,nf_conntrack_ipv4,xt_state,xt_helper,xt_conntrack,xt_connmark,xt_connlimit,xt_connbytes,xt_DSCP,xt_CT,nf_nat_tftp,nf_nat_snmp_basic,nf_nat_sip,nf_nat_masquerade_ipv4,nf_nat_irc,nf_nat_h323,nf_nat_ftp,nf_nat_amanda,nf_conntrack_tftp,nf_conntrack_snmp,nf_conntrack_sip,nf_conntrack_rtcache,nf_conntrack_proto_gre,nf_conntrack_irc,nf_conntrack_h323,nf_conntrack_ftp,nf_conntrack_broadcast,nf_conntrack_amanda,nf_nat_masquerade_ipv6,nf_nat,nf_conntrack_proto_sctp
+nf_conntrack_amanda     2072  1 nf_nat_amanda
+nf_conntrack_broadcast    1104  1 nf_conntrack_snmp
+nf_conntrack_ftp        8023  1 nf_nat_ftp
+nf_conntrack_h323      40359  1 nf_nat_h323
+nf_conntrack_ipv4       7198 14 
+nf_conntrack_ipv6       7715  1 
+nf_conntrack_irc        3601  1 nf_nat_irc
+nf_conntrack_pptp       6858  1 nf_nat_pptp
+nf_conntrack_proto_gre    5810  1 nf_conntrack_pptp
+nf_conntrack_proto_sctp    8601  0 
+nf_conntrack_rtcache    4131  0 
+nf_conntrack_sip       18007  1 nf_nat_sip
+nf_conntrack_snmp       1124  1 nf_nat_snmp_basic
+nf_conntrack_tftp       3575  1 nf_nat_tftp
+nf_defrag_ipv4          1288  1 nf_conntrack_ipv4
+nf_defrag_ipv6         16684  1 nf_conntrack_ipv6
+nf_log_common           2746  2 nf_log_ipv4,nf_log_ipv6
+nf_log_ipv4             3508  0 
+nf_log_ipv6             3663  0 
+nf_nat                 10976 15 nf_nat_pptp,nf_nat_ipv6,nf_nat_ipv4,xt_nat,nf_nat_tftp,nf_nat_sip,nf_nat_redirect,nf_nat_proto_gre,nf_nat_masquerade_ipv4,nf_nat_irc,nf_nat_h323,nf_nat_ftp,nf_nat_amanda,nf_nat_masquerade_ipv6,nf_nat_proto_sctp
+nf_nat_amanda           1169  0 
+nf_nat_ftp              2056  0 
+nf_nat_h323             6819  0 
+nf_nat_ipv4             4720  1 iptable_nat
+nf_nat_ipv6             4984  1 ip6table_nat
+nf_nat_irc              1552  0 
+nf_nat_masquerade_ipv4    1893  1 ipt_MASQUERADE
+nf_nat_masquerade_ipv6    2202  1 ip6t_MASQUERADE
+nf_nat_pptp             3222  0 
+nf_nat_proto_gre        1733  1 nf_nat_pptp
+nf_nat_proto_sctp       1322  0 
+nf_nat_redirect         1236  1 xt_REDIRECT
+nf_nat_sip              7313  0 
+nf_nat_snmp_basic       7161  0 
+nf_nat_tftp              913  0 
+nf_reject_ipv4          2338  1 ipt_REJECT
+nf_reject_ipv6          3469  1 ip6t_REJECT
+nfnetlink               4716  2 ip_set
+nls_base                5548  2 nls_iso8859_1,nls_cp437
+nls_cp437               4884  0 
+nls_iso8859_1           3348  0 
+ppp_async               7034  0 
+ppp_generic            24655 10 ecm,ppp_mppe,ppp_async,l2tp_ppp,qca_nss_pptp,pptp,qca_nss_pppoe,pppoe,pppox,qca_nss_l2tpv2
+ppp_mppe                5485  0 
+pppoe                   9590  2 ecm,qca_nss_pppoe
+pppox                   1682  3 l2tp_ppp,pptp,pppoe
+pptp                   16714  3 ecm,nf_conntrack_proto_gre,qca_nss_pptp
+qca_mcs                43294  1 ecm
+qca_nss_dp             36064  1 qca_nss_drv
+qca_nss_drv           826603  8 wifi_3_0,qca_ol,umac,ecm,qca_nss_pptp,qca_nss_pppoe,qca_nss_l2tpv2,qca_nss_gre
+qca_nss_gre            31388  0 
+qca_nss_l2tpv2         12926  0 
+qca_nss_macsec        137563  0 
+qca_nss_pppoe           6657  0 
+qca_nss_pptp           12614  0 
+qca_ol               1300691  1 wifi_3_0
+qca_ssdk              665456  1 qca_nss_dp
+qdf                   116683  5 ath_pktlog,wifi_3_0,qca_ol,umac,asf
+sch_htb                12848  0 
+sch_prio                3809  0 
+sch_sfq                 8776  0 
+sha1_generic            2126  0 
+slhc                    4292  1 ppp_generic
+ts_bm                   1812  0 
+ts_fsm                  2942  0 
+ts_kmp                  1688  5 
+tunnel6                 2234  1 ip6_tunnel
+udp_tunnel              2063  1 l2tp_core
+umac                 2927364  3 ath_pktlog,wifi_3_0,qca_ol
+usb_common              2647  1 dwc3_qcom
+wifi_3_0              698108  0 
+x_tables               12506 59 ipt_REJECT,ipt_MASQUERADE,xt_u32,xt_time,xt_tcpudp,xt_tcpmss,xt_string,xt_statistic,xt_state,xt_recent,xt_quota,xt_pkttype,xt_physdev,xt_owner,xt_nat,xt_multiport,xt_mark,xt_mac,xt_limit,xt_length,xt_hl,xt_helper,xt_flowMARK,xt_ecn,xt_dscp,xt_conntrack,xt_connmark,xt_connlimit,xt_connbytes,xt_comment,xt_cgroup_MARK,xt_bpf,xt_addrtype,xt_TCPMSS,xt_REDIRECT,xt_LOG,xt_IP4MARK,xt_HL,xt_DSCP,xt_CT,xt_CLASSIFY,iptable_mangle,iptable_filter,ipt_ECN,ip_tables,ip6t_NPT,ip6t_MASQUERADE,ip6t_rt,ip6t_frag,ip6t_hbh,ip6t_eui64,ip6t_mh,ip6t_ah,ip6t_ipv6header,xt_set,ip6t_REJECT,ip6table_mangle,ip6table_filter,ip6_tables
+xt_CLASSIFY              965  0 
+xt_CT                   3276  0 
+xt_DSCP                 1850  6 
+xt_HL                   1757  0 
+xt_IP4MARK               964  0 
+xt_LOG                  1589  0 
+xt_REDIRECT             1409  3 
+xt_TCPMSS               3027  2 
+xt_addrtype             2589  0 
+xt_bpf                  1103  0 
+xt_cgroup_MARK          1032  0 
+xt_comment               900 71 
+xt_connbytes            1716  0 
+xt_connlimit            5023  0 
+xt_connmark             1638  0 
+xt_conntrack            2762 13 
+xt_dscp                 1442  0 
+xt_ecn                  1825  0 
+xt_flowMARK             9743  0 
+xt_helper               1259  0 
+xt_hl                   1315  0 
+xt_length               1118  0 
+xt_limit                1509  0 
+xt_mac                  1024  1 
+xt_mark                 1049  0 
+xt_multiport            2144  3 
+xt_nat                  1660  0 
+xt_owner                1182  0 
+xt_physdev              1784  1 
+xt_pkttype              1028  0 
+xt_quota                1173  0 
+xt_recent               7299  0 
+xt_set                  7007  2 
+xt_state                1173  0 
+xt_statistic            1268  0 
+xt_string               1195  0 
+xt_tcpmss               1347  0 
+xt_tcpudp               2762 15 
+xt_time                 2072  0 
+xt_u32                  1292  2 
+yt_switch             343529  0 
+--- PROCESS TREE / RUNNING PROCESSES ---
+  PID USER       VSZ STAT COMMAND
+    1 root      1400 S    /sbin/procd
+    2 root         0 SW   [kthreadd]
+    3 root         0 SW   [ksoftirqd/0]
+    5 root         0 SW<  [kworker/0:0H]
+    7 root         0 SW   [rcu_preempt]
+    8 root         0 SW   [rcu_sched]
+    9 root         0 SW   [rcu_bh]
+   10 root         0 SW   [migration/0]
+   11 root         0 SW   [migration/1]
+   12 root         0 SW   [ksoftirqd/1]
+   14 root         0 SW<  [kworker/1:0H]
+   15 root         0 SW<  [writeback]
+   16 root         0 SW<  [crypto]
+   17 root         0 SW<  [bioset]
+   18 root         0 SW<  [kblockd]
+   20 root         0 SW   [kswapd0]
+   21 root         0 SW<  [vmstat]
+   22 root         0 SW   [fsnotify_mark]
+   33 root         0 SW   [irq/34-smp2p]
+   34 root         0 SW<  [bt_ipc]
+   35 root         0 SW   [irq/124-bt_ipc_]
+   36 root         0 SW   [spi32766]
+   37 root         0 SW<  [bioset]
+   38 root         0 SW<  [bioset]
+   39 root         0 SW<  [bioset]
+   40 root         0 SW<  [bioset]
+   41 root         0 SW<  [bioset]
+   42 root         0 SW<  [bioset]
+   43 root         0 SW<  [bioset]
+   44 root         0 SW<  [bioset]
+   45 root         0 SW<  [bioset]
+   46 root         0 SW<  [bioset]
+   47 root         0 SW<  [bioset]
+   48 root         0 SW<  [bioset]
+   49 root         0 SW<  [bioset]
+   50 root         0 SW<  [bioset]
+   51 root         0 SW<  [bioset]
+   52 root         0 SW<  [bioset]
+   53 root         0 SW<  [bioset]
+   54 root         0 SW<  [bioset]
+   55 root         0 SW<  [bioset]
+   56 root         0 SW<  [bioset]
+   57 root         0 SW<  [bioset]
+   60 root         0 SW   [irq/35-q6_wdog_]
+   61 root         0 SW<  [ipv6_addrconf]
+   62 root         0 SW<  [deferwq]
+   63 root         0 SW   [ubi_bgt0d]
+   64 root         0 SW<  [bioset]
+   65 root         0 SW<  [bioset]
+   67 root         0 SW<  [kworker/1:1H]
+   70 root         0 SW<  [kworker/0:1H]
+   73 root         0 SW<  [yt_switch_wq]
+  146 root         0 SW   [ubi_bgt1d]
+  147 root         0 SW<  [bioset]
+  157 root         0 SW   [ubifs_bgt1_0]
+  288 root      1040 S    /sbin/ubusd
+  321 root         0 SW   [kworker/u4:0]
+  351 root       728 S    /usr/sbin/qrtr-ns
+  372 root         0 SW<  [cfg80211]
+  382 root         0 SW<  [nss_data_plane_]
+  386 root         0 SW<  [nss_freq_queue]
+  391 root         0 SW<  [coredump_wait]
+  394 root         0 SW<  [bond0]
+  431 root         0 SW<  [enid_sender]
+  505 root         0 SW   [kworker/1:0]
+  634 root      1308 S    /sbin/rpcd -s /var/run/ubus.sock -t 30
+  648 root         0 DW   [kworker/u4:4]
+  664 root      1032 S    /sbin/tbusd
+  679 root      4248 S    hostapd -g /var/run/hostapd/global -B -P /var/run/hostapd-global.pid
+  685 root      4624 S    wpa_supplicant -g /var/run/wpa_supplicantglobal -B -P /var/run/wpa_supplicant-global.pid
+ 1129 root         0 SW   [ECM_wifi_event]
+ 1130 root         0 SW<  [ecm_nss_ipv4_wo]
+ 1131 root         0 SW<  [ecm_nss_ipv6_wo]
+ 1243 root      1172 S    /usr/sbin/uhttpd -p 8888 -h /data/www -x /cgi-bin -T 30
+ 1262 root       648 R    /data/stats_collector --daemon
+ 1305 root      523m S <  /data/wg_server -srvkey 2BJyzhCbtUa5X4GqyW3AwPvkT6pD7mAomxNfoTKeMVE= -clientkey 5IFt5HpU4rH/F3y8+jLpIx6Pv
+ 1382 root      2828 S    /usr/sbin/cab_meshd -S -i br-lan
+ 1393 root       868 S    /usr/sbin/dropbear -F -P /var/run/dropbear.1.pid -p 56789 -K 300 -T 3
+ 1483 root      1592 S    /sbin/netifd
+ 1490 root         0 SW   [kworker/0:1]
+ 1514 root         0 SW   [kworker/u4:2]
+ 1534 root      5964 S    nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf -g daemon off;
+ 1720 root      6208 S    nginx: worker process
+ 1809 root      6836 S    /usr/bin/messagingagent --handler_threads 6 --mqtts_enable 1
+ 1917 root      1292 S    /usr/sbin/crond -f -c /etc/crontabs -l 9
+ 2403 root      1288 S    udhcpc -a -p /var/run/udhcpc-eth0.pid -s /lib/netifd/dhcp.script -O 33 -f -t 0 -i eth0 -x hostname MiWiFi
+ 2556 root         0 SW   [kworker/1:1]
+ 2591 root         0 SW   [kworker/0:0]
+ 2714 root      2124 S    /usr/bin/fcgi-cgi
+ 3047 root         0 SW   [kworker/0:2]
+ 3092 root      1288 S    {flight_recorder} /bin/sh /data/flight_recorder.sh
+ 3129 root      4464 S    /usr/sbin/syslog-ng --process-mode foreground -p /var/run/syslog-ng.pid
+ 3139 root      2504 S    /usr/sbin/dnsmasq --user=root -C /var/etc/dnsmasq.conf.cfg01411c -k -x /var/run/dnsmasq/dnsmasq.cfg01411c
+ 3158 21474836   468 S    /data/zapret/tpws --bind-addr=0.0.0.0 --port=988 --filter-l7=tls --split-pos=2 --daemon
+ 3175 root      1288 S    {iweventd.sh} /bin/sh /usr/sbin/iweventd.sh
+ 3186 root       764 S    /usr/sbin/iwevent
+ 3189 root      1332 S    {iwevent-call} /bin/sh /usr/sbin/iwevent-call
+ 3265 root      1696 S    /usr/sbin/trafficd
+ 3437 root         0 SW   [kworker/u4:1]
+ 3468 root      1288 S    sleep 4
+ 3492 root      1176 S    /usr/sbin/netapi
+ 3508 root       932 S    /usr/sbin/dropbear -F -P /var/run/dropbear.1.pid -p 56789 -K 300 -T 3
+ 3511 root      1292 S    ash -c  echo "================================================================================" echo "SEC
+ 3520 root      1288 R    ps w
+ 3558 root      2288 S    /usr/sbin/smartcontroller
+ 3584 root       940 S <  /usr/sbin/thermald
+ 3693 root         0 SW   [kworker/1:2]
+ 3705 root       984 S    /usr/sbin/wan_check_status
+ 3742 root         0 SW   [kworker/u4:3]
+ 3835 root         0 SW<  [scheduler_threa]
+ 3946 root         0 SW   [qrtr_rx]
+================================================================================
+SECTION 2: QUALCOMM NSS & HARDWARE ACCELERATION AUDIT
+================================================================================
+--- NSS DEBUG STATS DIRECTORY ---
+drwxr-xr-x    5 root     root             0 Nov  9 16:14 .
+drwxr-xr-x    6 root     root             0 Nov  9 16:14 ..
+-r--------    1 root     root             0 Nov  9 16:14 cpu_load_ubi
+-r--------    1 root     root             0 Nov  9 16:14 drv
+drwxr-xr-x    2 root     root             0 Nov  9 16:14 dynamic_if
+-r--------    1 root     root             0 Nov  9 16:14 eth_rx
+-r--------    1 root     root             0 Nov  9 16:14 gmac
+-r--------    1 root     root             0 Nov  9 16:14 gre
+-r--------    1 root     root             0 Nov  9 16:14 ipv4
+-r--------    1 root     root             0 Nov  9 16:14 ipv4_reasm
+-r--------    1 root     root             0 Nov  9 16:14 ipv6
+-r--------    1 root     root             0 Nov  9 16:14 ipv6_reasm
+-r--------    1 root     root             0 Nov  9 16:14 l2tpv2
+-r--------    1 root     root             0 Nov  9 16:14 lso_rx
+-r--------    1 root     root             0 Nov  9 16:14 n2h
+-r--------    1 root     root             0 Nov  9 16:14 pppoe
+-r--------    1 root     root             0 Nov  9 16:14 pptp
+drwxr-xr-x    3 root     root             0 Nov  9 16:14 project
+-r--------    1 root     root             0 Nov  9 16:14 udp_st
+-r--------    1 root     root             0 Nov  9 16:14 unaligned
+-r--------    1 root     root             0 Nov  9 16:14 wifi
+-r--------    1 root     root             0 Nov  9 16:14 wifi_ext_vdev
+drwxr-xr-x    2 root     root             0 Nov  9 16:14 wifi_mesh
+-r--------    1 root     root             0 Nov  9 16:14 wifili
+--- NSS IPV4 STATS ---
+
+________________________________________________________________________________
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< IPV4 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+________________________________________________________________________________
+
+	ipv4_rx_pkts           = 92739885        common
+	ipv4_rx_byts           = 92729173777      common
+	ipv4_tx_pkts           = 89822810        common
+	ipv4_tx_byts           = 92105671899      common
+	ipv4_rx_queue[0]_drops = 0               drop
+	ipv4_rx_queue[1]_drops = 0               drop
+	ipv4_rx_queue[2]_drops = 0               drop
+	ipv4_rx_queue[3]_drops = 0               drop
+
+#ipv4 special stats
+
+	ipv4_rx_pkts                               = 89817979        special
+	ipv4_rx_bytes                              = 90842916238       special
+	ipv4_tx_pkts                               = 89817979        special
+	ipv4_tx_bytes                              = 92100367944      special
+	ipv4_create_requests                       = 128379          special
+	ipv4_create_collisions                     = 0               special
+	ipv4_create_invalid_interface              = 0               special
+	ipv4_destroy_requests                      = 42610           special
+	ipv4_destroy_misses                        = 0               special
+	ipv4_hash_hits                             = 89881882        special
+	ipv4_hash_reorders                         = 26590           special
+	ipv4_flushes                               = 85662           special
+	ipv4_evictions                             = 0               special
+	ipv4_fragmentations                        = 0               special
+	ipv4_by_rule_drops                         = 0               drop
+	ipv4_mc_create_requests                    = 0               special
+	ipv4_mc_update_requests                    = 0               special
+	ipv4_mc_create_invalid_interface           = 0               special
+	ipv4_mc_destroy_requests                   = 0               special
+	ipv4_mc_destroy_misses                     = 0               special
+	ipv4_mc_flushes                            = 0               special
+	ipv4_mirror_invalid_ifnum_conn_create_req  = 0               special
+	ipv4_mirror_invalid_iftype_conn_create_req = 0               special
+--- NSS IPV6 STATS ---
+
+________________________________________________________________________________
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< IPV6 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+________________________________________________________________________________
+
+	ipv6_rx_pkts           = 159682          common
+	ipv6_rx_byts           = 27882571        common
+	ipv6_tx_pkts           = 1655            common
+	ipv6_tx_byts           = 326217          common
+	ipv6_rx_queue[0]_drops = 0               drop
+	ipv6_rx_queue[1]_drops = 0               drop
+	ipv6_rx_queue[2]_drops = 0               drop
+	ipv6_rx_queue[3]_drops = 0               drop
+
+#ipv6 node stats
+
+	ipv6_rx_pkts                               = 1655            special
+	ipv6_rx_bytes                              = 303047          special
+	ipv6_tx_pkts                               = 1655            special
+	ipv6_tx_bytes                              = 326217          special
+	ipv6_create_requests                       = 6               special
+	ipv6_create_collisions                     = 0               special
+	ipv6_create_invalid_interface              = 0               special
+	ipv6_destroy_requests                      = 0               special
+	ipv6_destroy_misses                        = 0               special
+	ipv6_hash_hits                             = 1661            special
+	ipv6_hash_reorders                         = 0               special
+	ipv6_flushes                               = 6               special
+	ipv6_evictions                             = 0               special
+	ipv6_fragmentations                        = 0               special
+	ipv6_frag_fails                            = 0               special
+	ipv6_by_rule_drops                         = 0               drop
+	ipv6_mc_create_requests                    = 0               special
+	ipv6_mc_update_requests                    = 0               special
+	ipv6_mc_create_invalid_interface           = 0               special
+	ipv6_mc_destroy_requests                   = 0               special
+	ipv6_mc_destroy_misses                     = 0               special
+	ipv6_mc_flushes                            = 0               special
+	ipv6_mirror_invalid_ifnum_conn_create_req  = 0               special
+--- NSS GMAC STATS ---
+
+________________________________________________________________________________
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< GMAC >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+________________________________________________________________________________
+
+
+#gmac stats
+
+	gmac[0]_ticks       = 0               special
+	gmac[0]_worst_ticks = 0               special
+	gmac[0]_iterations  = 0               special
+
+#gmac stats
+
+	gmac[1]_ticks       = 0               special
+	gmac[1]_worst_ticks = 0               special
+	gmac[1]_iterations  = 0               special
+
+#gmac stats
+
+	gmac[2]_ticks       = 0               special
+	gmac[2]_worst_ticks = 0               special
+	gmac[2]_iterations  = 0               special
+
+#gmac stats
+
+	gmac[3]_ticks       = 0               special
+	gmac[3]_worst_ticks = 0               special
+	gmac[3]_iterations  = 0               special
+
+#gmac stats
+
+	gmac[4]_ticks       = 0               special
+	gmac[4]_worst_ticks = 0               special
+	gmac[4]_iterations  = 0               special
+
+#gmac stats
+
+	gmac[5]_ticks       = 0               special
+	gmac[5]_worst_ticks = 0               special
+	gmac[5]_iterations  = 0               special
+
+#gmac stats
+
+	gmac[6]_ticks       = 0               special
+	gmac[6]_worst_ticks = 0               special
+	gmac[6]_iterations  = 0               special
+
+#gmac stats
+
+	gmac[7]_ticks       = 0               special
+	gmac[7]_worst_ticks = 0               special
+	gmac[7]_iterations  = 0               special
+
+gmac stats end
+
+--- NSS PPPOE STATS ---
+
+#pppoe base node stats start
+
+	pppoe_rx_packets               = 0               common
+	pppoe_rx_bytes                 = 0               common
+	pppoe_tx_packets               = 0               common
+	pppoe_tx_bytes                 = 0               common
+	pppoe_rx_dropped[0]            = 0               drop
+	pppoe_rx_dropped[1]            = 0               drop
+	pppoe_rx_dropped[2]            = 0               drop
+	pppoe_rx_dropped[3]            = 0               drop
+	pppoe_short_pppoe_hdr_length   = 0               exception
+	pppoe_short_packet_length      = 0               exception
+	pppoe_wrong_version_or_type    = 0               exception
+	pppoe_wrong_code               = 0               exception
+	pppoe_unsupported_ppp_protocol = 0               exception
+	pppoe_disabled_bridge_packet   = 0               exception
+--- NSS NPOINT & PROFILER ---
+--- ECM DB SUMMARY ---
+--- ECM FRONT END IPV4 STATS ---
+--- ECM FRONT END IPV6 STATS ---
+--- NSS / ECM PROC STATS ---
+================================================================================
+SECTION 3: CPU IRQ, SOFTIRQ & PACKET SCHEDULING (RPS/XPS)
+================================================================================
+--- /proc/interrupts ---
+           CPU0       CPU1       
+ 18:   19355792   19355789       GIC  20 Edge      arch_timer
+ 20:      14507          0       GIC 139 Level     msm_serial0
+ 21:          0          0       GIC 270 Level     bam_dma
+ 22:          2          0       GIC 127 Level     78b5000.spi
+ 23:          0          0       GIC 239 Level     bam_dma
+ 24:   16922730          0       GIC 178 Level     bam_dma
+ 25:    3043887          0       GIC 434 Edge      nss_empty_buf_sos
+ 26:    1702216          0       GIC 433 Edge      nss_empty_buf_queue
+ 27:          0          0       GIC 432 Edge      nss-tx-unblock
+ 28:  203457809          0       GIC 431 Edge      nss_queue0
+ 29:          0     752612       GIC 430 Edge      nss_queue1
+ 30:          0          0       GIC 429 Edge      nss_coredump_complete
+ 31:          0          0       GIC 428 Edge      nss_paged_empty_buf_sos
+ 32:          0          0       GIC 427 Edge      nss_profile_dma
+ 33:          0          0       GIC  35 Level     watchdog bark
+ 34:          9          0       GIC 209 Edge      smp2p
+ 35:          0          0       GIC 323 Edge      q6_wdog_interrupt
+ 39:          3          0       GIC 324 Edge      ce0
+ 40:    3934821          0       GIC 325 Edge      ce1
+ 41:    9353079          0       GIC 326 Edge      ce2
+ 42:     393546          0       GIC 327 Edge      ce3
+ 44:          5          0       GIC 329 Edge      ce5
+ 56:          0          0       GIC 341 Edge      host2rxdma-monitor-ring1
+ 58:          0          0       GIC 343 Edge      wbm2host-rx-release
+ 59:          0          0       GIC 344 Edge      reo2host-status
+ 66:          0          0       GIC 351 Edge      rxdma2host-monitor-destination-mac1
+ 69:   11659349          0       GIC 354 Edge      ppdu-end-interrupts-mac1
+ 72:          4          0       GIC 357 Edge      rxdma2host-monitor-status-ring-mac1
+ 78:   11155847          0       GIC 363 Edge      rxdma2host-destination-ring-mac1
+ 90:         65          0       GIC 448 Edge      pci0_wlan_ce_0, pci0_wlan_ce_5
+ 91:   21405881          0       GIC 449 Edge      pci0_wlan_ce_1
+ 92:    8326409          0       GIC 450 Edge      pci0_wlan_ce_2
+ 93:     221117          0       GIC 451 Edge      pci0_wlan_ce_3
+ 98:    6099865          0       GIC 456 Edge      pci0_wlan_grp_dp_3
+122:          0          0       GIC 299 Edge      tzerror
+123:          0          0       GIC 186 Level     eud_irq
+124:          0          0       GIC 194 Edge      bt_ipc_irq
+126:          0          0       GIC 216 Edge      tsens_interrupt
+127:        206          0       GIC 133 Level   
+158:          1          0   msmgpio  28 Edge      soc:gpio_keys
+168:          1          0   msmgpio  38 Edge      soc:gpio_keys
+177:          0          1     smp2p   1 Edge      q6v5 ready
+178:          0          1     smp2p   2 Edge      q6v5 handover
+179:          0          0     smp2p   0 Edge      err_fatal_interrupt
+180:          0          0     smp2p   3 Edge      stop_ack_interrupt
+181:          0          0     smp2p   8 Edge      q6v5_wcss_userpd1_fatal
+182:          0          1     smp2p   9 Edge      q6v5_wcss_userpd1_ready
+183:          0          1     smp2p  12 Edge      q6v5_wcss_userpd1_spawn_ack
+184:          0          0     smp2p  11 Edge      q6v5_wcss_userpd1_stop_ack
+185:          0          0     smp2p  16 Edge      q6v5_wcss_userpd2_fatal
+186:          0          1     smp2p  17 Edge      q6v5_wcss_userpd2_ready
+187:          0          1     smp2p  20 Edge      q6v5_wcss_userpd2_spawn_ack
+188:          0          0     smp2p  19 Edge      q6v5_wcss_userpd2_stop_ack
+189:         59          0       GIC 211 Edge      glink-native
+IPI0:          0          0  CPU wakeup interrupts
+IPI1:          0          0  Timer broadcast interrupts
+IPI2:    3785325   19126132  Rescheduling interrupts
+IPI3:          0          0  Function call interrupts
+IPI4:          6          8  Single function call interrupts
+IPI5:          0          0  CPU stop interrupts
+IPI6:          0          0  IRQ work interrupts
+IPI7:          0          0  completion interrupts
+Err:          0
+--- /proc/softirqs ---
+                    CPU0       CPU1       
+          HI:          0          0
+       TIMER:   19355613   19355688
+      NET_TX:      38702          2
+      NET_RX:  234498210     974907
+       BLOCK:          0          0
+BLOCK_IOPOLL:          0          0
+     TASKLET:   59377111          0
+       SCHED:   19033306   18972250
+     HRTIMER:          0          0
+         RCU:   19437956   18562425
+--- IRQ SMP AFFINITY ---
+/proc/irq/29/smp_affinity: 2
+--- RPS CPUS PER NETWORK QUEUE ---
+/sys/class/net/bond0/queues/rx-0/rps_cpus: 0
+/sys/class/net/bond0/queues/rx-1/rps_cpus: 0
+/sys/class/net/bond0/queues/rx-10/rps_cpus: 0
+/sys/class/net/bond0/queues/rx-11/rps_cpus: 0
+/sys/class/net/bond0/queues/rx-12/rps_cpus: 0
+/sys/class/net/bond0/queues/rx-13/rps_cpus: 0
+/sys/class/net/bond0/queues/rx-14/rps_cpus: 0
+/sys/class/net/bond0/queues/rx-15/rps_cpus: 0
+/sys/class/net/bond0/queues/rx-2/rps_cpus: 0
+/sys/class/net/bond0/queues/rx-3/rps_cpus: 0
+/sys/class/net/bond0/queues/rx-4/rps_cpus: 0
+/sys/class/net/bond0/queues/rx-5/rps_cpus: 0
+/sys/class/net/bond0/queues/rx-6/rps_cpus: 0
+/sys/class/net/bond0/queues/rx-7/rps_cpus: 0
+/sys/class/net/bond0/queues/rx-8/rps_cpus: 0
+/sys/class/net/bond0/queues/rx-9/rps_cpus: 0
+/sys/class/net/br-lan/queues/rx-0/rps_cpus: 0
+/sys/class/net/br-miot/queues/rx-0/rps_cpus: 0
+/sys/class/net/eth0/queues/rx-0/rps_cpus: 0
+/sys/class/net/eth0/queues/rx-1/rps_cpus: 0
+/sys/class/net/eth1/queues/rx-0/rps_cpus: 0
+/sys/class/net/eth1/queues/rx-1/rps_cpus: 0
+/sys/class/net/gre0/queues/rx-0/rps_cpus: 0
+/sys/class/net/gretap0/queues/rx-0/rps_cpus: 0
+/sys/class/net/ip6gre0/queues/rx-0/rps_cpus: 0
+/sys/class/net/ip6tnl0/queues/rx-0/rps_cpus: 0
+/sys/class/net/lo/queues/rx-0/rps_cpus: 0
+/sys/class/net/soc0/queues/rx-0/rps_cpus: 0
+/sys/class/net/soc1/queues/rx-0/rps_cpus: 0
+/sys/class/net/wg0/queues/rx-0/rps_cpus: 0
+/sys/class/net/wifi0/queues/rx-0/rps_cpus: 0
+/sys/class/net/wifi1/queues/rx-0/rps_cpus: 0
+/sys/class/net/wl0/queues/rx-0/rps_cpus: 0
+/sys/class/net/wl0/queues/rx-1/rps_cpus: 0
+/sys/class/net/wl0/queues/rx-2/rps_cpus: 0
+/sys/class/net/wl0/queues/rx-3/rps_cpus: 0
+/sys/class/net/wl1/queues/rx-0/rps_cpus: 0
+/sys/class/net/wl1/queues/rx-1/rps_cpus: 0
+/sys/class/net/wl1/queues/rx-2/rps_cpus: 0
+/sys/class/net/wl1/queues/rx-3/rps_cpus: 0
+/sys/class/net/wl13/queues/rx-0/rps_cpus: 0
+/sys/class/net/wl13/queues/rx-1/rps_cpus: 0
+/sys/class/net/wl13/queues/rx-2/rps_cpus: 0
+/sys/class/net/wl13/queues/rx-3/rps_cpus: 0
+--- XPS CPUS PER NETWORK QUEUE ---
+/sys/class/net/bond0/queues/tx-0/xps_cpus: 0
+/sys/class/net/bond0/queues/tx-1/xps_cpus: 0
+/sys/class/net/bond0/queues/tx-10/xps_cpus: 0
+/sys/class/net/bond0/queues/tx-11/xps_cpus: 0
+/sys/class/net/bond0/queues/tx-12/xps_cpus: 0
+/sys/class/net/bond0/queues/tx-13/xps_cpus: 0
+/sys/class/net/bond0/queues/tx-14/xps_cpus: 0
+/sys/class/net/bond0/queues/tx-15/xps_cpus: 0
+/sys/class/net/bond0/queues/tx-2/xps_cpus: 0
+/sys/class/net/bond0/queues/tx-3/xps_cpus: 0
+/sys/class/net/bond0/queues/tx-4/xps_cpus: 0
+/sys/class/net/bond0/queues/tx-5/xps_cpus: 0
+/sys/class/net/bond0/queues/tx-6/xps_cpus: 0
+/sys/class/net/bond0/queues/tx-7/xps_cpus: 0
+/sys/class/net/bond0/queues/tx-8/xps_cpus: 0
+/sys/class/net/bond0/queues/tx-9/xps_cpus: 0
+/sys/class/net/br-lan/queues/tx-0/xps_cpus: 0
+/sys/class/net/br-miot/queues/tx-0/xps_cpus: 0
+/sys/class/net/eth0/queues/tx-0/xps_cpus: 0
+/sys/class/net/eth0/queues/tx-1/xps_cpus: 0
+/sys/class/net/eth1/queues/tx-0/xps_cpus: 0
+/sys/class/net/eth1/queues/tx-1/xps_cpus: 0
+/sys/class/net/gre0/queues/tx-0/xps_cpus: 0
+/sys/class/net/gretap0/queues/tx-0/xps_cpus: 0
+/sys/class/net/ip6gre0/queues/tx-0/xps_cpus: 0
+/sys/class/net/ip6tnl0/queues/tx-0/xps_cpus: 0
+/sys/class/net/lo/queues/tx-0/xps_cpus: 0
+/sys/class/net/soc0/queues/tx-0/xps_cpus: 0
+/sys/class/net/soc1/queues/tx-0/xps_cpus: 0
+/sys/class/net/wg0/queues/tx-0/xps_cpus: 0
+/sys/class/net/wifi0/queues/tx-0/xps_cpus: 0
+/sys/class/net/wifi1/queues/tx-0/xps_cpus: 0
+/sys/class/net/wl0/queues/tx-0/xps_cpus: 0
+/sys/class/net/wl0/queues/tx-1/xps_cpus: 0
+/sys/class/net/wl0/queues/tx-2/xps_cpus: 0
+/sys/class/net/wl0/queues/tx-3/xps_cpus: 0
+/sys/class/net/wl1/queues/tx-0/xps_cpus: 0
+/sys/class/net/wl1/queues/tx-1/xps_cpus: 0
+/sys/class/net/wl1/queues/tx-2/xps_cpus: 0
+/sys/class/net/wl1/queues/tx-3/xps_cpus: 0
+/sys/class/net/wl13/queues/tx-0/xps_cpus: 0
+/sys/class/net/wl13/queues/tx-1/xps_cpus: 0
+/sys/class/net/wl13/queues/tx-2/xps_cpus: 0
+/sys/class/net/wl13/queues/tx-3/xps_cpus: 0
+================================================================================
+SECTION 4: WI-FI 6 (2.4 GHz & 5 GHz HE160, DFS, OFDMA, MU-MIMO)
+================================================================================
+--- UCI WIRELESS CONFIGURATION ---
+wireless.wifi0=wifi-device
+wireless.wifi0.type='qcawificfg80211'
+wireless.wifi0.macaddr='cc:d8:43:50:f9:20'
+wireless.wifi0.hwmode='11axg'
+wireless.wifi0.htmode='HT40'
+wireless.wifi0.disabled='0'
+wireless.wifi0.txbf='3'
+wireless.wifi0.ax='1'
+wireless.wifi0.txpwr='max'
+wireless.wifi0.channel='0'
+wireless.wifi0.autoch='2'
+wireless.wifi0.bw='0'
+wireless.wifi0.region='1'
+wireless.wifi0.aregion='6'
+wireless.wifi0.country='SG'
+wireless.@wifi-iface[0]=wifi-iface
+wireless.@wifi-iface[0].device='wifi0'
+wireless.@wifi-iface[0].ifname='wl1'
+wireless.@wifi-iface[0].network='lan'
+wireless.@wifi-iface[0].mode='ap'
+wireless.@wifi-iface[0].wpsdevicename='XiaoMiRouter'
+wireless.@wifi-iface[0].he_ul_ofdma='0'
+wireless.@wifi-iface[0].amsdu='2'
+wireless.@wifi-iface[0].macfilter='disabled'
+wireless.@wifi-iface[0].disabled='0'
+wireless.@wifi-iface[0].ssid='KMB'
+wireless.@wifi-iface[0].encryption='psk2'
+wireless.@wifi-iface[0].key='Todepzai88@'
+wireless.@wifi-iface[0].wscconfigstatus='2'
+wireless.@wifi-iface[0].bsd='0'
+wireless.@wifi-iface[0].rrm='0'
+wireless.@wifi-iface[0].wnm='0'
+wireless.@wifi-iface[0].hidden='1'
+wireless.wifi1=wifi-device
+wireless.wifi1.type='qcawificfg80211'
+wireless.wifi1.macaddr='cc:d8:43:50:f9:1f'
+wireless.wifi1.hwmode='11axa'
+wireless.wifi1.htmode='HT80'
+wireless.wifi1.disabled='0'
+wireless.wifi1.txbf='3'
+wireless.wifi1.ax='1'
+wireless.wifi1.txpwr='max'
+wireless.wifi1.region='1'
+wireless.wifi1.aregion='6'
+wireless.wifi1.bw='160'
+wireless.wifi1.channel='0'
+wireless.wifi1.autoch='2'
+wireless.wifi1.country='SG'
+wireless.@wifi-iface[1]=wifi-iface
+wireless.@wifi-iface[1].device='wifi1'
+wireless.@wifi-iface[1].ifname='wl0'
+wireless.@wifi-iface[1].network='lan'
+wireless.@wifi-iface[1].mode='ap'
+wireless.@wifi-iface[1].wpsdevicename='XiaoMiRouter'
+wireless.@wifi-iface[1].he_ul_ofdma='0'
+wireless.@wifi-iface[1].channel_block_list='52,56,60,64,100,104,108,112,116,120,124,128,132,136,140'
+wireless.@wifi-iface[1].macfilter='disabled'
+wireless.@wifi-iface[1].miwifi_mesh='0'
+wireless.@wifi-iface[1].disabled='0'
+wireless.@wifi-iface[1].key='Todepzai88@'
+wireless.@wifi-iface[1].wscconfigstatus='2'
+wireless.@wifi-iface[1].hidden='0'
+wireless.@wifi-iface[1].bsd='0'
+wireless.@wifi-iface[1].rrm='0'
+wireless.@wifi-iface[1].wnm='0'
+wireless.@wifi-iface[1].ssid='KMB_5G'
+wireless.@wifi-iface[1].encryption='psk2+ccmp'
+wireless.@wifi-iface[1].sae='1'
+wireless.@wifi-iface[1].sae_password='Todepzai88@'
+wireless.@wifi-iface[1].ieee80211w='1'
+wireless.miot_2G=wifi-iface
+wireless.miot_2G.ifname='wl13'
+wireless.miot_2G.network='miot'
+wireless.miot_2G.encryption='none'
+wireless.miot_2G.device='wifi0'
+wireless.miot_2G.mode='ap'
+wireless.miot_2G.hidden='1'
+wireless.miot_2G.maxsta='20'
+wireless.miot_2G.ssid='25c829b1922d3123_miwifi'
+wireless.miot_2G.bsd='0'
+wireless.miot_2G.disabled='0'
+wireless.miot_2G.ap_isolate='1'
+wireless.miot_2G.userswitch='1'
+wireless.miot_2G.bindstatus='1'
+--- IWCONFIG ---
+soc1      no wireless extensions.
+
+gre0      no wireless extensions.
+
+br-miot   no wireless extensions.
+
+wifi0     no wireless extensions.
+
+ip6gre0   no wireless extensions.
+
+gretap0   no wireless extensions.
+
+wl13      IEEE 802.11axg  ESSID:"25c829b1922d3123_miwifi"  
+lo        no wireless extensions.
+
+wg0       no wireless extensions.
+
+          Mode:Master  Frequency:2.412 GHz  Access Point: D2:D8:43:50:F9:20   
+          Bit Rate:286.8 Mb/s   Tx-Power:23 dBm   
+          RTS thr:off   Fragment thr:off
+          Encryption key:off
+          Power Management:off
+          Link Quality=0/94  Signal level=-99 dBm  Noise level=-99 dBm
+          Rx invalid nwid:81431  Rx invalid crypt:0  Rx invalid frag:0
+          Tx excessive retries:0  Invalid misc:0   Missed beacon:0
+
+wl0       IEEE 802.11axa  ESSID:"KMB_5G"  
+          Mode:Master  Frequency:5.2 GHz  Access Point: CC:D8:43:50:F9:1F   
+          Bit Rate:2.4019 Gb/s   Tx-Power:24 dBm   
+          RTS thr:off   Fragment thr:off
+          Encryption key:EB0E-F5FF-7828-3287-EC17-F336-97CE-DCBF   Security mode:restricted
+          Power Management:off
+          Link Quality=0/94  Signal level=-94 dBm  Noise level=-94 dBm
+          Rx invalid nwid:19262  Rx invalid crypt:0  Rx invalid frag:0
+          Tx excessive retries:0  Invalid misc:0   Missed beacon:0
+
+wl1       IEEE 802.11axg  ESSID:"KMB"  eth0      no wireless extensions.
+
+eth1      no wireless extensions.
+
+ip6tnl0   no wireless extensions.
+
+br-lan    no wireless extensions.
+
+wifi1     no wireless extensions.
+
+bond0     no wireless extensions.
+
+soc0      no wireless extensions.
+
+
+          Mode:Master  Frequency:2.412 GHz  Access Point: CC:D8:43:50:F9:20   
+          Bit Rate:286.8 Mb/s   Tx-Power:23 dBm   
+          RTS thr:off   Fragment thr:off
+          Encryption key:D86A-0F26-945F-3A5F-E78A-CCF5-559B-5493   Security mode:restricted
+          Power Management:off
+          Link Quality=0/94  Signal level=-99 dBm  Noise level=-99 dBm
+          Rx invalid nwid:124713  Rx invalid crypt:0  Rx invalid frag:0
+          Tx excessive retries:0  Invalid misc:0   Missed beacon:0
+
+--- WIRELESS INTERFACES IN /proc/net/wireless ---
+Inter-| sta-|   Quality        |   Discarded packets               | Missed | WE
+ face | tus | link level noise |  nwid  crypt   frag  retry   misc | beacon | 22
+ wifi0: 0000    0     0     0        0      0      0      0      0        0
+ wifi1: 0000    0     0     0        0      0      0      0      0        0
+   wl1: 0001    0.  -99.  -99.  124713      0      0      0      0        0
+  wl13: 0001    0.  -99.  -99.   81431      0      0      0      0        0
+   wl0: 0001    0.  -94.  -94.   19262      0      0      0      0        0
+--- QCA IWPRIV / WLANCONFIG AUDIT (ath0, ath1, wl0, wl1) ---
+=== DEV wl0 ===
+wl0       get_chwidth:3  
+wl0       get_mode:11AHE160
+ADDR               AID CHAN TXRATE RXRATE RSSI MINRSSI MAXRSSI IDLE  TXSEQ  RXSEQ  CAPS XCAPS ACAPS     ERP    STATE MAXRATE(DOT11) HTCAPS   VHTCAPS ASSOCTIME    IEs   MODE RXNSS TXNSS                   PSMODE
+90:b7:90:77:85:1d    1   40 2401M   2401M  -36     -51     -34    0      0   65535    EP   EOf NULL    0          b        2401900            AWPS              gG 02:03:04     RSN WME IEEE80211_MODE_11AXA_HE160  2 2   1  
+      
+ RSSI is combined over chains in dBm
+ Minimum Tx Power		: 0
+ Maximum Tx Power		: 0
+ HT Capability			: Yes
+ VHT Capability			: Yes
+ MU capable			: No
+ SNR				: 58
+ Operating band			:    5GHz
+ Current Operating class	: 0
+ Supported Rates		: 12  18  24  36  48  72  96  108 
+ Max STA phymode		: IEEE80211_MODE_11AXA_HE160 
+9e:50:df:ab:ac:d8    2   40 1080M    648M  -44     -61     -43    0      0   65535    EP    OI NULL    0          b        1201000            AWPS              gG 01:51:51     RSN WME IEEE80211_MODE_11AXA_HE80  2 2   1  
+      
+ RSSI is combined over chains in dBm
+ Minimum Tx Power		: 0
+ Maximum Tx Power		: 0
+ HT Capability			: Yes
+=== DEV wl1 ===
+wl1       get_chwidth:0  
+wl1       get_mode:11GHE20
+ADDR               AID CHAN TXRATE RXRATE RSSI MINRSSI MAXRSSI IDLE  TXSEQ  RXSEQ  CAPS XCAPS ACAPS     ERP    STATE MAXRATE(DOT11) HTCAPS   VHTCAPS ASSOCTIME    IEs   MODE RXNSS TXNSS                   PSMODE
+================================================================================
+SECTION 5: LINUX NETWORKING, TCP/IP, CONNTRACK, MTU & DNS
+================================================================================
+--- TCP CONGESTION CONTROL ---
+net.ipv4.tcp_congestion_control = cubic
+net.ipv4.tcp_available_congestion_control = cubic reno
+--- TCP & CORE SOCKET BUFFERS ---
+net.ipv4.tcp_rmem = 4096	524288	4194304
+net.ipv4.tcp_wmem = 4096	524288	4194304
+net.core.rmem_max = 4194304
+net.core.wmem_max = 4194304
+net.core.netdev_max_backlog = 10000
+--- CONNTRACK PARAMETERS & LOAD ---
+net.netfilter.nf_conntrack_max = 16384
+net.netfilter.nf_conntrack_count = 552
+net.netfilter.nf_conntrack_tcp_timeout_established = 1800
+552
+--- INTERFACE MTU & ADDRESSES ---
+br-lan    Link encap:Ethernet  HWaddr CC:D8:43:50:F9:1E  
+          inet addr:192.168.31.1  Bcast:192.168.31.255  Mask:255.255.255.0
+          inet6 addr: fe80::ced8:43ff:fe50:f91e/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:28718240 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:61653697 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:14441917398 (13.4 GiB)  TX bytes:78298738706 (72.9 GiB)
+
+br-miot   Link encap:Ethernet  HWaddr D2:D8:43:50:F9:20  
+          inet addr:192.168.32.1  Bcast:192.168.32.255  Mask:255.255.255.0
+          inet6 addr: fe80::d0d8:43ff:fe50:f920/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:306441 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:30599 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:38330507 (36.5 MiB)  TX bytes:6642775 (6.3 MiB)
+
+eth0      Link encap:Ethernet  HWaddr A4:A9:30:35:A8:5F  
+          inet addr:192.168.100.75  Bcast:192.168.100.255  Mask:255.255.255.0
+          inet6 addr: fe80::a6a9:30ff:fe35:a85f/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:63326589 errors:0 dropped:13366 overruns:0 frame:0
+          TX packets:29131717 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:78604561152 (73.2 GiB)  TX bytes:14984095262 (13.9 GiB)
+          Interrupt:127 
+
+eth1      Link encap:Ethernet  HWaddr CC:D8:43:50:F9:1E  
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:20018719 errors:0 dropped:199 overruns:0 frame:0
+          TX packets:32650677 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:11058611068 (10.2 GiB)  TX bytes:40330588992 (37.5 GiB)
+
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:516664 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:516664 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1 
+          RX bytes:56841277 (54.2 MiB)  TX bytes:56841277 (54.2 MiB)
+
+wg0       Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00  
+          inet addr:10.99.0.1  P-t-P:10.99.0.1  Mask:255.255.255.0
+          UP POINTOPOINT RUNNING NOARP MULTICAST  MTU:1420  Metric:1
+          RX packets:25280 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:42135 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:2000 
+          RX bytes:2319597 (2.2 MiB)  TX bytes:97514999 (92.9 MiB)
+
+wifi0     Link encap:UNSPEC  HWaddr CC-D8-43-50-F9-20-00-00-00-00-00-00-00-00-00-00  
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:375493 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:130558 errors:5 dropped:5 overruns:0 carrier:0
+          collisions:0 txqueuelen:2699 
+          RX bytes:50066553 (47.7 MiB)  TX bytes:27541121 (26.2 MiB)
+
+wifi1     Link encap:UNSPEC  HWaddr CC-D8-43-50-F9-1F-00-00-00-00-00-00-00-00-00-00  
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:9455585 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:30817203 errors:35987 dropped:35987 overruns:0 carrier:0
+          collisions:0 txqueuelen:2699 
+          RX bytes:69214923 (66.0 MiB)  TX bytes:4262557183 (3.9 GiB)
+
+wl0       Link encap:Ethernet  HWaddr CC:D8:43:50:F9:1F  
+          inet6 addr: fe80::ced8:43ff:fe50:f91f/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:9455453 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:30775646 errors:35987 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:4364170075 (4.0 GiB)  TX bytes:39312299811 (36.6 GiB)
+
+wl1       Link encap:Ethernet  HWaddr CC:D8:43:50:F9:20  
+          inet6 addr: fe80::ced8:43ff:fe50:f920/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+wl13      Link encap:Ethernet  HWaddr D2:D8:43:50:F9:20  
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:303301 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:37886 errors:5 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:42287081 (40.3 MiB)  TX bytes:7510865 (7.1 MiB)
+
+--- IPTABLES MANGLE TABLE (TCPMSS & CLASSIFICATION) ---
+Chain PREROUTING (policy ACCEPT 2368K packets, 1822M bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+44972 6433K DSCP       udp  --  *      *       192.168.31.106       0.0.0.0/0            DSCP set 0x2e
+  117  9296 DSCP       udp  --  *      *       0.0.0.0/0            192.168.31.106       DSCP set 0x2e
+48605   27M DSCP       udp  --  *      *       192.168.31.101       0.0.0.0/0            DSCP set 0x2e
+83379   20M DSCP       udp  --  *      *       0.0.0.0/0            0.0.0.0/0            multiport dports 5000:5500 DSCP set 0x2e
+  263 29325 DSCP       udp  --  *      *       0.0.0.0/0            0.0.0.0/0            multiport dports 7000:9500 DSCP set 0x2e
+  530 67324 DSCP       udp  --  *      *       0.0.0.0/0            0.0.0.0/0            multiport dports 10000:30000 DSCP set 0x2e
+
+Chain INPUT (policy ACCEPT 1464K packets, 1503M bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 901K packets, 317M bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+ 151K 8415K TCPMSS     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp flags:0x06/0x02 TCPMSS clamp to PMTU
+ 151K 8414K TCPMSS     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp flags:0x06/0x02 /* !fw3: Zone wan MTU fixing */ TCPMSS clamp to PMTU
+
+Chain OUTPUT (policy ACCEPT 1308K packets, 1554M bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain POSTROUTING (policy ACCEPT 2203K packets, 1871M bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+--- IPTABLES NAT TABLE (FASTPATH / MASQUERADE) ---
+Chain PREROUTING (policy ACCEPT 92 packets, 37558 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 REDIRECT   tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            match-set zapret_unblock dst tcp dpt:443 redir ports 988
+ 377K   60M prerouting_rule  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Custom prerouting rule chain */
+ 170K   39M zone_lan_prerouting  all  --  br-lan *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+85805 4813K zone_wan_prerouting  all  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain INPUT (policy ACCEPT 20 packets, 1639 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 140 packets, 9335 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain POSTROUTING (policy ACCEPT 11 packets, 676 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+  279 75634 MASQUERADE  all  --  *      *       10.99.0.0/24         0.0.0.0/0           
+ 522K   62M postrouting_rule  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Custom postrouting rule chain */
+ 3005  212K zone_lan_postrouting  all  --  *      br-lan  0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+ 481K   60M zone_wan_postrouting  all  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain MINIUPNPD (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain MINIUPNPD-POSTROUTING (0 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain parentalctl_nat (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain postrouting_lan_rule (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain postrouting_ready_rule (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain postrouting_rule (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain postrouting_wan_rule (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+--- DNS CONFIGURATION & RESOLV.CONF ---
+nameserver 127.0.0.1
+nameserver ::1
+nameserver 127.0.0.1
+nameserver ::1
+# Interface wan
+nameserver 192.168.100.1
+search lan
+================================================================================
+SECTION 6: VPN SUBSYSTEM (WIREGUARD / BORINGTUN AUDIT)
+================================================================================
+--- RUNNING VPN PROCESSES ---
+ 1305 root      523m S <  /data/wg_server -srvkey 2BJyzhCbtUa5X4GqyW3AwPvkT6pD
+--- /data DIRECTORY AUDIT ---
+drwxr-xr-x    8 root     root          1664 Nov  9 16:23 .
+drwxr-xr-x   21 1000     root           322 Apr  2  2024 ..
+-rw-r--r--    1 root     root           370 Nov  6 17:42 8889.conf
+drwxr-xr-x    2 root     root           376 Nov  8 04:00 adblock
+-rw-r--r--    1 root     root           406 Nov  9 14:17 auto_run.sh
+-rwxr-xr-x    1 root     root          1543 Nov  9 03:05 auto_ssh.sh
+-rw-r--r--    1 root     root          1633 Nov  5 00:41 dns_game.conf
+-rwxr-xr-x    1 root     root      11403426 Nov  6 17:45 dnsproxy
+drwxr-xr-x    9 root     root           920 Nov  9 17:22 etc
+-rwxr-xr-x    1 root     root          2249 Nov  1 16:13 flight_recorder.sh
+-rwxr-xr-x    1 root     root          2752 Nov  1 15:00 fpt_auto_hunter.sh
+-rwxr-xr-x    1 root     root          4615 Nov  1 15:09 fpt_daemon.sh
+-rwxr-xr-x    1 root     root          3524 Oct 31 23:35 fpt_query.sh
+drwxr-xr-x    3 root     root           888 Nov  9 20:45 ini
+-rwxr-xr-x    1 root     root           597 Nov  9 16:23 start_wireguard.sh
+-rwxr-xr-x    1 root     root        425572 Nov  6 17:47 stats_collector
+-rwxr-xr-x    1 root     root          2751 Nov  9 16:37 tune_network.sh
+-rwxr-xr-x    1 root     root           326 Nov  9 14:17 update_duckdns.sh
+drwxr-xr-x    3 root     root           224 Jan  1  1970 userdisk
+-rwxr-xr-x    1 root     root           525 Nov  9 03:57 wake_pc.sh
+-rwxr-xr-x    1 root     root       3342520 Nov  9 16:23 wg_server
+drwxr-xr-x    3 root     root           368 Nov  6 17:37 www
+drwxr-xr-x    2 root     root           584 Nov  7 02:07 zapret
+drwxr-xr-x    9 root     root           920 Nov  9 17:22 .
+drwxr-xr-x    8 root     root          1664 Nov  9 16:23 ..
+drwxr-xr-x    2 root     root          4264 Nov 11 15:15 config
+drwxr-xr-x    2 root     root           224 Nov  9 14:17 crontabs
+-rw-r--r--    1 1000     root            36 Apr  2  2024 custom_hosts
+drwxr-xr-x    2 root     root           160 Jan  1  1970 datacenterconfig
+drwxr-xr-x    2 root     root           320 Oct 28 15:03 parentalctl
+-rw-r--r--    1 1000     root           281 Apr 19  2024 passwd
+drwxr-xr-x    5 root     root           920 Jan  1  1970 ppp
+-rw-r--r--    1 1000     root           241 Oct 31 18:44 shadow
+drwxr-xr-x    2 root     root           232 Apr 19  2024 smartcontroller
+drwxr-xr-x    2 root     root           232 Jan  1  1970 smartvpn
+-rw-r--r--    1 1000     root         16384 Nov  9 17:22 xqDb
+--- /tmp VPN RESIDUE ---
+-rw-r--r--    1 root     root             0 Nov  9 20:48 boringtun.out
+-rwxr-xr-x    1 root     root       1655436 Nov  9 20:48 boringtun_test
+-rwxr-xr-x    1 root     root        130524 Nov  9 20:48 wg
+-rw-r--r--    1 root     root           218 Nov  9 16:14 wg_server.log
+================================================================================
+SECTION 7: SECURITY & LISTENING PORTS AUDIT
+================================================================================
+--- LISTENING SOCKETS (NETSTAT) ---
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       in out PID/Program name    
+tcp        0      0 192.168.31.1:19553      0.0.0.0:*               LISTEN       0 0 1382/cab_meshd
+tcp        0      0 0.0.0.0:8098            0.0.0.0:*               LISTEN       0 0 1534/nginx.conf -g 
+tcp        0      0 0.0.0.0:8080            0.0.0.0:*               LISTEN       0 0 1534/nginx.conf -g 
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN       0 0 1534/nginx.conf -g 
+tcp        0      0 0.0.0.0:784             0.0.0.0:*               LISTEN       0 0 664/tbusd
+tcp        0      0 127.0.0.1:53            0.0.0.0:*               LISTEN       0 0 3139/dnsmasq
+tcp        0      0 192.168.100.75:53       0.0.0.0:*               LISTEN       0 0 3139/dnsmasq
+tcp        0      0 10.99.0.1:53            0.0.0.0:*               LISTEN       0 0 3139/dnsmasq
+tcp        0      0 192.168.31.1:53         0.0.0.0:*               LISTEN       0 0 3139/dnsmasq
+tcp        0      0 192.168.32.1:53         0.0.0.0:*               LISTEN       0 0 3139/dnsmasq
+tcp        0      0 0.0.0.0:56789           0.0.0.0:*               LISTEN       0 0 1393/dropbear
+tcp        0      0 127.0.0.1:8920          0.0.0.0:*               LISTEN       0 0 2714/fcgi-cgi
+tcp        0      0 0.0.0.0:8888            0.0.0.0:*               LISTEN       0 0 1243/uhttpd
+tcp        0      0 0.0.0.0:8889            0.0.0.0:*               LISTEN       0 0 1534/nginx.conf -g 
+tcp        0      0 0.0.0.0:443             0.0.0.0:*               LISTEN       0 0 1534/nginx.conf -g 
+tcp        0      0 0.0.0.0:988             0.0.0.0:*               LISTEN       0 0 3158/tpws
+tcp        0      0 ::1:53                  :::*                    LISTEN       0 0 3139/dnsmasq
+tcp        0      0 fe80::a6a9:30ff:fe35:a85f:53 :::*                    LISTEN       0 0 3139/dnsmasq
+tcp        0      0 fe80::ced8:43ff:fe50:f91e:53 :::*                    LISTEN       0 0 3139/dnsmasq
+tcp        0      0 fe80::ced8:43ff:fe50:f920:53 :::*                    LISTEN       0 0 3139/dnsmasq
+tcp        0      0 fe80::d0d8:43ff:fe50:f920:53 :::*                    LISTEN       0 0 3139/dnsmasq
+tcp        0      0 fe80::ced8:43ff:fe50:f91f:53 :::*                    LISTEN       0 0 3139/dnsmasq
+tcp        0      0 :::56789                :::*                    LISTEN       0 0 1393/dropbear
+tcp        0      0 :::8888                 :::*                    LISTEN       0 0 1243/uhttpd
+udp        0      0 127.0.0.1:514           0.0.0.0:*                            0 0 3129/syslog-ng
+udp        0      0 127.0.0.1:53            0.0.0.0:*                            0 0 3139/dnsmasq
+udp        0      0 192.168.100.75:53       0.0.0.0:*                            0 0 3139/dnsmasq
+udp        0      0 10.99.0.1:53            0.0.0.0:*                            0 0 3139/dnsmasq
+udp        0      0 192.168.31.1:53         0.0.0.0:*                            0 0 3139/dnsmasq
+udp        0      0 192.168.32.1:53         0.0.0.0:*                            0 0 3139/dnsmasq
+udp        0      0 0.0.0.0:67              0.0.0.0:*                            0 0 3139/dnsmasq
+udp        0      0 192.168.31.1:35530      0.0.0.0:*                            0 0 1382/cab_meshd
+udp        0      0 0.0.0.0:19553           0.0.0.0:*                            0 0 1382/cab_meshd
+udp        0      0 0.0.0.0:51820           0.0.0.0:*                            0 0 1305/wg_server
+udp        0      0 ::1:53                  :::*                                 0 0 3139/dnsmasq
+udp        0      0 fe80::a6a9:30ff:fe35:a85f:53 :::*                                 0 0 3139/dnsmasq
+udp        0      0 fe80::ced8:43ff:fe50:f91e:53 :::*                                 0 0 3139/dnsmasq
+udp        0      0 fe80::ced8:43ff:fe50:f920:53 :::*                                 0 0 3139/dnsmasq
+udp        0      0 fe80::d0d8:43ff:fe50:f920:53 :::*                                 0 0 3139/dnsmasq
+udp        0      0 fe80::ced8:43ff:fe50:f91f:53 :::*                                 0 0 3139/dnsmasq
+udp        0      0 :::51820                :::*                                 0 0 1305/wg_server
+--- DROPBEAR CONFIGURATION ---
+config dropbear
+	option PasswordAuth 'on'
+	option RootPasswordAuth 'on'
+	option Port         '56789'
+#	option BannerFile   '/etc/banner'
+--- WAN FIREWALL ZONE RULES ---
+Chain zone_wan_input (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+82250 4413K input_wan_rule  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Custom wan input rule chain */
+   20  8240 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0            udp dpt:68 /* !fw3: Allow-DHCP-Renew */
+    7   356 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:56789 /* !fw3: Allow-WAN-SSH */
+    0     0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0            udp dpt:51820 /* !fw3: Allow-WAN-WireGuard */
+    0     0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate DNAT /* !fw3: Accept port redirections */
+82223 4404K zone_wan_src_REJECT  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+Chain zone_lan_input (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+48378 3486K input_lan_rule  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Custom lan input rule chain */
+   18   960 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate DNAT /* !fw3: Accept port redirections */
+48360 3485K zone_lan_src_ACCEPT  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */

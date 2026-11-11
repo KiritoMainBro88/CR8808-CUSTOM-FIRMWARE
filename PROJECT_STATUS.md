@@ -2,11 +2,11 @@
 
 - Version: `0.2.0-dev`
 - Date: 2026-11-11
-- Phase: P9/M10.2.1 CR8818 Critical Evidence Correction & Recovery Validation
-- Current Branch: `feature/m10-2-1-evidence-correction`
-- Overall status: `M10_2_1_EVIDENCE_CORRECTION_COMPLETE_AWAITING_REVIEW`
+- Phase: P10/M11 RA82 Performance & Security Optimization Audit (Track A Primary)
+- Current Branch: `feature/m11-ra82-optimization-audit`
+- Overall status: `M11_RA82_OPTIMIZATION_AUDIT_COMPLETE_AWAITING_REVIEW`
 - GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE`
-- Flash authorization: `STRICT NO-GO FLASH (Live read-only device audit, static partition verification & recovery analysis only)`
+- Flash authorization: `STRICT NO-GO FLASH (Live read-only device audit, static partition verification & optimization analysis only)`
 - Initial Firmware Baseline: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Single-conduit Port 8 SGMII 1000M, Linux 6.12.112 LTS verified)
 - Primary Hardware References:
   - `yangfl/openwrt` (commit `6729bbe9f082dc15449f17908832447caeec5065` on `cr8818` branch) — Authoritative CR8818 DTS, SerDes REVSGMII abuse patch 940, caldata geometry
@@ -152,6 +152,17 @@
   4. **Architectural Grounding of KEXEC Constraint (`SOURCE_VERIFIED`):** Reframed ARM32 to ARM64 execution state transition: architecturally possible via higher EL exception in ARMv8-A, but blocked on this platform by Qualcomm TrustZone (QTEE) firmware lacking an EL3 Secure Monitor service for runtime state switching. `CONFIG_KEXEC` disabled in stock kernel; syscall returns `ENOSYS`. Removed unproven 43.6 MB contiguous RAM claim.
   5. **Dissection of `IITII/openwrt-redmi-ax3000` Community Pattern:** Validated dynamic `/proc/cmdline` detection and `ubiformat /dev/mtd18` payload delivery to inactive Slot 0, while issuing a critical warning that precompiled AX3000 firmware is fatal on CR8808 Ver.B due to switch (QCA8337 vs YT9215SC) and kernel incompatibilities.
   6. **Deliverables & Strict Safety Protocol:** Authored `reports/M10_2_1_EVIDENCE_CORRECTION.md`, `docs/M10_2_1_SLOT_AND_PARTITION_VERIFICATION.md`, and `docs/M10_2_1_RECOVERY_VALIDATION.md`. Live readback archived at `reports/live_device_audit_m10_2_1.txt`. STRICT `NO-GO FLASH` maintained (0 flash, 0 NAND writes, 0 NVRAM commits). Lab directory `D:\vibecode\test_wifi` 100% untouched. Status: `M10_2_1_EVIDENCE_CORRECTION_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Developer / Research Engineer).
+- 2026-11-11: Milestone M11 RA82 Performance & Security Optimization Audit (Track A Primary) completed on branch `feature/m11-ra82-optimization-audit`.
+  1. **Strategic Pivot Formalized:** Realaligned project into Track A (Primary: RA82 stock firmware enhancement, NSS offload, HE160, BoringTun Rust, security hardening) and Track B (Secondary: OpenWrt 25.12.6 community R&D on GitHub).
+  2. **Comprehensive Live Baseline Audit (`DEVICE_READBACK`):** Interrogated running router passively via SSH script `scripts/m11_ra82_optimization_audit.sh`, saving 1,205 lines of raw telemetry to `reports/M11_RA82_LIVE_AUDIT_RAW.txt`.
+  3. **NSS Flow Offload Reality (`DEVICE_READBACK`):** Confirmed NSS IPv4 hardware acceleration is active and healthy: 92.7M packets / 92.7 GB processed, 89.8M hash hits (96.9% offload rate, 0 drops). Identified fallback traffic: WireGuard `wg0` (software CPU), Zapret `tpws` proxy, IPv6, and local sockets.
+  4. **CPU Core & IRQ Imbalance Discovered (`DEVICE_READBACK`):** Diagnosed severe single-core bottleneck: CPU0 processes 99.58% of `NET_RX` softirqs (234.5M) and 100% of Wi-Fi DMA/interrupts; CPU1 handles only 0.42%. RPS is disabled (`0`) across all network devices.
+  5. **Wi-Fi 6 HE160 Ground Truth (`DEVICE_READBACK`):** Proved 5 GHz QCN6102 radio (`wl0`) is already operating at 160 MHz (Channel 40) with active station connected at 2,401.9 Mbps (2.4 Gbps) link rate. Demystified Speedtest > 1,000 Mbps paradox: 2.4 Gbps Wi-Fi PHY is physically throttled by the 1,000 Mbps Gigabit WAN port.
+  6. **VPN Modernization Opportunity (`DEVICE_READBACK`):** Discovered existing `/data/wg_server` (WireGuard Go) consumes 523 MB virtual memory. Proposed drop-in replacement with statically linked BoringTun Rust (~3.0 MB VmRSS), saving tens of megabytes of RAM.
+  7. **Security Exposure Audit (`DEVICE_READBACK`):** Discovered Dropbear SSH (port 56789) is open to the entire WAN subnet (`0.0.0.0/0`) with root password authentication enabled. Identified ~15–20 MiB of RAM consumed by non-essential Xiaomi cloud daemons (`messagingagent`, `trafficd`, `smartcontroller`, `cab_meshd`).
+  8. **Itemized Optimization Roadmap & 5-Tier Taxonomy:** Formulated 8 structured proposals across CPU balancing (RPS), memory reclamation, BoringTun Rust, Wi-Fi OFDMA/roaming, conntrack tuning, and WAN firewall hardening. Every change mapped to 5-tier taxonomy with instant rollback commands.
+  9. **Deliverables & Strict Safety Protocol:** Authored `reports/M11_RA82_OPTIMIZATION_AUDIT.md`, `docs/M11_RA82_OPTIMIZATION_ROADMAP.md`, and raw log `reports/M11_RA82_LIVE_AUDIT_RAW.txt`. STRICT `NO-GO FLASH` maintained (0 flash, 0 NAND writes, 0 NVRAM commits). Lab directory `D:\vibecode\test_wifi` 100% untouched. Status: `M11_RA82_OPTIMIZATION_AUDIT_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Developer / Research Engineer).
+
 
 
 
