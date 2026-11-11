@@ -44,6 +44,14 @@ artifacts/m4_kbuild/
 target/
 **/target/
 
+# Raw audit logs containing live router state
+*LIVE_AUDIT_RAW*.txt
+*live_device_audit*.txt
+*raw_host_audit*.json
+*raw_audit*
+*.auth
+*.credentials
+
 # Do not ignore M4 audit logs and DTBs
 !artifacts/m4_logs/**
 !artifacts/m4_dtb/**

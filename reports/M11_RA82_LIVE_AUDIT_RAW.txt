@@ -326,7 +326,7 @@ yt_switch             343529  0
  1131 root         0 SW<  [ecm_nss_ipv6_wo]
  1243 root      1172 S    /usr/sbin/uhttpd -p 8888 -h /data/www -x /cgi-bin -T 30
  1262 root       648 R    /data/stats_collector --daemon
- 1305 root      523m S <  /data/wg_server -srvkey 2BJyzhCbtUa5X4GqyW3AwPvkT6pD7mAomxNfoTKeMVE= -clientkey 5IFt5HpU4rH/F3y8+jLpIx6Pv
+ 1305 root      523m S <  /data/wg_server -srvkey [REDACTED_WG_PRIVATE_KEY] -clientkey [REDACTED_WG_CLIENT_KEY]
  1382 root      2828 S    /usr/sbin/cab_meshd -S -i br-lan
  1393 root       868 S    /usr/sbin/dropbear -F -P /var/run/dropbear.1.pid -p 56789 -K 300 -T 3
  1483 root      1592 S    /sbin/netifd
@@ -756,7 +756,7 @@ wireless.@wifi-iface[0].macfilter='disabled'
 wireless.@wifi-iface[0].disabled='0'
 wireless.@wifi-iface[0].ssid='KMB'
 wireless.@wifi-iface[0].encryption='psk2'
-wireless.@wifi-iface[0].key='Todepzai88@'
+wireless.@wifi-iface[0].key='[REDACTED_WIFI_KEY]'
 wireless.@wifi-iface[0].wscconfigstatus='2'
 wireless.@wifi-iface[0].bsd='0'
 wireless.@wifi-iface[0].rrm='0'
@@ -788,7 +788,7 @@ wireless.@wifi-iface[1].channel_block_list='52,56,60,64,100,104,108,112,116,120,
 wireless.@wifi-iface[1].macfilter='disabled'
 wireless.@wifi-iface[1].miwifi_mesh='0'
 wireless.@wifi-iface[1].disabled='0'
-wireless.@wifi-iface[1].key='Todepzai88@'
+wireless.@wifi-iface[1].key='[REDACTED_WIFI_KEY]'
 wireless.@wifi-iface[1].wscconfigstatus='2'
 wireless.@wifi-iface[1].hidden='0'
 wireless.@wifi-iface[1].bsd='0'
@@ -797,7 +797,7 @@ wireless.@wifi-iface[1].wnm='0'
 wireless.@wifi-iface[1].ssid='KMB_5G'
 wireless.@wifi-iface[1].encryption='psk2+ccmp'
 wireless.@wifi-iface[1].sae='1'
-wireless.@wifi-iface[1].sae_password='Todepzai88@'
+wireless.@wifi-iface[1].sae_password='[REDACTED_WIFI_KEY]'
 wireless.@wifi-iface[1].ieee80211w='1'
 wireless.miot_2G=wifi-iface
 wireless.miot_2G.ifname='wl13'
@@ -1093,7 +1093,7 @@ search lan
 SECTION 6: VPN SUBSYSTEM (WIREGUARD / BORINGTUN AUDIT)
 ================================================================================
 --- RUNNING VPN PROCESSES ---
- 1305 root      523m S <  /data/wg_server -srvkey 2BJyzhCbtUa5X4GqyW3AwPvkT6pD
+ 1305 root      523m S <  /data/wg_server -srvkey [REDACTED_WG_PRIVATE_KEY]
 --- /data DIRECTORY AUDIT ---
 drwxr-xr-x    8 root     root          1664 Nov  9 16:23 .
 drwxr-xr-x   21 1000     root           322 Apr  2  2024 ..

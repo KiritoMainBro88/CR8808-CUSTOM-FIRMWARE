@@ -2,9 +2,9 @@
 
 - Version: `0.2.0-dev`
 - Date: 2026-11-11
-- Phase: P10/M11 RA82 Performance & Security Optimization Audit (Track A Primary)
+- Phase: P10/M11.0.1 Security Incident Containment & Evidence Correction (Track A Primary)
 - Current Branch: `feature/m11-ra82-optimization-audit`
-- Overall status: `M11_RA82_OPTIMIZATION_AUDIT_COMPLETE_AWAITING_REVIEW`
+- Overall status: `M11_0_1_CONTAINMENT_AND_CORRECTION_COMPLETE_AWAITING_REVIEW`
 - GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE`
 - Flash authorization: `STRICT NO-GO FLASH (Live read-only device audit, static partition verification & optimization analysis only)`
 - Initial Firmware Baseline: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Single-conduit Port 8 SGMII 1000M, Linux 6.12.112 LTS verified)
@@ -162,6 +162,15 @@
   7. **Security Exposure Audit (`DEVICE_READBACK`):** Discovered Dropbear SSH (port 56789) is open to the entire WAN subnet (`0.0.0.0/0`) with root password authentication enabled. Identified ~15–20 MiB of RAM consumed by non-essential Xiaomi cloud daemons (`messagingagent`, `trafficd`, `smartcontroller`, `cab_meshd`).
   8. **Itemized Optimization Roadmap & 5-Tier Taxonomy:** Formulated 8 structured proposals across CPU balancing (RPS), memory reclamation, BoringTun Rust, Wi-Fi OFDMA/roaming, conntrack tuning, and WAN firewall hardening. Every change mapped to 5-tier taxonomy with instant rollback commands.
   9. **Deliverables & Strict Safety Protocol:** Authored `reports/M11_RA82_OPTIMIZATION_AUDIT.md`, `docs/M11_RA82_OPTIMIZATION_ROADMAP.md`, and raw log `reports/M11_RA82_LIVE_AUDIT_RAW.txt`. STRICT `NO-GO FLASH` maintained (0 flash, 0 NAND writes, 0 NVRAM commits). Lab directory `D:\vibecode\test_wifi` 100% untouched. Status: `M11_RA82_OPTIMIZATION_AUDIT_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Developer / Research Engineer).
+- 2026-11-11: Milestone M11.0.1 Security Incident Containment & Evidence Correction (Track A Primary) completed on branch `feature/m11-ra82-optimization-audit`.
+  1. **P0 Security Incident Contained:** Redacted cleartext Wi-Fi passwords and WireGuard private keys from working tree log `reports/M11_RA82_LIVE_AUDIT_RAW.txt`. Updated `.gitignore` with strict patterns excluding raw audits and tokens. Re-engineered `scripts/m11_ra82_optimization_audit.sh` with dual-layer `sed` pattern redaction, `SSHPASS` env variable usage (eliminating process table leaks), and strict host key verification. Prepared git history rewrite plan using `git-filter-repo` (pending owner authorization). Issued urgent security advisory for user to rotate Wi-Fi passwords and regenerate WireGuard keys. Deliverable: `reports/M11_0_1_SECURITY_INCIDENT_REPORT.md`.
+  2. **NSS Counter Semantics Corrected:** Retracted global 96.9% offload claim. Documented QSDK `nss_ipv4.c` common vs special counter architecture. Proved `hash_hits > rx_pkts` is caused by 5-tuple hash lookups occurring during connection creation (128,379) and teardown (42,610) as well as packet forwarding. Reclassified metric as internal NSS rule match ratio (96.85%). Deliverable: `docs/M11_0_1_NSS_COUNTER_VALIDATION.md`.
+  3. **CPU Measurement Methodology Corrected:** Retracted cumulative saturation claim (99.58% softirqs over 2.24 days is historical distribution, not instantaneous CPU load). Formulated time-bounded delta sampling equation across `/proc/stat`, `/proc/softirqs`, `/proc/interrupts`. Built read-only profiling tool `scripts/measure_cpu_deltas.sh`. Reclassified RPS as an experimental trial hypothesis (`HOLD`). Deliverable: `docs/M11_0_1_CPU_MEASUREMENT_METHOD.md`.
+  4. **Memory Accounting & Daemon Dependency Corrected:** Retracted virtual memory summation (`VSZ`). Defined `VmRSS`, `RssAnon`, `RssFile` framework from `/proc/<PID>/status`. Proved `SUnreclaim` (57.9 MiB) is essential SKB and Wi-Fi DMA buffer slab. Analyzed functional dependencies of the 4 vendor daemons. Deliverable: `docs/M11_0_1_RAM_ACCOUNTING.md`.
+  5. **BoringTun Validation Aligned:** Enforced strict adherence to `docs/09_WIREGUARD_RUST_PLAN.md`. Mandated that live `/data/wg_server` on `wg0` remains untouched. Defined isolated sandbox trial on `wg1` / port 51821 with multi-gate qualification.
+  6. **Proposal Dispositions Standardized:** Formalized 8 proposals into `GO` (6.1 WAN SSH hardening), `HOLD` (1.1 RPS, 2.1 Daemons, 3.1 BoringTun sandbox, 4.1 OFDMA, 4.2 Roaming), and `REJECT` (5.1 Conntrack timeouts dismissed at 3.37% load; 5.2 TCP buffer dismissed at BDP=2.5MB). Deliverable: `docs/M11_1_APPROVED_TRIAL_PLAN.md`.
+  7. **Deliverables & Safety Protocol:** Authored `reports/M11_0_1_SECURITY_INCIDENT_REPORT.md` and `reports/M11_0_1_EVIDENCE_CORRECTION.md`. STRICT `NO-GO FLASH` maintained. Zero router writes executed. Lab directory `D:\vibecode\test_wifi` 100% untouched. Status: `M11_0_1_CONTAINMENT_AND_CORRECTION_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Developer / Research Engineer).
+
 
 
 

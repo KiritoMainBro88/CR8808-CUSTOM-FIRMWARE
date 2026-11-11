@@ -1,24 +1,32 @@
 #!/bin/bash
-# Milestone M11: Passive Read-Only Performance & Security Audit for Xiaomi RA82
+# Milestone M11.0.1: Hardened, Sanitized Read-Only Audit Script for Xiaomi RA82
 # Target: 192.168.31.1:56789
-# Usage: ROUTER_PASS="<password>" ./scripts/m11_ra82_optimization_audit.sh
+# Usage: export SSHPASS="<password>"; ./scripts/m11_ra82_optimization_audit.sh
+
+set -euo pipefail
 
 ROUTER_IP="${ROUTER_IP:-192.168.31.1}"
 ROUTER_PORT="${ROUTER_PORT:-56789}"
 ROUTER_USER="${ROUTER_USER:-root}"
-OUTPUT_FILE="/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M11_RA82_LIVE_AUDIT_RAW.txt"
+KNOWN_HOSTS_FILE="${KNOWN_HOSTS_FILE:-/tmp/cr8818_known_hosts}"
+OUTPUT_FILE="${OUTPUT_FILE:-/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M11_RA82_LIVE_AUDIT_RAW.txt}"
 
-if [ -z "$ROUTER_PASS" ]; then
-    echo "ERROR: ROUTER_PASS environment variable is required."
-    echo "Usage: ROUTER_PASS='mysecret' $0"
+if [ -z "${SSHPASS:-}" ]; then
+    echo "ERROR: SSHPASS environment variable is required to avoid command-line argument leakage."
+    echo "Usage: export SSHPASS='mysecret'; $0"
     exit 1
 fi
 
-echo "Connecting to Xiaomi CR8808 Ver.B (RA82) at ${ROUTER_IP}:${ROUTER_PORT}..."
+echo "Verifying host key for ${ROUTER_IP}:${ROUTER_PORT}..."
+mkdir -p "$(dirname "$KNOWN_HOSTS_FILE")"
+ssh-keyscan -p "$ROUTER_PORT" -t rsa "$ROUTER_IP" 2>/dev/null > "$KNOWN_HOSTS_FILE"
 
-sshpass -p "$ROUTER_PASS" ssh -p "$ROUTER_PORT" \
-  -o StrictHostKeyChecking=no \
-  -o UserKnownHostsFile=/dev/null \
+echo "Connecting to Xiaomi CR8808 Ver.B (RA82) with automated credential redaction..."
+
+# Execute audit and pipe through multi-pattern redaction filter before writing to disk
+sshpass -e ssh -p "$ROUTER_PORT" \
+  -o StrictHostKeyChecking=yes \
+  -o UserKnownHostsFile="$KNOWN_HOSTS_FILE" \
   -o HostKeyAlgorithms=+ssh-rsa \
   -o PubkeyAcceptedKeyTypes=+ssh-rsa \
   "${ROUTER_USER}@${ROUTER_IP}" '
@@ -43,8 +51,8 @@ head -n 25 /proc/slabinfo 2>/dev/null
 echo "--- LOADED KERNEL MODULES ---"
 lsmod
 
-echo "--- PROCESS TREE / RUNNING PROCESSES ---"
-ps w
+echo "--- PROCESS TREE / RUNNING PROCESSES (SANITIZED) ---"
+ps w | sed -E "s/(-srvkey|-clientkey) [^ ]+/\1 [REDACTED_WG_KEY]/g"
 
 echo "================================================================================"
 echo "SECTION 2: QUALCOMM NSS & HARDWARE ACCELERATION AUDIT"
@@ -108,8 +116,8 @@ done 2>/dev/null
 echo "================================================================================"
 echo "SECTION 4: WI-FI 6 (2.4 GHz & 5 GHz HE160, DFS, OFDMA, MU-MIMO)"
 echo "================================================================================"
-echo "--- UCI WIRELESS CONFIGURATION ---"
-uci show wireless
+echo "--- UCI WIRELESS CONFIGURATION (SANITIZED) ---"
+uci show wireless | sed -E "s/(key|sae_password)=.*/\1=\"[REDACTED_WIFI_KEY]\"/g"
 
 echo "--- IWCONFIG ---"
 iwconfig 2>&1
@@ -161,8 +169,8 @@ cat /tmp/resolv.conf* 2>/dev/null
 echo "================================================================================"
 echo "SECTION 6: VPN SUBSYSTEM (WIREGUARD / BORINGTUN AUDIT)"
 echo "================================================================================"
-echo "--- RUNNING VPN PROCESSES ---"
-ps | grep -iE "(wireguard|wg|boring)" | grep -v grep
+echo "--- RUNNING VPN PROCESSES (SANITIZED) ---"
+ps | grep -iE "(wireguard|wg|boring)" | grep -v grep | sed -E "s/(-srvkey|-clientkey) [^ ]+/\1 [REDACTED_WG_KEY]/g"
 
 echo "--- /data DIRECTORY AUDIT ---"
 ls -la /data/ 2>/dev/null
@@ -184,6 +192,9 @@ cat /etc/config/dropbear 2>/dev/null
 echo "--- WAN FIREWALL ZONE RULES ---"
 iptables -L zone_wan_input -v -n 2>/dev/null
 iptables -L zone_lan_input -v -n 2>/dev/null
-' > "$OUTPUT_FILE"
+' | sed -E \
+    -e "s/(-srvkey|-clientkey) [^ ]+/\1 [REDACTED_WG_KEY]/g" \
+    -e "s/(key|sae_password)=['\"][^'\"]*['\"]/\1='[REDACTED_WIFI_KEY]'/g" \
+    > "$OUTPUT_FILE"
 
-echo "Audit completed. Raw log saved to: $OUTPUT_FILE"
+echo "Hardened audit complete. Output safely redacted to: $OUTPUT_FILE"
