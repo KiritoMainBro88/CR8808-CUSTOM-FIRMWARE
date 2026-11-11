@@ -111,39 +111,31 @@ In upstream Linux DSA driver source code (`drivers/net/dsa/yt921x.c`), register 
 
 ## 4. Real Dual-Conduit Mechanics: Driver, DTS & Forwarding Tables
 
-Because register `0x8000c` only selects one external CPU port at a time, dual-conduit operation cannot be achieved simply by flipping a register bit. Instead, dual-conduit requires coordination across multiple switch subsystems and DTS definitions:
+Because register `0x8000c` only selects one external CPU port at a time, dual-conduit operation cannot be achieved simply by flipping a register bit. 
 
-### 4.1 How Dual-Conduit is Achieved in Practice (`SOURCE_VERIFIED` / `REPORTED_UNVERIFIED`)
+### 4.1 Upstream Mainline Code Reality: Single CPU Port Only (`SOURCE_VERIFIED`)
+In upstream Linux mainline driver `yt921x.c`, `yt921x_chip_setup_dsa()` explicitly takes only the first CPU port found in the bitmask:
+```c
+priv->cpu_port = __ffs(priv->cpu_ports_mask);
+yt921x_write(priv, YT921X_EXT_CPU_PORT,
+             YT921X_EXT_CPU_PORT_TAG_EN |
+             YT921X_EXT_CPU_PORT_PORT_EN |
+             priv->cpu_port);
+```
+**Conclusion:** Upstream Linux mainline DSA does **NOT** support dual CPU ports on the Motorcomm YT9215. David Yang's upstream DTS targets strictly a single CPU port (Port 8 via `eth1`).
+
+### 4.2 ZCOP Out-of-Tree Dual-Conduit Implementation (`REPORTED_UNVERIFIED`)
+Dual-conduit is exclusively an out-of-tree feature implemented in ZCOP's custom fork (`zcop/immortalwrt` commit `7b307fa`) using proprietary DTS bindings and switch forwarding matrices:
 1. **Device Tree Specification of Dual CPU Ports:**
-   In Linux DSA, a switch node can define two CPU ports:
-   ```dts
-   ports {
-       #address-cells = <1>;
-       #size-cells = <0>;
-
-       port@4 {
-           reg = <4>;
-           label = "cpu2";
-           ethernet = <&gmac0>; // Port 4 connected to eth0 / dp1
-           phy-mode = "internal";
-       };
-
-       port@8 {
-           reg = <8>;
-           label = "cpu1";
-           ethernet = <&gmac1>; // Port 8 connected to eth1 / dp2
-           phy-mode = "sgmii";
-       };
-   };
-   ```
-2. **Per-Port Conduit Association:**
-   In modern Linux DSA (Linux 6.x), user ports can explicitly specify their CPU conduit (`conduit = <&eth0>` vs `conduit = <&eth1>`).
-3. **Switch Hardware Forwarding Tables (VLAN / Port Member Matrix):**
+   In ZCOP's `ipq5018-cr881x.dts`, the switch is declared as `compatible = "motorcomm,yt9215-enhanced"`, with:
+   - `motorcomm,secondary-conduit-user-mask = <0x8>` (Routing Port 3 WAN to secondary conduit).
+   - `port@4`: Marked with `motorcomm,conduit-role = "secondary-conduit"` connected to `&gmac0`.
+   - `port@8`: Marked with `motorcomm,conduit-role = "primary-conduit"` connected to `&gmac1`.
+2. **Switch Hardware Forwarding Tables (VLAN / Port Member Matrix):**
    The Motorcomm switch hardware uses internal VLAN and Port Isolation matrices (`PORT_MEM` / `VLAN_MEM` tables) to govern packet forwarding:
    - Port 3 (WAN) is placed in a dedicated VLAN whose membership vector contains only Port 3 and Port 4. Packets entering Port 3 egress towards GMAC0 (`eth0` or `dp1`).
    - Ports 0–2 (LAN) are placed in a LAN VLAN whose membership vector contains Ports 0–2 and Port 8. Packets entering LAN egress towards GMAC1 (`eth1` or `dp2`).
-4. **ZCOP Implementation in ImmortalWrt (`REPORTED_UNVERIFIED`):**
-   In `zcop/immortalwrt`, ZCOP introduced driver-level modifications to configure the switch forwarding matrix such that WAN traffic routes directly to Port 4 (`dp1`) untagged, while LAN ports communicate over Port 8 (`dp2`). While verified as functional in ZCOP's compiled source tree, empirical line-rate packet captures on real CR8818 hardware remain unverified.
+3. **Reference Analysis:** Detailed code audit comparing upstream `yt921x.c` and ZCOP's driver is documented in [`docs/M7.1/DUAL_CONDUIT_FINAL_RECONCILIATION.md`](DUAL_CONDUIT_FINAL_RECONCILIATION.md).
 
 ---
 

@@ -21,19 +21,24 @@ This document establishes the verified hardware parameters, architecture, and sa
 
 ## 2. SPI NAND Flash Hardware & MTD Partition Topology
 
-### 2.1 Physical NAND Flash Specifications & ECC Truth (`SOURCE_VERIFIED`)
-- **Manufacturer & Part Number:** Winbond W25N01GWZEIG (1 Gb / 128 MB Serial SLC NAND Flash, 1.8V).
+### 2.1 Physical NAND Flash Specifications & ECC Truth (`DEVICE_READBACK_RECONCILED` / `SOURCE_VERIFIED`)
+- **Forensic Part Number & Voltage Reconciliation:**
+  - Saved device readback baseline in `docs/02_DEVICE_BASELINE.md` captured JEDEC ID **`0xef 0xaa 0x21`**.
+  - According to official Winbond datasheets and Linux `drivers/mtd/nand/spi/winbond.c`:
+    - **`0xef 0xaa 0x21`:** Identifies the **Winbond W25N01GV (3.3V)** (e.g. `W25N01GVZEIG`).
+    - **`0xef 0xba 0x21`:** Identifies the **Winbond W25N01GW (1.8V)**.
+  - The router motherboard runs on a standard 3.3V flash power domain. The previous "W25N01GW" label was a legacy community transcription error. The physical flash is established as **Winbond W25N01GV (3.3V)**. (Detailed in [`docs/M7.1/NAND_IDENTITY_RECONCILIATION.md`](NAND_IDENTITY_RECONCILIATION.md)).
 - **Interface:** Standard SPI-NAND (clocked via IPQ5018 QSPI controller).
 - **Array Geometry:**
   - Page Size: 2048 bytes user data + 64 bytes Out-Of-Band (OOB / Spare area).
   - Block Size: 64 pages per block (128 KB user data + 4 KB spare).
   - Total Array: 1024 blocks (128 MB total addressable flash).
 - **Hardware ECC Specification (Official Winbond Datasheet & Upstream Linux Driver):**
-  - According to the official Winbond W25N01GW datasheet, the chip integrates an **internal 1-bit on-die ECC engine** covering each 512-byte sector.
+  - According to the official Winbond W25N01GV datasheet, the chip integrates an **internal 1-bit on-die ECC engine** covering each 512-byte sector.
   - In upstream Linux kernel (`drivers/mtd/nand/spi/winbond.c`), the chip is registered as:
     ```c
-    SPINAND_INFO("W25N01GW",
-        SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xba, 0x21),
+    SPINAND_INFO("W25N01GV",
+        SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xaa, 0x21),
         NAND_MEMORG(1, 2048, 64, 64, 1024, 20, 1, 1, 1),
         NAND_ECCREQ(1, 512),
         SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -160,9 +165,12 @@ Factory RF calibration data is stored in the `0:ART` partition:
 > **Calibration Data Does NOT Guarantee DFS or HE160 Operation:**
 > Previous drafts incorrectly implied that extracting calibration data at offset `0x26800` automatically guarantees HE160 DFS operation. This was an invalid technical inference.
 >
-> In reality, 160 MHz operation across DFS channels (e.g. Channel 52 to 64, Channel 100 to 128) requires three independent prerequisites:
-> 1. **Caldata RF Limits:** The calibration block must contain valid power tables for the 160 MHz band.
-> 2. **Kernel DFS Radar Detection (`ath11k_dfs`):** The kernel must have `CONFIG_ATH11K_DFS_CERTIFIED=y` or proper ETSI/FCC radar pattern detectors enabled. Without functioning radar detection, the driver will refuse to transmit on DFS channels or fall back immediately to 80 MHz non-DFS channels.
-> 3. **Regulatory Database (`wireless-regdb`):** The active country code in `wireless-regdb` must permit 160 MHz contiguous channels and DFS operation at the specified EIRP power.
+> In reality, 160 MHz operation across DFS channels (e.g. Channel 52 to 64, Channel 100 to 128) requires four independent prerequisites:
+> 1. **Caldata Multi-dimensional Analog Matrix:** The calibration block contains factory-measured analog operational curves: per-channel target power, LNA gain steps, IQ imbalance amplitude/phase correction constants, CFR baseband filter constants, thermistor slopes, and MU-MIMO chain-to-chain phase deltas. It does not provide regulatory authority.
+> 2. **Firmware Baseband Radar Detector:** Qualcomm Hexagon Q6 WCSS / PHY microcode must actively detect radar pulse width/chirp and transmit asynchronous `WMI_RADAR_DETECT_EVENTID` messages.
+> 3. **Host Driver Engine (`ath11k.ko` -> `dfs.c`):** Monolithic `ath11k.ko` driver (there is no standalone `ath11k_dfs.ko` module) translates WMI radar events and interfaces with `cfg80211` / `mac80211` to trigger Channel Availability Checks (CAC) and Channel Switch Announcements (CSA).
+> 4. **Regulatory Database (`wireless-regdb`):** Country-code database defining allowed EIRP and radar channel boundaries.
+>
+> For a comprehensive technical audit of the DFS pipeline, see [`docs/M7.1/ATH11K_DFS_COMPATIBILITY_AUDIT.md`](ATH11K_DFS_COMPATIBILITY_AUDIT.md).
 >
 > **Status:** Full HE160 DFS functionality on CR8808 Ver.B remains classified as **`REPORTED_UNVERIFIED / REQUIRES_TESTING`** until verified with real 160 MHz client associations and radar scan logs.

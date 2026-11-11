@@ -48,12 +48,27 @@ sources:
     pinned_commit: "9d36e2f18bc18be177b960bbf4ad7ef7d87b0a70"
     commit_date: "2023-11-15T12:00:00Z"
     author: "Miquel Raynal / Linux MTD Subsystem"
-    hardware_revision: "Winbond W25N01GW SPI NAND"
+    hardware_revision: "Winbond W25N01GV (3.3V) & W25N01GW (1.8V) SPI NAND"
     role: "spi_nand_flash_driver"
-    code_path: "drivers/mtd/nand/spi/winbond.c (SPINAND_INFO W25N01GW, NAND_ECCREQ(1, 512))"
+    code_path: "drivers/mtd/nand/spi/winbond.c (SPINAND_INFO W25N01GV 0xaa 0x21, W25N01GW 0xba 0x21, NAND_ECCREQ(1, 512))"
     verification_status: "SOURCE_VERIFIED"
     license: "GPL-2.0"
     provenance: "Linux Kernel Mainline MTD Subsystem"
+
+  winbond_w25n01gv_datasheet:
+    url: "https://www.winbond.com/resource-files/W25N01GV%20Rev%20L%20050918.pdf"
+    release_date: "2018-05-09"
+    author: "Winbond Electronics Corporation"
+    hardware_revision: "W25N01GVZEIG (3.3V 1Gb Serial SLC NAND Flash, JEDEC 0xef 0xaa 0x21)"
+    role: "authoritative_nand_hardware_specification"
+    findings:
+      - "Operating Voltage: 3.3V (2.7V - 3.6V)"
+      - "JEDEC ID: 0xef 0xaa 0x21 (Matches CR8818 DEVICE_READBACK)"
+      - "Page size: 2048 bytes + 64 bytes spare (OOB)"
+      - "Internal on-die ECC engine: 1-bit ECC per 512-byte sector (NAND_ECCREQ(1, 512))"
+      - "Blocks: 1024 blocks (128 MB total array)"
+    verification_status: "SOURCE_VERIFIED"
+    provenance: "Official Manufacturer Component Datasheet"
 
   winbond_w25n01gw_datasheet:
     url: "https://www.winbond.com/resource-files/W25N01GW%20Rev%20G%2005092019.pdf"

@@ -2,9 +2,9 @@
 
 - Version: `0.2.0-dev`
 - Date: 2026-11-11
-- Phase: P6/M7.1-Rev1 Evidence Corrections & Technical Reconciliation
+- Phase: P6/M7.1-Rev1.1 Final Evidence Reconciliation
 - Current Branch: `feature/m7.1-evidence-corrections`
-- Overall status: `M7.1_REVISION_1_COMPLETE_AWAITING_REVIEW`
+- Overall status: `M7.1_REVISION_1_1_COMPLETE_AWAITING_REVIEW`
 - GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE` (Active branches: `main`, `develop`, `review/g1-architecture-corrections`, `feature/g1-final-architecture-deliverables`, `feature/g1-corrections-round2`, `feature/g1-corrections-round3`, `feature/g1-corrections-round4`, `feature/g1-corrections-round5`, `feature/g1-corrections-round5.1`, `feature/g1-corrections-round5.2`, `feature/nss-cr8818-research`, `feature/nss-cr8818-poc`, `feature/rust-userspace-strategy`, `feature/product-vision-hardening`, `feature/m5-daily-driver-build`, `feature/m6-full-source-build`, `feature/m7-architecture-selection`, `feature/m7.1-china-source-audit`, `feature/m7.1-evidence-corrections`)
 - Flash authorization: `NO-GO pending independent recovery validation (All artifacts classified NON_FLASHABLE_TEST_ARTIFACT)`
 - Initial Firmware Baseline Proposal: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Architecture Proposal under review; NOT yet approved for implementation by Product Owner)
@@ -35,7 +35,7 @@
 - History cleanup dry-run executed on isolated clone: 100% elimination of netbios hostname and private IPs verified — `MEASURED`.
 - Port 8 Physical Link Speed: Strictly **1,000 Mbps SGMII** (`speed = <1000>`). Historical 2.5 Gbps claim formally retracted — `SOURCE_VERIFIED`.
 - Switch Register `0x8000c`: Defined as `YT921X_EXT_CPU_PORT` with `TAG_EN` (bit 15), `PORT_EN` (bit 14), `PORT_MASK` (bits 3:0). `0xc008` selects Port 8; `0xc004` selects Port 4. No bit-4 dual-conduit toggle exists — `SOURCE_VERIFIED`.
-- Winbond W25N01GW SPI NAND: Integrated 1-bit on-die ECC engine per 512 bytes (`NAND_ECCREQ(1, 512)`). Controller 8-bit ECC unverified — `SOURCE_VERIFIED` (On-die).
+- Winbond W25N01GV (3.3V) SPI NAND: JEDEC `0xef 0xaa 0x21` confirmed in saved device readback baseline. Integrated 1-bit on-die ECC engine per 512 bytes (`NAND_ECCREQ(1, 512)`). Previous "W25N01GW" (1.8V, `0xef 0xba 0x21`) label resolved as legacy community transcription error — `DEVICE_READBACK_RECONCILED` / `SOURCE_VERIFIED`.
 
 ## Reported / Unverified on-device
 - Motorcomm switch physical silicon suffix: `UNKNOWN / REPORTED_UNVERIFIED` (YT9215S vs YT9215SC unconfirmed).
@@ -108,5 +108,13 @@
   9. **Kernel Baseline Hardened:** Strictly decoupled OpenWrt 25.12.6 / Linux 6.12.112 Daily Driver baseline from Linux 6.18 experimental research track. Updated ADR-0005 (`docs/M7.1/UPDATED_ARCHITECTURE_ADR.md`).
   10. **Correction Log & Manifest Pinned:** Authored itemized correction log `docs/M7.1/M7.1_CORRECTION_LOG.md` tracking all 9 corrected assertions. Updated `manifests/m7.1-sources.lock.yaml` with upstream driver code paths and original URLs.
   11. **Safety Affirmation:** ZERO router contact (0 SSH, 0 flashing, 0 NVRAM writes, test_wifi untouched). Status updated to `M7.1_REVISION_1_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Developer / Research Engineer).
+- 2026-11-11: Milestone M7.1 Revision 1.1 (Final Evidence Reconciliation) completed on branch `feature/m7.1-evidence-corrections` (base commit `10b5fff`).
+  1. **Dual-Conduit Code Evidence Reconciled (P0-1):** Direct comparison between upstream `yt921x.c` (`__ffs(priv->cpu_ports_mask)` single CPU port) and ZCOP `motorcomm,yt9215-enhanced` proved that dual-conduit is completely absent in upstream mainline Linux. Upstream baseline is strictly single-conduit (Port 8). Dual-conduit is an out-of-tree ZCOP feature. Deliverable: `docs/M7.1/DUAL_CONDUIT_FINAL_RECONCILIATION.md`.
+  2. **NAND Hardware Model Disambiguated (P0-2):** Forensic audit of saved readback baseline JEDEC ID `0xef 0xaa 0x21` against Winbond datasheets and Linux `winbond.c` established physical flash as 3.3V Winbond W25N01GV (1-bit on-die ECC). Previous 1.8V "W25N01GW" (`0xef 0xba 0x21`) label resolved as legacy transcription error. Zero SSH performed. Deliverable: `docs/M7.1/NAND_IDENTITY_RECONCILIATION.md`.
+  3. **Wi-Fi DFS Pipeline & Caldata Audited (P0-3):** Standalone `ath11k_dfs.ko` eliminated; radar logic proven integrated into monolithic `ath11k.ko`. Documented 4-tier DFS pipeline and 6-dimension analog ART caldata matrix. HE160 DFS classified as `REQUIRES_HARDWARE_TESTING`. Deliverable: `docs/M7.1/ATH11K_DFS_COMPATIBILITY_AUDIT.md`.
+  4. **NSS 8-byte Parser Outcomes Enumerated (P0-4):** Replaced single deterministic slow-path claim with 4 empirical possibilities (compatible offload, incompatible bypass, software fallback via exception ring, ingress packet drop).
+  5. **Kernel Baseline Standardized (P0-5):** Clarified OpenWrt 25.12.6 as stable release series; standardized Track A Daily Driver on Linux 6.12.112 LTS (tracking 6.12.y); Track B on Linux 6.18.63 experimental.
+  6. **Label Audit Completed (P0-6):** Rigorously audited all `SOURCE_VERIFIED` tags to ensure community forum claims are never passed off as upstream-verified. Deliverable: `docs/M7.1/M7.1_REV1_1_CORRECTION_LOG.md`.
+  7. **Safety Affirmation:** ZERO router contact (0 SSH, 0 flashing, 0 NVRAM writes, test_wifi 100% untouched). Status updated to `M7.1_REVISION_1_1_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Developer / Research Engineer).
 
 

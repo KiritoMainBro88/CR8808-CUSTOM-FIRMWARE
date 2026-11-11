@@ -104,10 +104,14 @@ Motorcomm Proprietary DSA Tagged Frame (tag_yt921x):
    - The parser flags the packet as **UNKNOWN L2 PAYLOAD**.
    - It cannot locate the IP header at expected offsets.
    - It cannot extract the 5-tuple (`SrcIP`, `DstIP`, `Proto`, `SrcPort`, `DstPort`).
-3. **Hardware Acceleration Failure:** Because the 5-tuple cannot be extracted by the NPU:
-   - ECM cannot match the packet against active hardware flowtable entries.
-   - The NSS NPU cannot perform fast-path NAT/NAPT forwarding.
-   - Unaccelerated frames must fall back to the slow-path exception ring towards the host CPU, introducing software overhead rather than acceleration.
+3. **Hardware Acceleration Failure & Four Potential Outcomes:**
+   Because the 5-tuple cannot be extracted by the NPU, hardware offload cannot succeed. Depending on NSS microcode version and runtime driver configuration, four distinct potential behaviors exist:
+   - **Outcome 1 (Hardware Offload Compatible):** Fails immediately because the parser cannot identify L3/L4 headers behind the 8-byte tag.
+   - **Outcome 2 (Hardware Offload Incompatible):** The connection is bypassed by ECM, remaining completely unaccelerated by hardware.
+   - **Outcome 3 (Software Fallback via Exception Ring):** The NPU forwards unparsed frames to the host CPU via the NSS exception ring, generating high interrupt load.
+   - **Outcome 4 (Ingress Packet Drop):** The NPU ingress filter discards frames flagged as malformed or unknown L2 payloads.
+   
+   **Governance Directive:** The exact outcome (Outcome 2, 3, or 4) cannot be determined theoretically. It can **only be verified empirically through packet captures and NSS debugfs counter statistics** (`/sys/kernel/debug/qca-nss-drv/stats/`) on live physical hardware. In the absence of on-device instrumentation, all claims regarding exception rings or packet drops are categorized strictly as **`INFERRED`**.
 
 ---
 
