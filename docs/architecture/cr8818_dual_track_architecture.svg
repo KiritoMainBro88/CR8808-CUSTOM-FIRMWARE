@@ -1,0 +1,204 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" width="100%" height="100%" style="background:#0f172a; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <linearGradient id="grad-daily" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="grad-exp" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a1b1b"/>
+      <stop offset="100%" stop-color="#140c0c"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Title & Header -->
+  <text x="600" y="42" text-anchor="middle" font-size="22" font-weight="700" fill="#f8fafc" letter-spacing="0.5">CR8808 / CR8818 Dual-Track Architecture &amp; Verification Taxonomy</text>
+  <text x="600" y="66" text-anchor="middle" font-size="13" fill="#94a3b8">Target Hardware: Xiaomi CR8808 Ver.B (CR8818 / IPQ5018 Dual A53 / 256MB DDR3L / YT9215SC / Winbond 128MB NAND)</text>
+
+  <!-- Legend Box -->
+  <g transform="translate(50, 85)">
+    <rect width="1100" height="42" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <text x="18" y="26" font-size="12" font-weight="700" fill="#cbd5e1">VERIFICATION STATUS:</text>
+    
+    <rect x="180" y="13" width="120" height="20" rx="4" fill="#065f46" stroke="#059669"/>
+    <text x="240" y="27" text-anchor="middle" font-size="11" font-weight="600" fill="#a7f3d0">BUILD_VERIFIED</text>
+    
+    <rect x="315" y="13" width="105" height="20" rx="4" fill="#1e3a8a" stroke="#2563eb"/>
+    <text x="367" y="27" text-anchor="middle" font-size="11" font-weight="600" fill="#bfdbfe">PC_VERIFIED</text>
+    
+    <rect x="435" y="13" width="140" height="20" rx="4" fill="#854d0e" stroke="#d97706"/>
+    <text x="505" y="27" text-anchor="middle" font-size="11" font-weight="600" fill="#fef08a">SOURCE_AVAILABLE</text>
+    
+    <rect x="590" y="13" width="115" height="20" rx="4" fill="#701a75" stroke="#a21caf"/>
+    <text x="647" y="27" text-anchor="middle" font-size="11" font-weight="600" fill="#f5d0fe">EXPERIMENTAL</text>
+    
+    <rect x="720" y="13" width="200" height="20" rx="4" fill="#831843" stroke="#e11d48"/>
+    <text x="820" y="27" text-anchor="middle" font-size="11" font-weight="600" fill="#fecdd3">NON_FLASHABLE_TEST_ARTIFACT</text>
+
+    <rect x="935" y="13" width="150" height="20" rx="4" fill="#450a0a" stroke="#ef4444"/>
+    <text x="1010" y="27" text-anchor="middle" font-size="11" font-weight="600" fill="#fca5a5">HARDWARE_BLOCKED</text>
+  </g>
+
+  <!-- Left Column: Daily Driver -->
+  <g transform="translate(50, 145)">
+    <!-- Column Card -->
+    <rect width="535" height="580" rx="10" fill="url(#grad-daily)" stroke="#22c55e" stroke-width="2" filter="url(#shadow)"/>
+    
+    <!-- Header -->
+    <rect width="535" height="48" rx="10" fill="#14532d"/>
+    <rect y="38" width="535" height="10" fill="#14532d"/>
+    <text x="20" y="30" font-size="16" font-weight="700" fill="#86efac">TRACK 1: DAILY DRIVER (OpenWrt 25.12.6 Stable)</text>
+    
+    <!-- Base System -->
+    <g transform="translate(18, 62)">
+      <rect width="499" height="72" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="14" y="24" font-size="13" font-weight="700" fill="#f8fafc">Operating System &amp; Toolchain</text>
+      <text x="14" y="44" font-size="12" fill="#94a3b8">OpenWrt 25.12.6 Stable (commit 64900e7) | Target qualcommax/ipq50xx</text>
+      <text x="14" y="60" font-size="12" fill="#94a3b8">Linux Kernel 6.12.112 LTS (LTS maintenance through Dec 2028)</text>
+      <rect x="385" y="12" width="102" height="18" rx="3" fill="#065f46" stroke="#059669"/>
+      <text x="436" y="25" text-anchor="middle" font-size="10" font-weight="600" fill="#a7f3d0">BUILD_VERIFIED</text>
+    </g>
+
+    <!-- Package Manager & System Userspace -->
+    <g transform="translate(18, 146)">
+      <rect width="499" height="66" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="14" y="22" font-size="13" font-weight="700" fill="#f8fafc">Userspace &amp; Package Management</text>
+      <text x="14" y="42" font-size="12" fill="#94a3b8">Package Manager: apk-tools v3 (musl native repository architecture)</text>
+      <text x="14" y="58" font-size="12" fill="#94a3b8">Management Web UI: LuCI (Bootstrap theme, uhttpd, rpcd)</text>
+      <rect x="385" y="12" width="102" height="18" rx="3" fill="#065f46" stroke="#059669"/>
+      <text x="436" y="25" text-anchor="middle" font-size="10" font-weight="600" fill="#a7f3d0">BUILD_VERIFIED</text>
+    </g>
+
+    <!-- Network Acceleration -->
+    <g transform="translate(18, 224)">
+      <rect width="499" height="66" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="14" y="22" font-size="13" font-weight="700" fill="#f8fafc">Forwarding &amp; NAT Acceleration</text>
+      <text x="14" y="42" font-size="12" fill="#94a3b8">nftables / firewall4 + Linux Kernel Software Flowtable (kmod-nft-offload)</text>
+      <text x="14" y="58" font-size="12" fill="#cbd5e1">Bypasses full conntrack stack; ~900 Mbps bidirectional CPU-safe NAT</text>
+      <rect x="385" y="12" width="102" height="18" rx="3" fill="#065f46" stroke="#059669"/>
+      <text x="436" y="25" text-anchor="middle" font-size="10" font-weight="600" fill="#a7f3d0">BUILD_VERIFIED</text>
+    </g>
+
+    <!-- Ethernet & Switch -->
+    <g transform="translate(18, 302)">
+      <rect width="499" height="66" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="14" y="22" font-size="13" font-weight="700" fill="#f8fafc">Ethernet Switching: Motorcomm YT9215SC</text>
+      <text x="14" y="42" font-size="12" fill="#94a3b8">DSA Driver: tag_yt921x (8-byte CPU tag, default TPID 0x9988)</text>
+      <text x="14" y="58" font-size="12" fill="#fde047">Conduit: Single conduit via Port 8 (2.5G SGMII+ to IPQ5018 GMAC1)</text>
+      <rect x="360" y="12" width="127" height="18" rx="3" fill="#854d0e" stroke="#d97706"/>
+      <text x="423" y="25" text-anchor="middle" font-size="10" font-weight="600" fill="#fef08a">SOURCE_AVAILABLE</text>
+    </g>
+
+    <!-- Wi-Fi 6 -->
+    <g transform="translate(18, 380)">
+      <rect width="499" height="66" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="14" y="22" font-size="13" font-weight="700" fill="#f8fafc">Wireless: Wi-Fi 6 (ath11k + QCN6102)</text>
+      <text x="14" y="42" font-size="12" fill="#94a3b8">SoC 2.4GHz 2x2 HE40 + External QCN6102 5GHz 2x2 HE160 (160MHz)</text>
+      <text x="14" y="58" font-size="12" fill="#fca5a5">DTS Status: Disabled in base DTS to protect 256MB RAM against ath11k OOM</text>
+      <rect x="360" y="12" width="127" height="18" rx="3" fill="#854d0e" stroke="#d97706"/>
+      <text x="423" y="25" text-anchor="middle" font-size="10" font-weight="600" fill="#fef08a">SOURCE_AVAILABLE</text>
+    </g>
+
+    <!-- VPN Layer: BoringTun Rust -->
+    <g transform="translate(18, 458)">
+      <rect width="499" height="66" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="14" y="22" font-size="13" font-weight="700" fill="#f8fafc">VPN: BoringTun Rust 0.7.1 (AArch64 musl static)</text>
+      <text x="14" y="42" font-size="12" fill="#94a3b8">UAPI In-Place Peer Mutation (Issue #498 resolved; zero panic, errno=95 on PSK)</text>
+      <text x="14" y="58" font-size="12" fill="#bfdbfe">Rekey &amp; Soak: 15-phase netns test PASS (0% loss, handshake age reset verified)</text>
+      <rect x="385" y="12" width="102" height="18" rx="3" fill="#1e3a8a" stroke="#2563eb"/>
+      <text x="436" y="25" text-anchor="middle" font-size="10" font-weight="600" fill="#bfdbfe">PC_VERIFIED</text>
+    </g>
+
+    <!-- Safety / Hardware Note -->
+    <g transform="translate(18, 536)">
+      <rect width="499" height="32" rx="4" fill="#3b0764" stroke="#7e22ce"/>
+      <text x="14" y="21" font-size="11" font-weight="600" fill="#e9d5ff">HALT GATE: Physical flash strictly prohibited until UART / TFTP recovery verified.</text>
+    </g>
+  </g>
+
+  <!-- Right Column: Experimental -->
+  <g transform="translate(615, 145)">
+    <!-- Column Card -->
+    <rect width="535" height="580" rx="10" fill="url(#grad-exp)" stroke="#e11d48" stroke-width="2" filter="url(#shadow)"/>
+    
+    <!-- Header -->
+    <rect width="535" height="48" rx="10" fill="#881337"/>
+    <rect y="38" width="535" height="10" fill="#881337"/>
+    <text x="20" y="30" font-size="16" font-weight="700" fill="#fecdd3">TRACK 2: EXPERIMENTAL (Research &amp; Advanced Offload)</text>
+
+    <!-- Experimental Kernel -->
+    <g transform="translate(18, 62)">
+      <rect width="499" height="72" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="14" y="24" font-size="13" font-weight="700" fill="#f8fafc">Bleeding-Edge Kernel &amp; Toolchain</text>
+      <text x="14" y="44" font-size="12" fill="#94a3b8">Linux Kernel 6.18 LTS Experimental branch</text>
+      <text x="14" y="60" font-size="12" fill="#94a3b8">Evaluation branch for next-gen Qualcomm IPQ5018 upstream patches</text>
+      <rect x="385" y="12" width="102" height="18" rx="3" fill="#701a75" stroke="#a21caf"/>
+      <text x="436" y="25" text-anchor="middle" font-size="10" font-weight="600" fill="#f5d0fe">EXPERIMENTAL</text>
+    </g>
+
+    <!-- Qualcomm NSS Subsystem -->
+    <g transform="translate(18, 146)">
+      <rect width="499" height="66" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="14" y="22" font-size="13" font-weight="700" fill="#f8fafc">Qualcomm NSS (Network Subsystem) Datapath</text>
+      <text x="14" y="42" font-size="12" fill="#94a3b8">Hardware NPU Offload: qca-nss-drv + qca-nss-ecm (Enhanced Conntrack)</text>
+      <text x="14" y="58" font-size="12" fill="#fca5a5">Caveat: Unverified on IPQ5018 silicon; requires NSS firmware binary blob</text>
+      <rect x="385" y="12" width="102" height="18" rx="3" fill="#701a75" stroke="#a21caf"/>
+      <text x="436" y="25" text-anchor="middle" font-size="10" font-weight="600" fill="#f5d0fe">EXPERIMENTAL</text>
+    </g>
+
+    <!-- Dual-Conduit Switch Wiring -->
+    <g transform="translate(18, 224)">
+      <rect width="499" height="66" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="14" y="22" font-size="13" font-weight="700" fill="#f8fafc">Switch Architecture: Dual-Conduit DSA</text>
+      <text x="14" y="42" font-size="12" fill="#94a3b8">Conduit 0: IPQ5018 GMAC0 -> YT9215 Port 4 (GE Phy) for WAN</text>
+      <text x="14" y="58" font-size="12" fill="#fca5a5">Conduit 1: IPQ5018 GMAC1 -> YT9215 Port 8 (2.5G SGMII+) for LAN ports</text>
+      <rect x="385" y="12" width="102" height="18" rx="3" fill="#701a75" stroke="#a21caf"/>
+      <text x="436" y="25" text-anchor="middle" font-size="10" font-weight="600" fill="#f5d0fe">EXPERIMENTAL</text>
+    </g>
+
+    <!-- NSS + YT9215 Tagging Collision -->
+    <g transform="translate(18, 302)">
+      <rect width="499" height="66" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="14" y="22" font-size="13" font-weight="700" fill="#f8fafc">Tag Conflict: NSS Parser vs YT9215 CPU Tag</text>
+      <text x="14" y="42" font-size="12" fill="#94a3b8">NSS Hardware parser expects Qualcomm QCA tag (or raw Ethernet frame)</text>
+      <text x="14" y="58" font-size="12" fill="#fca5a5">YT9215 inserts 8-byte 0x9988 tag -> NSS drops packets or trips fallback</text>
+      <rect x="385" y="12" width="102" height="18" rx="3" fill="#701a75" stroke="#a21caf"/>
+      <text x="436" y="25" text-anchor="middle" font-size="10" font-weight="600" fill="#f5d0fe">EXPERIMENTAL</text>
+    </g>
+
+    <!-- M5 Packaging Prototype Legacy Status -->
+    <g transform="translate(18, 380)">
+      <rect width="499" height="66" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="14" y="22" font-size="13" font-weight="700" fill="#f8fafc">M5 Packaging Skeleton Artifacts</text>
+      <text x="14" y="42" font-size="12" fill="#94a3b8">573 KB rootfs + 5.37 MB factory UBI (Synthetic 4MB test payload)</text>
+      <text x="14" y="58" font-size="12" fill="#fda4af">Classification: Strictly packaging geometry prototype; non-flashable</text>
+      <rect x="300" y="12" width="187" height="18" rx="3" fill="#831843" stroke="#e11d48"/>
+      <text x="393" y="25" text-anchor="middle" font-size="10" font-weight="600" fill="#fecdd3">NON_FLASHABLE_TEST_ARTIFACT</text>
+    </g>
+
+    <!-- Rust Telemetry & eBPF Monitoring -->
+    <g transform="translate(18, 458)">
+      <rect width="499" height="66" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="14" y="22" font-size="13" font-weight="700" fill="#f8fafc">Rust Modern Telemetry &amp; System Monitor</text>
+      <text x="14" y="42" font-size="12" fill="#94a3b8">Aya eBPF flow observer + lightweight real-time network dashboard</text>
+      <text x="14" y="58" font-size="12" fill="#94a3b8">Design phase; target memory footprint &lt; 3MB RAM</text>
+      <rect x="385" y="12" width="102" height="18" rx="3" fill="#701a75" stroke="#a21caf"/>
+      <text x="436" y="25" text-anchor="middle" font-size="10" font-weight="600" fill="#f5d0fe">EXPERIMENTAL</text>
+    </g>
+
+    <!-- Hardware Isolation Boundary -->
+    <g transform="translate(18, 536)">
+      <rect width="499" height="32" rx="4" fill="#450a0a" stroke="#ef4444"/>
+      <text x="14" y="21" font-size="11" font-weight="600" fill="#fca5a5">ISOLATION: Track 2 code strictly excluded from Daily Driver release images.</text>
+    </g>
+  </g>
+
+  <!-- Bottom Global Footer -->
+  <g transform="translate(50, 745)">
+    <rect width="1100" height="50" rx="6" fill="#0f172a" stroke="#334155"/>
+    <text x="550" y="24" text-anchor="middle" font-size="12" font-weight="600" fill="#94a3b8">SAFETY COMMITMENT: ZERO SSH/WRITES TO ROUTER (192.168.100.224) | NO LAB INTERFERENCE (test_wifi UNTOUCHED)</text>
+    <text x="550" y="40" text-anchor="middle" font-size="11" fill="#64748b">CR8808-CUSTOM-FIRMWARE Project | Milestone M6 Baseline: OpenWrt 25.12.6 + Linux Kernel 6.12.112 LTS</text>
+  </g>
+</svg>

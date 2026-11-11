@@ -6,12 +6,16 @@
 - **Target Platform (Daily Driver):** OpenWrt 25.12.6 Stable, Linux Kernel 6.12.112 LTS (Dec 2028 EOL)
 - **Target Platform (Experimental):** Linux Kernel 6.18 LTS Git (quarantined development track)
 - **Package Management:** `apk` (`apk-tools` v3, Alpine-derived OpenWrt 25.12 packaging)
-- **Build Stage:** `PROTOTYPE_PACKAGING_SKELETON_VERIFIED` (FIT/UBI layout verified; distribution Kbuild decoupled)
+- **Build Stage:** `M5A_PACKAGING_SKELETON_VERIFIED` (`NON_FLASHABLE_TEST_ARTIFACT`)
 - **Build Host:** Linux WSL2 Ubuntu 22.04 LTS x86_64 (`6.6.87.2-microsoft-standard-WSL2`)
 - **Author:** Gemini Engineering Team (Implementer / System Operator)
 - **Reviewer:** ChatGPT Architecture Lead & Product Owner
-- **Decision Baseline:** `CONDITIONAL APPROVAL – PC BUILD ONLY` (Zero Router Contact, Zero Flashing)
-- **Status:** Milestone M5 Complete — All 10 Required Artifacts Landed with Cryptographic Checksums
+- **Decision Baseline:** `M5 PACKAGING SKELETON ACCEPTED AS A PROTOTYPE. FULL FIRMWARE BUILD NOT ACCEPTED.`
+- **Status:** Milestone M5A Accepted as Packaging Skeleton Prototype. Artifacts strictly labeled `NON_FLASHABLE_TEST_ARTIFACT`. Transitioning to M6 Full Source Build.
+
+> [!WARNING]
+> **NON-FLASHABLE TEST ARTIFACTS:**
+> The `factory.ubi` and `sysupgrade.bin` images produced in Milestone M5 are packaging layout verification prototypes only (incorporating a 4MB synthetic test payload and stub rootfs). They **MUST NOT BE FLASHED** to router hardware under any circumstances. Physical firmware installation is blocked pending Milestone M6 full source build and independent UART recovery validation.
 
 ---
 

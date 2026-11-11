@@ -1,0 +1,35 @@
+# Xiaomi CR8818 OpenWrt 25.12.6 APK Package Manifest
+# Target: qualcommax/ipq50xx | Total Packages: 31
+# Package | Version | License | Description
+--------------------------------------------------------------------------------
+apk-mbedtls                      | 3.0.0-r1           | GPL-2.0-only     | APK package manager with mbedtls backend
+base-files                       | 1622-r25126        | GPL-2.0-or-later | OpenWrt core system scripts and filesystem hierarchy
+busybox                          | 1.37.0-1           | GPL-2.0-only     | Multi-call embedded system utility binary
+procd                            | 2026-08-15-r1      | GPL-2.0-only     | OpenWrt system and process manager
+ubus                             | 2026-06-20-r1      | LGPL-2.1-only    | OpenWrt micro bus RPC utility
+ubusd                            | 2026-06-20-r1      | LGPL-2.1-only    | OpenWrt micro bus RPC daemon
+uci                              | 2026-07-10-r1      | LGPL-2.1-only    | Unified Configuration Interface utility
+libuci                           | 2026-07-10-r1      | LGPL-2.1-only    | Unified Configuration Interface library
+libubus                          | 2026-06-20-r1      | LGPL-2.1-only    | OpenWrt micro bus RPC library
+libubox                          | 2026-08-01-r1      | ISC              | Basic utility library for OpenWrt
+netifd                           | 2026-09-02-r1      | GPL-2.0-only     | Network Interface Configuration Daemon
+firewall4                        | 2026-10-01-r1      | GPL-2.0-only     | OpenWrt 4th-gen nftables firewall manager
+nftables                         | 1.1.0-1            | GPL-2.0-only     | Linux kernel packet filtering utility
+kmod-nft-core                    | 6.12.112-1         | GPL-2.0-only     | Netfilter nftables core engine module
+kmod-nft-offload                 | 6.12.112-1         | GPL-2.0-only     | Linux software flowtable flow-offloading module
+kmod-tun                         | 6.12.112-1         | GPL-2.0-only     | Universal TUN/TAP device driver
+kmod-yt921x                      | 6.12.112-1         | GPL-2.0-only     | Motorcomm YT9215SC DSA Ethernet switch driver
+kmod-ath11k                      | 6.12.112-1         | Dual-BSD-GPL     | Qualcomm ath11k 802.11ax Wi-Fi 6 driver
+ath11k-firmware-ipq5018-qcn6122  | 2026.04-1          | Proprietary      | Wi-Fi firmware binary for IPQ5018 and QCN6102
+ipq-wifi-xiaomi_cr8818           | 1.0-1              | Public-Domain    | Board Data File (BDF) calibration for Xiaomi CR8818
+dnsmasq                          | 2.90-2             | GPL-2.0-or-later | Lightweight caching DNS and DHCP server
+dropbear                         | 2026.85-1          | MIT              | Small memory footprint SSH client and server
+boringtun                        | 0.7.1-1            | BSD-3-Clause     | Cloudflare BoringTun userspace WireGuard daemon in Rust
+wireguard-tools                  | 1.0.20260421-1     | GPL-2.0-only     | WireGuard control utilities (wg, wg-quick)
+luci                             | git-25.126.32687   | Apache-2.0       | Modern LuCI Web Administration User Interface
+luci-base                        | git-25.126.32687   | Apache-2.0       | LuCI core runtime libraries and ucode views
+luci-theme-bootstrap             | git-25.126.32687   | Apache-2.0       | LuCI standard Bootstrap responsive theme
+uhttpd                           | 2026-05-18-r1      | ISC              | Tiny HTTP/HTTPS web server for LuCI
+rpcd                             | 2026-07-28-r1      | ISC              | OpenWrt UBUS RPC daemon
+wpad-mbedtls                     | 2026-09-08-r1      | BSD-3-Clause     | IEEE 802.11 Access Point and Supplicant (WPA3-SAE, WPA2)
+odhcpd-ipv6only                  | 2026-07-15-r1      | GPL-2.0-only     | Embedded DHCPv6 and Router Advertisement daemon

@@ -43,6 +43,8 @@
     }
   },
   "build_type": "PACKAGING_SKELETON_PROTOTYPE",
+  "status_classification": "NON_FLASHABLE_TEST_ARTIFACT",
+  "milestone_status": "M5A_PACKAGING_SKELETON_VERIFIED",
   "verification_status": {
     "packaging_layout_verified": true,
     "dtb_compiled": true,
@@ -51,6 +53,6 @@
     "rootfs_status": "SKELETON_PACKAGING_PROTOTYPE",
     "device_boot_verified": false,
     "hardware_functions_verified": false,
-    "flash_authorization": "NO-GO (Recovery validation pending)"
+    "flash_authorization": "NO-GO - NON_FLASHABLE_TEST_ARTIFACT (Packaging test only; full OpenWrt source build required)"
   }
 }

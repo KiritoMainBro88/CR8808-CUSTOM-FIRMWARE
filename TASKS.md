@@ -32,31 +32,18 @@ Status values: `READY`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `NOT_STARTED`.
 | P3-RUST-STRAT | Architecture Directive: Rust-First Userspace Strategy & BoringTun Evaluation | P3 | DONE | Gemini | P2-NSS-POC-M4 |
 | P3-002 | Integrate Rust BoringTun package and procd service | P3 | DONE | Gemini | P3-RUST-STRAT |
 | P4-VISION-HARDENING | Modern Firmware Vision, Parity Gate, Security Strategy & BoringTun Integration Tests | P4 | DONE | Gemini | P3-002 |
-| P4-001 | Milestone M5 OpenWrt Daily Driver PC Image Build & Acceptance (No Flash) | P4 | DONE | Gemini | P4-VISION-HARDENING |
-| P5-001 | Non-persistent RAM initramfs netboot hardware validation | P5 | BLOCKED | ChatGPT + User | P4 + safe recovery design |
+| P4-001 | Milestone M5A Packaging Skeleton Verification (NON_FLASHABLE_TEST_ARTIFACT) | P4 | DONE | Gemini | P4-VISION-HARDENING |
+| P5-M6 | Milestone M6 Full OpenWrt 25.12.6 Source Build, BoringTun Issue #498 & #495 Verification | P5 | DONE | Gemini | P4-001 |
+| P5-M6-REV | ChatGPT Architecture Lead Review & Acceptance of Milestone M6 | P5 | IN_PROGRESS | ChatGPT + User | P5-M6 |
+| P5-001 | Non-persistent RAM initramfs netboot hardware validation | P5 | BLOCKED | ChatGPT + User | P5-M6 + safe recovery design |
 | P6-001 | Release candidate and deployment decision | P6 | BLOCKED | User | All gates |
 
 ## Current instruction
-Milestone M5 OpenWrt Daily Driver PC Build, BoringTun Issue #498 & #495 Verification, and Metrics Audit completed (`P4-001`). Branch `feature/m5-daily-driver-build` active. Deliverables authored & verified:
-- Kernel Decoupling: OpenWrt 25.12.6 confirmed on Linux 6.12.112 LTS; Linux 6.18 LTS quarantined as an independent experimental sandbox; default package manager transitioned to modern `apk` (`apk-tools` v3).
-- BoringTun Issue #498 Resolution & AllowedIP Append Fix: Root-cause panic at `boringtun/src/device/mod.rs:321` patched via `0002-boringtun-uapi-peer-update-no-panic.patch`. Critical AllowedIP bug fixed: previously appending IPs wiped existing ones; now branches strictly on `_replace_ips` to merge non-duplicate AllowedIPs as per WireGuard UAPI spec. Verified via `tests/integration/test_allowed_ips.sh` and 15-phase test (`tests/integration/test_boringtun_netns.sh`, SHA256 `03d54aea...`).
-- BoringTun Issue #495 Rekey & Soak Verification: Demonstrated live WireGuard rekey at T=122s with continuous bidirectional traffic (61/61 ping responses, 0% packet loss) via `tests/integration/test_rekey.sh`. Authored extended 60-minute soak test harness (`tests/integration/soak_boringtun_60m.sh`).
-- Metrics Rigorously Audited: WSL2 throughput (860–949 Mbps) classified as `HOST_BENCHMARK`; VmRSS (2.8–3.0 MB) classified as `HOST_PROCESS_RSS`; permanently retracted false 145 MB RAM claim; router RAM classified as `ESTIMATE` (140–150 MB daily, 120 MB experimental); NAT 940 Mbps line rate classified as `ACCEPTANCE_TARGET`; verified `BUILD_VERIFIED` strictly for Kbuild/PC built components. Subagent timeout explained.
-- Milestone M5 Acceptance Deliverables: All 10 acceptance artifacts generated in `artifacts/m5_build/` with honest demarcation as `PACKAGING_SKELETON_PROTOTYPE` (verifying UBI geometry, SquashFS generation, DTS compilation, and package manifest, with real LuCI rootfs budget estimated at 15–25 MB within 40 MB NAND budget):
-  1. Build Log: `artifacts/m5_build/build.log`
-  2. Image Manifest: `artifacts/m5_build/image_manifest.json`
-  3. Kernel Configuration: `config/kernel-6.12.112.config`
-  4. Device Tree Source & DTB: `artifacts/m5_build/ipq5018-xiaomi-cr8818-daily.dtb` (26,788 B)
-  5. Package Manifest: `artifacts/m5_build/apk_packages.manifest`
-  6. Rootfs SquashFS Image: `artifacts/m5_build/openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-rootfs.squashfs` (573,440 B, packaging skeleton)
-  7. Firmware Images:
-     - Factory UBI: `openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-factory.ubi` (5,373,952 B / 5.12 MB)
-     - Sysupgrade BIN: `openwrt-25.12.6-qualcommax-ipq50xx-xiaomi_cr8818-squashfs-nand-sysupgrade.bin` (4,802,560 B / 4.58 MB)
-  8. Checksums: `artifacts/m5_build/SHA256SUMS`
-  9. Software Bill of Materials (SBOM): `artifacts/m5_build/sbom.spdx.json`
-  10. Build Reproducibility Report: `reports/M5_BUILD_REPRODUCIBILITY.md` and Acceptance Report `reports/M5_BUILD_ACCEPTANCE_REPORT.md`
-- Unit Testing: `cargo test` in `tests/rust_verification` passing 32/32 tests; CLI runner passing 24/24 tests.
-- Hardware Safety: Zero router SSH, zero flashing, zero router contact, lab directory `D:\vibecode\test_wifi` 100% untouched.
-
-Milestone M5 is complete and awaiting Architecture Lead review. Do NOT flash to router.
+Milestone M6 (`P5-M6`) has been completed on branch `feature/m6-full-source-build`:
+1. Reclassified M5 artifacts as non-flashable packaging skeletons (`M5A_PACKAGING_SKELETON_VERIFIED`).
+2. Resolved BoringTun Issue #498 via surgical in-place UAPI patch `0002-boringtun-uapi-peer-update-no-panic.patch`, eliminating all panics, returning controlled POSIX errnos (`libc::EOPNOTSUPP` = 95 on unsupported mid-session changes), and preserving active session state.
+3. Disambiguated `boringtun-cli` (with TUN device) from `Tunn` library for Issue #495, and executed 600s continuous multi-rekey soak test logging 0% packet loss across 4 rekey cycles, steady-state VmRSS ~3.0 MB, and exporting raw telemetry.
+4. Initialized official OpenWrt 25.12.6 source build pipeline on PC targeting IPQ5018 / CR8818 with Linux 6.12.112 LTS, aligned Device Tree to upstream ESS architecture (`dp1`/`dp2`), integrated Motorcomm YT9215SC DSA driver, compiled DTB (27,883 B), integrated modern `apk` packaging, nftables software flowtable offload, and generated full release artifacts (`artifacts/m6_build/`).
+5. Authored `reports/M6_BUILD_ACCEPTANCE_REPORT.md`, `reports/M6_BUILD_REPRODUCIBILITY.md`, `reports/HARDWARE_PARITY_REPORT.md`, and updated architecture diagram with explicit verification badges (`docs/architecture/cr8818_dual_track_architecture.svg`).
+6. Maintained strict safety: ZERO router contact, ZERO flashing, lab workspace `D:\vibecode\test_wifi` 100% untouched. Halted at Gate G-M6 awaiting Architecture Lead review.
 

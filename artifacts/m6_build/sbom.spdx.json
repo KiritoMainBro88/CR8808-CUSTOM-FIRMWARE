@@ -1,0 +1,304 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "CR8808-CUSTOM-FIRMWARE-OpenWrt-25.12.6-CR8818",
+  "documentNamespace": "https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE/spdx/m6",
+  "creationInfo": {
+    "created": "2026-11-11T10:05:00Z",
+    "creators": [
+      "Tool: CR8818-M6-Firmware-Assembler",
+      "Organization: Gemini Engineering Team"
+    ]
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-OpenWrt",
+      "name": "openwrt-core",
+      "versionInfo": "25.12.6 (commit 64900e7)",
+      "downloadLocation": "https://git.openwrt.org/openwrt/openwrt.git",
+      "licenseConcluded": "GPL-2.0-only"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-Linux",
+      "name": "linux-kernel",
+      "versionInfo": "6.12.112 LTS",
+      "downloadLocation": "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.112.tar.xz",
+      "licenseConcluded": "GPL-2.0-only",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "164dc9d1f6c93c61a15e1f071c48379b467f2b17c469cce7223471968208ed03"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-BoringTun",
+      "name": "boringtun-cli",
+      "versionInfo": "0.7.1-patched-issue498",
+      "downloadLocation": "https://github.com/cloudflare/boringtun",
+      "licenseConcluded": "BSD-3-Clause",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1cdf830027d9c665263079ae726f47dc732f4fc2891dd1450c111596f6659d12"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-YT9215",
+      "name": "kmod-yt921x",
+      "versionInfo": "6.12.112-yt9215sc-dsa",
+      "downloadLocation": "https://github.com/yangfl/openwrt",
+      "licenseConcluded": "GPL-2.0-only"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-apk-mbedtls",
+      "name": "apk-mbedtls",
+      "versionInfo": "3.0.0-r1",
+      "licenseConcluded": "GPL-2.0-only",
+      "summary": "APK package manager with mbedtls backend",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-base-files",
+      "name": "base-files",
+      "versionInfo": "1622-r25126",
+      "licenseConcluded": "GPL-2.0-or-later",
+      "summary": "OpenWrt core system scripts and filesystem hierarchy",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-busybox",
+      "name": "busybox",
+      "versionInfo": "1.37.0-1",
+      "licenseConcluded": "GPL-2.0-only",
+      "summary": "Multi-call embedded system utility binary",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-procd",
+      "name": "procd",
+      "versionInfo": "2026-08-15-r1",
+      "licenseConcluded": "GPL-2.0-only",
+      "summary": "OpenWrt system and process manager",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-ubus",
+      "name": "ubus",
+      "versionInfo": "2026-06-20-r1",
+      "licenseConcluded": "LGPL-2.1-only",
+      "summary": "OpenWrt micro bus RPC utility",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-ubusd",
+      "name": "ubusd",
+      "versionInfo": "2026-06-20-r1",
+      "licenseConcluded": "LGPL-2.1-only",
+      "summary": "OpenWrt micro bus RPC daemon",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-uci",
+      "name": "uci",
+      "versionInfo": "2026-07-10-r1",
+      "licenseConcluded": "LGPL-2.1-only",
+      "summary": "Unified Configuration Interface utility",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-libuci",
+      "name": "libuci",
+      "versionInfo": "2026-07-10-r1",
+      "licenseConcluded": "LGPL-2.1-only",
+      "summary": "Unified Configuration Interface library",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-libubus",
+      "name": "libubus",
+      "versionInfo": "2026-06-20-r1",
+      "licenseConcluded": "LGPL-2.1-only",
+      "summary": "OpenWrt micro bus RPC library",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-libubox",
+      "name": "libubox",
+      "versionInfo": "2026-08-01-r1",
+      "licenseConcluded": "ISC",
+      "summary": "Basic utility library for OpenWrt",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-netifd",
+      "name": "netifd",
+      "versionInfo": "2026-09-02-r1",
+      "licenseConcluded": "GPL-2.0-only",
+      "summary": "Network Interface Configuration Daemon",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-firewall4",
+      "name": "firewall4",
+      "versionInfo": "2026-10-01-r1",
+      "licenseConcluded": "GPL-2.0-only",
+      "summary": "OpenWrt 4th-gen nftables firewall manager",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-nftables",
+      "name": "nftables",
+      "versionInfo": "1.1.0-1",
+      "licenseConcluded": "GPL-2.0-only",
+      "summary": "Linux kernel packet filtering utility",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-kmod-nft-core",
+      "name": "kmod-nft-core",
+      "versionInfo": "6.12.112-1",
+      "licenseConcluded": "GPL-2.0-only",
+      "summary": "Netfilter nftables core engine module",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-kmod-nft-offload",
+      "name": "kmod-nft-offload",
+      "versionInfo": "6.12.112-1",
+      "licenseConcluded": "GPL-2.0-only",
+      "summary": "Linux software flowtable flow-offloading module",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-kmod-tun",
+      "name": "kmod-tun",
+      "versionInfo": "6.12.112-1",
+      "licenseConcluded": "GPL-2.0-only",
+      "summary": "Universal TUN/TAP device driver",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-kmod-yt921x",
+      "name": "kmod-yt921x",
+      "versionInfo": "6.12.112-1",
+      "licenseConcluded": "GPL-2.0-only",
+      "summary": "Motorcomm YT9215SC DSA Ethernet switch driver",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-kmod-ath11k",
+      "name": "kmod-ath11k",
+      "versionInfo": "6.12.112-1",
+      "licenseConcluded": "Dual-BSD-GPL",
+      "summary": "Qualcomm ath11k 802.11ax Wi-Fi 6 driver",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-ath11k-firmware-ipq5018-qcn6122",
+      "name": "ath11k-firmware-ipq5018-qcn6122",
+      "versionInfo": "2026.04-1",
+      "licenseConcluded": "Proprietary",
+      "summary": "Wi-Fi firmware binary for IPQ5018 and QCN6102",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-ipq-wifi-xiaomi_cr8818",
+      "name": "ipq-wifi-xiaomi_cr8818",
+      "versionInfo": "1.0-1",
+      "licenseConcluded": "Public-Domain",
+      "summary": "Board Data File (BDF) calibration for Xiaomi CR8818",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-dnsmasq",
+      "name": "dnsmasq",
+      "versionInfo": "2.90-2",
+      "licenseConcluded": "GPL-2.0-or-later",
+      "summary": "Lightweight caching DNS and DHCP server",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-dropbear",
+      "name": "dropbear",
+      "versionInfo": "2026.85-1",
+      "licenseConcluded": "MIT",
+      "summary": "Small memory footprint SSH client and server",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-boringtun",
+      "name": "boringtun",
+      "versionInfo": "0.7.1-1",
+      "licenseConcluded": "BSD-3-Clause",
+      "summary": "Cloudflare BoringTun userspace WireGuard daemon in Rust",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-wireguard-tools",
+      "name": "wireguard-tools",
+      "versionInfo": "1.0.20260421-1",
+      "licenseConcluded": "GPL-2.0-only",
+      "summary": "WireGuard control utilities (wg, wg-quick)",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-luci",
+      "name": "luci",
+      "versionInfo": "git-25.126.32687",
+      "licenseConcluded": "Apache-2.0",
+      "summary": "Modern LuCI Web Administration User Interface",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-luci-base",
+      "name": "luci-base",
+      "versionInfo": "git-25.126.32687",
+      "licenseConcluded": "Apache-2.0",
+      "summary": "LuCI core runtime libraries and ucode views",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-luci-theme-bootstrap",
+      "name": "luci-theme-bootstrap",
+      "versionInfo": "git-25.126.32687",
+      "licenseConcluded": "Apache-2.0",
+      "summary": "LuCI standard Bootstrap responsive theme",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-uhttpd",
+      "name": "uhttpd",
+      "versionInfo": "2026-05-18-r1",
+      "licenseConcluded": "ISC",
+      "summary": "Tiny HTTP/HTTPS web server for LuCI",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-rpcd",
+      "name": "rpcd",
+      "versionInfo": "2026-07-28-r1",
+      "licenseConcluded": "ISC",
+      "summary": "OpenWrt UBUS RPC daemon",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-wpad-mbedtls",
+      "name": "wpad-mbedtls",
+      "versionInfo": "2026-09-08-r1",
+      "licenseConcluded": "BSD-3-Clause",
+      "summary": "IEEE 802.11 Access Point and Supplicant (WPA3-SAE, WPA2)",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-odhcpd-ipv6only",
+      "name": "odhcpd-ipv6only",
+      "versionInfo": "2026-07-15-r1",
+      "licenseConcluded": "GPL-2.0-only",
+      "summary": "Embedded DHCPv6 and Router Advertisement daemon",
+      "downloadLocation": "https://git.openwrt.org/feed/packages.git"
+    }
+  ]
+}

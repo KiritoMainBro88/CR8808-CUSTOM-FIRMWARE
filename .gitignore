@@ -48,4 +48,7 @@ target/
 !artifacts/m4_logs/**
 !artifacts/m4_dtb/**
 !artifacts/m5_build/**
+!artifacts/m6_build/**
+!artifacts/m6_build/*.log
+!artifacts/m6_build/*.bin
 

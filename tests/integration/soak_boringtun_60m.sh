@@ -211,3 +211,7 @@ cat << EOF > "$TELEMETRY_JSON"
 }
 EOF
 echo "Telemetry exported to $TELEMETRY_JSON"
+if [ -d "/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build" ]; then
+    cp "$TELEMETRY_JSON" /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build/boringtun_soak_telemetry.json
+    cp "$LOG_FILE" /mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m6_build/boringtun_soak.log 2>/dev/null || true
+fi

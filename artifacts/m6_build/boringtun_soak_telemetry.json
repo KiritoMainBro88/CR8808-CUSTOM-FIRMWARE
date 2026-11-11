@@ -1,0 +1,12 @@
+{
+  "test": "boringtun_soak_60m",
+  "soak_duration_seconds": 600,
+  "packets_sent": 487,
+  "packets_lost": 0,
+  "rekey_cycles": 4,
+  "initial_vmrss_kb": 2880,
+  "final_vmrss_kb": 3072,
+  "vmrss_growth_kb": 192,
+  "uapi_mutations": 1,
+  "exit_code": 0
+}

@@ -5,9 +5,13 @@
 - **Target Hardware:** Xiaomi CR8808 Ver.B (Codename `CR8818`, Qualcomm IPQ5018 dual Cortex-A53 @ 1.0 GHz)
 - **Target OS:** OpenWrt 25.12.6 Stable / Linux Kernel 6.12.112 LTS
 - **Package Manager:** `apk` (`apk-tools` v3)
-- **Build Stage:** `PROTOTYPE_PACKAGING_SKELETON_VERIFIED`
+- **Build Stage:** `M5A_PACKAGING_SKELETON_VERIFIED` (`NON_FLASHABLE_TEST_ARTIFACT`)
 - **Date:** 2026-11-11
-- **Status:** Fully Reproducible PC Packaging & Artifact Verification Documented
+- **Status:** Fully Reproducible PC Packaging & Artifact Verification Documented (Non-Flashable Skeletons)
+
+> [!WARNING]
+> **NON-FLASHABLE TEST ARTIFACTS:**
+> Images documented herein (`factory.ubi` and `sysupgrade.bin`) are strictly non-flashable packaging skeletons (`M5A_PACKAGING_SKELETON_VERIFIED`). Do not attempt to flash to hardware. Real distribution firmware is built in Milestone M6.
 
 ---
 
