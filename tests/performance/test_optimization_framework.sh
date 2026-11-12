@@ -7,7 +7,8 @@
 # Validates:
 #   1. Isolated mock root environment initialization (matching RA82 baseline).
 #   2. CLI commands: list, audit, apply, rollback, rollback_all, verify.
-#   3. Atomic apply, state snapshot creation, and verification for each profile.
+#   3. Atomic apply, state snapshot creation, and verification for each profile
+#      (including new dns_stability and enhanced nss_flow_tuning).
 #   4. Bit-for-bit exact value restoration on rollback for every profile.
 #   5. Multi-profile bulk apply and reverse-order rollback_all.
 #   6. Fault injection and automatic instantaneous rollback on verification failure.
@@ -97,6 +98,7 @@ init_mock_tree() {
     # Sysfs: ECM Module
     mkdir -p "$MOCK_DIR/sys/module/ecm/parameters"
     printf '%s\n' "0" > "$MOCK_DIR/sys/module/ecm/parameters/accel_delay_pkts"
+    printf '%s\n' "0" > "$MOCK_DIR/sys/module/ecm/parameters/auto_bypassed"
 
     # Sysfs: Network Interfaces & RPS Queues
     for iface in eth0 eth1 br-lan wg0; do
@@ -109,16 +111,26 @@ init_mock_tree() {
     mkdir -p "$MOCK_DIR/proc"
     cat << 'EOF' > "$MOCK_DIR/proc/interrupts"
            CPU0       CPU1       
+ 28:  203457809          0       GIC 431 Edge      nss_queue0
+ 29:          0     752612       GIC 430 Edge      nss_queue1
  41:    9353079          0       GIC 326 Edge      ce2
  91:   21405881          0       GIC 449 Edge      pci0_wlan_ce_1
  92:    8326409          0       GIC 450 Edge      pci0_wlan_ce_2
  98:    6099865          0       GIC 456 Edge      pci0_wlan_grp_dp_3
 EOF
 
-    for irq in 41 91 92 98; do
+    for irq in 28 29 41 91 92 98; do
         mkdir -p "$MOCK_DIR/proc/irq/${irq}"
-        printf '%s\n' "1" > "$MOCK_DIR/proc/irq/${irq}/smp_affinity"
+        if [ "$irq" = "29" ]; then
+            printf '%s\n' "2" > "$MOCK_DIR/proc/irq/${irq}/smp_affinity"
+        else
+            printf '%s\n' "1" > "$MOCK_DIR/proc/irq/${irq}/smp_affinity"
+        fi
     done
+
+    # Configuration paths: dnsmasq
+    mkdir -p "$MOCK_DIR/etc/dnsmasq.d"
+    mkdir -p "$MOCK_DIR/tmp/resolv.conf.d"
 
     # State directory
     mkdir -p "$MOCK_DIR$STATE_DIR"
@@ -136,22 +148,26 @@ echo "--- TEST 1: Framework Discovery & CLI Operations ---"
 LIST_OUT=$(sh "$FRAMEWORK" list)
 echo "$LIST_OUT" | grep -q "conntrack_tuning"
 assert_eq "Framework lists conntrack_tuning" "0" "$?"
+echo "$LIST_OUT" | grep -q "dns_stability"
+assert_eq "Framework lists dns_stability" "0" "$?"
 echo "$LIST_OUT" | grep -q "rps_rfs_tuning"
 assert_eq "Framework lists rps_rfs_tuning" "0" "$?"
 echo "$LIST_OUT" | grep -q "tcp_tuning"
 assert_eq "Framework lists tcp_tuning" "0" "$?"
+echo "$LIST_OUT" | grep -q "nss_flow_tuning"
+assert_eq "Framework lists nss_flow_tuning" "0" "$?"
 
 # Test 'audit' command
-AUDIT_OUT=$(sh "$FRAMEWORK" audit conntrack_tuning)
-echo "$AUDIT_OUT" | grep -q "nf_conntrack_max"
-assert_eq "Framework audits conntrack_tuning correctly" "0" "$?"
+AUDIT_OUT=$(sh "$FRAMEWORK" audit dns_stability)
+echo "$AUDIT_OUT" | grep -q "10-dns-stability.conf"
+assert_eq "Framework audits dns_stability correctly" "0" "$?"
 
 # ------------------------------------------------------------------------------
 # TEST 2: Individual Profile Atomic Apply and Exact Verification
 # ------------------------------------------------------------------------------
 echo "--- TEST 2: Individual Profile Atomic Apply & State Capture ---"
 
-PROFILES="rps_rfs_tuning irq_affinity netdev_backlog tcp_tuning qdisc_tuning conntrack_tuning nss_flow_tuning"
+PROFILES="rps_rfs_tuning irq_affinity netdev_backlog tcp_tuning qdisc_tuning conntrack_tuning nss_flow_tuning dns_stability"
 
 for prof in $PROFILES; do
     echo "Testing Profile: $prof"
@@ -183,6 +199,17 @@ assert_eq "tcp_fin_timeout set to 30" "30" "$(cat "$MOCK_DIR/proc/sys/net/ipv4/t
 assert_eq "default_qdisc set to fq_codel" "fq_codel" "$(cat "$MOCK_DIR/proc/sys/net/core/default_qdisc")"
 assert_eq "nf_conntrack_tcp_timeout_established set to 86400" "86400" "$(cat "$MOCK_DIR/proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established")"
 assert_eq "ecm accel_delay_pkts set to 4" "4" "$(cat "$MOCK_DIR/sys/module/ecm/parameters/accel_delay_pkts")"
+assert_eq "ecm auto_bypassed set to 0" "0" "$(cat "$MOCK_DIR/sys/module/ecm/parameters/auto_bypassed")"
+
+# Verify dns_stability snippet contents
+grep -q "cache-size=2048" "$MOCK_DIR/etc/dnsmasq.d/10-dns-stability.conf"
+assert_eq "dnsmasq cache-size set to 2048" "0" "$?"
+grep -q "dns-forward-max=512" "$MOCK_DIR/etc/dnsmasq.d/10-dns-stability.conf"
+assert_eq "dnsmasq dns-forward-max set to 512" "0" "$?"
+grep -q "min-cache-ttl=300" "$MOCK_DIR/etc/dnsmasq.d/10-dns-stability.conf"
+assert_eq "dnsmasq min-cache-ttl set to 300" "0" "$?"
+grep -q "timeout:1" "$MOCK_DIR/tmp/resolv.conf.d/options.conf"
+assert_eq "resolver options set to timeout:1" "0" "$?"
 
 # Verify global verify
 sh "$FRAMEWORK" verify >/dev/null 2>&1
@@ -194,7 +221,7 @@ assert_eq "Global verify confirms all active profiles" "0" "$?"
 echo "--- TEST 3: Individual Profile Rollback & Bit-for-Bit Restoration ---"
 
 # Rollback each profile in reverse order
-for prof in nss_flow_tuning conntrack_tuning qdisc_tuning tcp_tuning netdev_backlog irq_affinity rps_rfs_tuning; do
+for prof in dns_stability nss_flow_tuning conntrack_tuning qdisc_tuning tcp_tuning netdev_backlog irq_affinity rps_rfs_tuning; do
     sh "$FRAMEWORK" rollback "$prof" >/dev/null 2>&1
     assert_eq "Profile $prof rolled back with exit code 0" "0" "$?"
 
@@ -221,6 +248,7 @@ assert_eq "tcp_fin_timeout restored to 60" "60" "$(cat "$MOCK_DIR/proc/sys/net/i
 assert_eq "default_qdisc restored to pfifo_fast" "pfifo_fast" "$(cat "$MOCK_DIR/proc/sys/net/core/default_qdisc")"
 assert_eq "nf_conntrack_tcp_timeout_established restored to 432000" "432000" "$(cat "$MOCK_DIR/proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established")"
 assert_eq "ecm accel_delay_pkts restored to 0" "0" "$(cat "$MOCK_DIR/sys/module/ecm/parameters/accel_delay_pkts")"
+assert_eq "dnsmasq snippet purged on rollback" "0" "$([ ! -f "$MOCK_DIR/etc/dnsmasq.d/10-dns-stability.conf" ] && echo 0 || echo 1)"
 
 # ------------------------------------------------------------------------------
 # TEST 4: Bulk Apply and rollback_all
@@ -234,6 +262,7 @@ done
 
 assert_eq "tcp_fastopen is 3 after apply" "3" "$(cat "$MOCK_DIR/proc/sys/net/ipv4/tcp_fastopen")"
 assert_eq "netdev_budget is 600 after apply" "600" "$(cat "$MOCK_DIR/proc/sys/net/core/netdev_budget")"
+assert_eq "dns snippet exists after bulk apply" "0" "$([ -f "$MOCK_DIR/etc/dnsmasq.d/10-dns-stability.conf" ] && echo 0 || echo 1)"
 
 # Execute rollback_all
 sh "$FRAMEWORK" rollback_all >/dev/null 2>&1
@@ -244,6 +273,7 @@ assert_eq "netdev_budget restored to 300 via rollback_all" "300" "$(cat "$MOCK_D
 assert_eq "tcp_fastopen restored to 0 via rollback_all" "0" "$(cat "$MOCK_DIR/proc/sys/net/ipv4/tcp_fastopen")"
 assert_eq "default_qdisc restored to pfifo_fast via rollback_all" "pfifo_fast" "$(cat "$MOCK_DIR/proc/sys/net/core/default_qdisc")"
 assert_eq "nf_conntrack_tcp_timeout_established restored to 432000 via rollback_all" "432000" "$(cat "$MOCK_DIR/proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established")"
+assert_eq "dnsmasq snippet purged via rollback_all" "0" "$([ ! -f "$MOCK_DIR/etc/dnsmasq.d/10-dns-stability.conf" ] && echo 0 || echo 1)"
 
 # Active list should be empty
 _active_count=$(sh "$FRAMEWORK" list | grep "Active Profiles Managed:" | cut -d':' -f2 | tr -d ' ')

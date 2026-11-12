@@ -1,0 +1,31 @@
+{
+  "test_name": "boringtun_armv7_pc_simulation",
+  "timestamp": "2026-11-12T13:00:40Z",
+  "binary_path": "/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m12_wireguard/boringtun-cli-armv7",
+  "binary_arch": "ARMv7 hard-float (armv7-unknown-linux-musleabihf +neon)",
+  "qemu_emulated": true,
+  "tunnel_interface": "wg1",
+  "listen_port": 51821,
+  "ping_stats": {
+    "packets_sent": 50,
+    "packet_loss_pct": 0,
+    "rtt_min_ms": 0.245,
+    "rtt_avg_ms": 0.390,
+    "rtt_max_ms": 4.227,
+    "rtt_mdev_ms": 0.550
+  },
+  "traffic_stats": {
+    "protocol": "TCP",
+    "duration_sec": 10,
+    "throughput_mbps": 244.04,
+    "retransmits": 224
+  },
+  "memory_footprint_kb": {
+    "pre_traffic_vm_rss": 9800,
+    "post_traffic_vm_rss": 9992,
+    "peak_vm_hwm": 9992,
+    "vm_size": 4538688,
+    "net_growth_kb": 192
+  },
+  "acceptance_verdict": "PASS"
+}

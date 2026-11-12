@@ -16,6 +16,12 @@ WG_TABLE=101
 WG_PID_FILE="/tmp/wg1.pid"
 WG_LOG_FILE="/tmp/boringtun_wg1.log"
 
+# Strict Safety Boundary: Under no circumstances allow operations on wg0
+if [ "$WG_IFACE" = "wg0" ]; then
+    echo "[CRITICAL SAFETY GUARD] Refusing to execute teardown on production interface 'wg0'! Aborting immediately." >&2
+    exit 99
+fi
+
 log() {
     echo "[wg1-teardown] $*"
 }

@@ -28,6 +28,12 @@ WG_SOCK_DIR="/var/run/wireguard"
 WG_LOG_FILE="/tmp/boringtun_wg1.log"
 BORINGTUN_BIN="/tmp/boringtun-cli-armv7"
 
+# Strict Safety Boundary: Under no circumstances allow operations on wg0
+if [ "$WG_IFACE" = "wg0" ]; then
+    echo "[CRITICAL SAFETY GUARD] Refusing to execute on production interface 'wg0'! Aborting immediately." >&2
+    exit 99
+fi
+
 log() {
     echo "[wg1-setup] $*"
 }
@@ -78,7 +84,8 @@ mkdir -p /tmp/wireguard
 
 # 3. Launch BoringTun daemon for wg1
 log "Starting BoringTun daemon on interface $WG_IFACE..."
-"$BORINGTUN_BIN" --foreground --threads 2 --verbosity debug "$WG_IFACE" > "$WG_LOG_FILE" 2>&1 &
+export WG_SUDO=1
+"$BORINGTUN_BIN" --disable-drop-privileges --foreground --threads 2 --verbosity debug "$WG_IFACE" > "$WG_LOG_FILE" 2>&1 &
 BORINGTUN_PID=$!
 echo "$BORINGTUN_PID" > "$WG_PID_FILE"
 log "BoringTun launched with PID $BORINGTUN_PID (recorded in $WG_PID_FILE)."

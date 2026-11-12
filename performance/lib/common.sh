@@ -45,7 +45,10 @@ log_success() {
 sysctl_to_proc() {
     _param="$1"
     _proc_path=$(echo "$_param" | tr '.' '/')
-    echo "${MOCK_ROOT}/proc/sys/${_proc_path}"
+    case "${_proc_path}" in
+        "$MOCK_ROOT"*) echo "${_proc_path}" ;;
+        *) echo "${MOCK_ROOT}/proc/sys/${_proc_path}" ;;
+    esac
 }
 
 # Read a sysctl parameter value
@@ -118,6 +121,36 @@ write_sysfs() {
         return 0
     fi
     return 1
+}
+
+# Resolve arbitrary configuration path (supports MOCK_ROOT)
+conf_path() {
+    _path="$1"
+    case "$_path" in
+        "$MOCK_ROOT"*) echo "$_path" ;;
+        *) echo "${MOCK_ROOT}${_path}" ;;
+    esac
+}
+
+# Read configuration file
+read_conf() {
+    _path="$1"
+    _full=$(conf_path "$_path")
+    if [ -f "$_full" ]; then
+        cat "$_full"
+        return 0
+    fi
+    return 1
+}
+
+# Write configuration file
+write_conf() {
+    _path="$1"
+    _content="$2"
+    _full=$(conf_path "$_path")
+    mkdir -p "$(dirname "$_full")" 2>/dev/null || true
+    printf '%s\n' "$_content" > "$_full" 2>/dev/null || return 1
+    return 0
 }
 
 # State management functions

@@ -1,37 +1,34 @@
 #!/bin/sh
 # performance/profiles/irq_affinity.sh
 # ==============================================================================
-# Profile: Hardware IRQ Affinity Balancing
+# Profile: Hardware IRQ Affinity Balancing across CPU0 and CPU1
 # Target: Xiaomi CR8808 / RA82 (Qualcomm IPQ5018 Dual-Core Cortex-A53, Linux 4.4.60)
 #
-# SPECIFICATION & ARCHITECTURAL DOCUMENTATION:
+# SPECIFICATION & MEASURABLE ACCEPTANCE CRITERIA:
 # ------------------------------------------------------------------------------
-# 1. PARAMETERS & VALUES:
-#    - Wi-Fi 5GHz PCIe Copy Engine 1 (pci0_wlan_ce_1):
-#        Baseline: 1 (CPU0) -> Proposed: 2 (CPU1 affinity mask 0x2)
-#    - Wi-Fi 5GHz PCIe Copy Engine 2 (pci0_wlan_ce_2):
-#        Baseline: 1 (CPU0) -> Proposed: 2 (CPU1 affinity mask 0x2)
-#    - Wi-Fi 5GHz Data Path 3 (pci0_wlan_grp_dp_3):
-#        Baseline: 1 (CPU0) -> Proposed: 2 (CPU1 affinity mask 0x2)
-#    - Hardware Crypto Engine 2 (ce2):
-#        Baseline: 1 (CPU0) -> Proposed: 2 (CPU1 affinity mask 0x2)
+# 1. BASELINE CONFLICT & MEASUREMENTS:
+#    - Factory Baseline: Over 260,000,000 hardware interrupts accumulated on CPU0,
+#      including all Wi-Fi 5GHz DMA rings (35.8M) and Crypto Engines (13.2M),
+#      while CPU1 handled only 752K interrupts.
+#    - Under sustained Wi-Fi 6 HE160 transmission, CPU0 suffers severe IRQ latency
+#      jitter, starving userspace daemons and VPN processing.
 #
-# 2. HARDWARE COMPATIBILITY:
-#    - Architecture: ARM Cortex-A53 Dual-Core (IPQ5018) with ARM GIC-400 interrupt
-#      controller supporting dynamic SPI routing via /proc/irq/<irq>/smp_affinity.
+# 2. MEASURABLE ACCEPTANCE CRITERIA:
+#    - [CRIT-1] Wi-Fi 5GHz DMA Affinity: pci0_wlan_ce_1 smp_affinity == 2 (CPU1).
+#    - [CRIT-2] Wi-Fi 5GHz Ring Affinity: pci0_wlan_ce_2 smp_affinity == 2 (CPU1).
+#    - [CRIT-3] Wi-Fi 5GHz DP Affinity: pci0_wlan_grp_dp_3 smp_affinity == 2 (CPU1).
+#    - [CRIT-4] Crypto Offload Affinity: ce2 (Crypto Engine 2) smp_affinity == 2 (CPU1).
+#    - [CRIT-5] Dynamic Discovery: Exact IRQ numbers resolved by name from /proc/interrupts.
+#    - [CRIT-6] Reversible Rollback: Original affinities (0x1) restored 100% bit-for-bit.
 #
 # 3. RAM & CPU COST:
 #    - RAM: 0 bytes.
-#    - CPU: Prevents CPU0 IRQ starvation. On RA82, CPU0 previously handled over
-#      260M hardware interrupts while CPU1 handled <1M. Moving Wi-Fi 5GHz DMA and
-#      crypto interrupts to CPU1 achieves near 50/50 hardware IRQ distribution.
+#    - CPU: Eliminates single-core interrupt bottlenecks. Distributes high-frequency
+#      DMA completion events from 5GHz Wi-Fi directly to CPU1.
 #
 # 4. FAILURE MODES & MITIGATIONS:
 #    - Failure Mode: Writing affinity to non-routable PPI (per-CPU timer) causes EIO.
-#      Mitigation: Dynamically searches /proc/interrupts by peripheral name; only
-#      modifies routable SPIs for Wi-Fi and crypto engines.
-#    - Failure Mode: IRQ numbers vary across kernel revisions.
-#      Mitigation: Name-based IRQ resolution dynamically extracts the active IRQ number.
+#      Mitigation: Dynamically queries /proc/interrupts for specific named SPIs only.
 # ==============================================================================
 
 set -u
@@ -59,7 +56,7 @@ info() {
     cat << 'EOF'
 Profile: irq_affinity
 Description: Hardware IRQ Affinity Balancing across CPU0 and CPU1
-Parameters:
+Measurable Acceptance Criteria:
   - pci0_wlan_ce_1 smp_affinity: 1 -> 2 (CPU1)
   - pci0_wlan_ce_2 smp_affinity: 1 -> 2 (CPU1)
   - pci0_wlan_grp_dp_3 smp_affinity: 1 -> 2 (CPU1)
@@ -152,7 +149,6 @@ verify() {
         if [ -n "$_irq" ]; then
             _aff_path="/proc/irq/${_irq}/smp_affinity"
             _cur=$(read_sysfs "$_aff_path" || echo "")
-            # Affinity mask may be formatted with leading zeros or spaces (e.g. '02' or '2')
             _cur_dec=$(echo "$_cur" | tr -d ' ' | sed 's/^0*//')
             if [ -z "$_cur_dec" ]; then _cur_dec="0"; fi
             if [ "$_cur_dec" != "$PROPOSED_CPU1_MASK" ]; then
