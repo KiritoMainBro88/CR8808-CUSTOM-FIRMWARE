@@ -140,4 +140,4 @@ Kính trình **Chief Architect ChatGPT** và **User** xem xét cấp phép thự
 - **Cơ chế phòng hộ:** Watchdog 180 giây có kiểm tra đọc lại, bẫy tín hiệu SIGINT/SIGTERM, khóa thư mục chống xung đột, kiểm tra kết nối quản trị LAN, và cổng kiểm tra đọc lại bắt buộc trước khi kết thúc.
 
 Toàn bộ gói công cụ đã sẵn sàng trên máy trạm để thực thi ngay khi nhận được lệnh phê duyệt.
-*(Sau khi hoàn tất cập nhật mã nguồn, chúng tôi sẽ thực hiện commit và push lên GitHub).*
+*(Mã nguồn và báo cáo M12.6 đã được commit tại `a8e6cfd` và push thành công lên GitHub `origin/feature/m12-ra82-performance-modernization` cùng bản sao lưu cục bộ).*
