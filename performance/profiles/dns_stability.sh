@@ -1,16 +1,39 @@
 #!/bin/sh
 # performance/profiles/dns_stability.sh
 # ==============================================================================
-# Profile: DNS Stability, Cache Optimization & Resolver Timeout Tuning
+# Profile: DNS Stability, Cache Sizing & Resolver Tuning (EXPERIMENTAL / ON_HOLD)
 # Target: Xiaomi CR8808 / RA82 (Qualcomm IPQ5018 Dual-Core Cortex-A53, Linux 4.4.60)
+# Status: EXPERIMENTAL / ON_HOLD (Requires explicit confirmation; live execution held)
 #
 # SPECIFICATION & ARCHITECTURAL DOCUMENTATION:
 # ------------------------------------------------------------------------------
-# 1. PARAMETERS & VALUES:
+# 1. ACCURATE DNSMASQ SIGHUP SEMANTICS (CRITICAL ARCHITECTURAL CORRECTION):
+#    - Official dnsmasq manpage & source mechanics:
+#      SIGHUP does NOT reload main configuration files (dnsmasq.conf or --conf-dir).
+#      Upon receiving SIGHUP, dnsmasq:
+#        a) Flushes its in-memory DNS cache.
+#        b) Re-reads /etc/hosts, /etc/ethers, and --dhcp-hostsfile/--hostsdir.
+#        c) Re-reads /etc/resolv.conf (if --no-poll is set).
+#        d) Invokes lease change scripts for existing DHCP leases.
+#    - To modify structural parameters like 'cache-size', 'dns-forward-max',
+#      or load new snippet files, dnsmasq MUST BE RESTARTED (SIGTERM/kill followed
+#      by respawn or /etc/init.d/dnsmasq restart).
+#    - A daemon restart closes listening sockets and creates a brief (~50-200ms)
+#      window where client DNS queries or DHCP renewals can be dropped.
+#      Claims of "guaranteed zero DHCP disruption" were inaccurate and are retracted.
+#
+# 2. RAM BUDGET CONSTRAINTS ON RA82:
+#    - The baseline audit recorded MemAvailable at only ~10.1 MB (5.5% of 182 MB).
+#    - Unverified large cache expansion (e.g. 2,048 entries / 512 forward slots)
+#      could risk page allocation failure under bursty slab allocation.
+#    - Target values are held at conservative trial figures (cache-size=300,
+#      dns-forward-max=150) pending live RAM budget sign-off.
+#
+# 3. PARAMETERS & VALUES:
 #    - dnsmasq cache-size:
-#        Baseline: 150 (Stock OpenWrt default) -> Proposed: 2048
+#        Baseline: 150 -> Conservative Trial: 300 (Deferred: 2048 held for RAM audit)
 #    - dnsmasq dns-forward-max:
-#        Baseline: 150 -> Proposed: 512 (Concurrent upstream query capacity)
+#        Baseline: 150 -> Conservative Trial: 150 (Deferred: 512 held for RAM audit)
 #    - dnsmasq min-cache-ttl:
 #        Baseline: 0 -> Proposed: 300 (Guarantees 5m TTL; absorbs upstream micro-outages)
 #    - dnsmasq neg-ttl:
@@ -18,66 +41,57 @@
 #    - libc resolver options (/etc/resolv.conf):
 #        Baseline: default (timeout:5 attempts:2) -> Proposed: options timeout:1 attempts:2
 #
-# 2. HARDWARE COMPATIBILITY:
-#    - Architecture: dnsmasq 2.80+ under OpenWrt / Linux 4.4.60 QSDK.
-#    - Compatible with both stock RA82 v1.4.31 and OpenWrt 25.12.6.
-#
-# 3. RAM & CPU COST:
-#    - RAM: Expanding cache from 150 to 2048 entries requires ~90 KiB heap RAM.
-#    - CPU: Increases cache hit ratio from ~25% to >85%, serving repeat queries
-#      in <0.5ms directly from memory and eliminating upstream latency jitter.
-#
-# 4. FAILURE MODES & MITIGATIONS:
-#    - Failure Mode: Reloading dnsmasq disrupts active DHCP leases.
-#      Mitigation: Framework issues SIGHUP (killall -SIGHUP dnsmasq) rather than
-#      restarting the process. SIGHUP triggers cache flush and re-read of configuration
-#      files with ZERO disruption to active DHCP leases or socket listeners.
-#    - Failure Mode: Upstream ISP DNS failure triggers client-side timeouts.
-#      Mitigation: min-cache-ttl=300 keeps cached records alive across transient
-#      upstream dropouts; timeout:1 accelerates failover to secondary resolver.
+# 4. SAFETY POLICY:
+#    - Marked EXPERIMENTAL/HOLD. Framework requires --confirm-experimental flag.
+#    - Offline configuration generation, state capture, and rollback fully supported.
 # ==============================================================================
 
 set -u
 
 PROFILE_NAME="dns_stability"
-PROFILE_DESC="DNS Cache Size, Concurrency & Resolver Timeout Tuning"
+PROFILE_DESC="DNS Cache Sizing & Resolver Tuning [EXPERIMENTAL/HOLD]"
+PROFILE_STATUS="EXPERIMENTAL_HOLD"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 FRAMEWORK_LIB="${SCRIPT_DIR}/../lib"
 . "${FRAMEWORK_LIB}/common.sh"
 
-PROPOSED_CACHE_SIZE="2048"
-PROPOSED_FORWARD_MAX="512"
-PROPOSED_MIN_CACHE_TTL="300"
-PROPOSED_NEG_TTL="60"
-PROPOSED_RESOLV_OPTIONS="options timeout:1 attempts:2"
+# Conservative trial defaults (2048/512 held until RAM budget verified)
+PROPOSED_CACHE_SIZE="${PROPOSED_CACHE_SIZE:-300}"
+PROPOSED_FORWARD_MAX="${PROPOSED_FORWARD_MAX:-150}"
+PROPOSED_MIN_CACHE_TTL="${PROPOSED_MIN_CACHE_TTL:-300}"
+PROPOSED_NEG_TTL="${PROPOSED_NEG_TTL:-60}"
+PROPOSED_RESOLV_OPTIONS="${PROPOSED_RESOLV_OPTIONS:-options timeout:1 attempts:2}"
 
 SNIPPET_FILE="/etc/dnsmasq.d/10-dns-stability.conf"
 RESOLV_FILE="/tmp/resolv.conf.d/options.conf"
 
 info() {
-    cat << 'EOF'
+    cat << EOF
 Profile: dns_stability
-Description: DNS Cache Size, Concurrency & Resolver Timeout Tuning
+Status: EXPERIMENTAL / ON_HOLD (Requires confirmation flag --confirm-experimental)
+Description: DNS Cache Sizing, Concurrency & Resolver Timeout Tuning
 Parameters:
-  - cache-size: 150 -> 2048 (Expands cache capacity for multi-device households)
-  - dns-forward-max: 150 -> 512 (Quadruples concurrent DNS query capacity)
-  - min-cache-ttl: 0 -> 300s (Absorbs upstream ISP DNS micro-outages)
-  - neg-ttl: 0 -> 60s (Suppresses repeated NXDOMAIN floods)
-  - resolver options: timeout:1 attempts:2 (Accelerates upstream failover)
-Hardware Compatibility: dnsmasq 2.80+, Linux 4.4.60 QSDK, IPQ5018
-RAM Cost: ~90 KiB
-CPU Impact: Reduces upstream network round-trips; cache queries resolve in <0.5ms
-Failure Modes: SIGHUP reload ensures zero DHCP disruption or socket disconnects
+  - cache-size: 150 -> ${PROPOSED_CACHE_SIZE} (Conservative trial; 2048 held for RAM audit)
+  - dns-forward-max: 150 -> ${PROPOSED_FORWARD_MAX} (512 held for RAM audit)
+  - min-cache-ttl: 0 -> ${PROPOSED_MIN_CACHE_TTL}s (Absorbs upstream ISP DNS micro-outages)
+  - neg-ttl: 0 -> ${PROPOSED_NEG_TTL}s (Suppresses repeated NXDOMAIN floods)
+  - resolver options: ${PROPOSED_RESOLV_OPTIONS} (Accelerates upstream failover)
+Technical SIGHUP Semantics:
+  SIGHUP only flushes cache and reloads hosts/resolv.conf. It does NOT reload
+  main configuration or new cache-size parameters. Full reload requires service
+  restart with potential momentary socket interruption.
+RAM Overhead: ~25 KiB (conservative 300 entries) vs ~90 KiB (2048 entries)
+Safety Gate: Blocked from automatic framework apply. Manual confirmation required.
 EOF
 }
 
 audit() {
-    log_info "Auditing profile: ${PROFILE_NAME}"
+    log_info "Auditing profile: ${PROFILE_NAME} [Status: ${PROFILE_STATUS}]"
     _snippet=$(read_conf "$SNIPPET_FILE" 2>/dev/null || echo "NOT_PRESENT")
     echo "  [config] $SNIPPET_FILE:"
     if [ "$_snippet" = "NOT_PRESENT" ]; then
-        echo "    Status: NOT APPLIED (Default system cache in use)"
+        echo "    Status: NOT APPLIED (Default factory dnsmasq configuration active)"
     else
         echo "$_snippet" | sed 's/^/    /'
     fi
@@ -87,7 +101,7 @@ audit() {
 }
 
 apply() {
-    log_info "Applying profile: ${PROFILE_NAME}"
+    log_info "Applying profile: ${PROFILE_NAME} (Offline config generation & state snapshot)"
     ensure_state_dir
 
     if has_state "$PROFILE_NAME"; then
@@ -109,9 +123,10 @@ apply() {
         save_state_kv "$PROFILE_NAME" "orig.resolv.content" "$(echo "$_orig_resolv" | tr '\n' ' ')"
     fi
 
-    # Generate new dnsmasq stability configuration
+    # Generate conservative dnsmasq stability configuration
     _config_body=$(cat << EOF
 # Auto-generated by RA82 Performance Framework: dns_stability
+# Note: Full activation requires daemon restart; SIGHUP only flushes cache.
 cache-size=${PROPOSED_CACHE_SIZE}
 dns-forward-max=${PROPOSED_FORWARD_MAX}
 min-cache-ttl=${PROPOSED_MIN_CACHE_TTL}
@@ -130,13 +145,14 @@ EOF
         log_warn "Failed to write resolver options to $RESOLV_FILE (non-fatal)"
     fi
 
-    # Safely signal dnsmasq to reload configuration if running (zero DHCP disruption)
+    # Note: On live device, do NOT restart dnsmasq automatically.
+    # SIGHUP flushes cache but does not re-read cache-size.
     if [ -z "$MOCK_ROOT" ]; then
-        killall -SIGHUP dnsmasq 2>/dev/null || true
+        log_warn "Notice: Written snippet to $SNIPPET_FILE. Daemon restart deferred to maintain live stability."
     fi
 
     if verify; then
-        log_success "Profile ${PROFILE_NAME} applied successfully."
+        log_success "Profile ${PROFILE_NAME} applied successfully (state snapshot preserved)."
         return 0
     else
         log_err "Profile ${PROFILE_NAME} verification failed after apply. Initiating automatic rollback."
@@ -169,11 +185,6 @@ rollback() {
     else
         _full_res=$(conf_path "$RESOLV_FILE")
         rm -f "$_full_res" 2>/dev/null || true
-    fi
-
-    # Signal dnsmasq to re-read restored configuration
-    if [ -z "$MOCK_ROOT" ]; then
-        killall -SIGHUP dnsmasq 2>/dev/null || true
     fi
 
     clear_state "$PROFILE_NAME"

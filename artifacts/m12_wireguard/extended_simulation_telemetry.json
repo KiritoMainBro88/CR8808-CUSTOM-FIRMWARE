@@ -1,0 +1,46 @@
+{
+  "suite_name": "boringtun_armv7_extended_pc_validation",
+  "timestamp": "2026-11-12T15:03:13Z",
+  "binary_path": "/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m12_wireguard/boringtun-cli-armv7",
+  "binary_arch": "ARMv7 hard-float (armv7-unknown-linux-musleabihf +neon static)",
+  "host_environment": "WSL2 Ubuntu-22.04 LTS (x86_64 Host Emulating ARMv7 via QEMU)",
+  "test_summary": {
+    "total_tests": 5,
+    "passed_tests": 5,
+    "verdict": "PASS"
+  },
+  "test_results": {
+    "lifecycle_10_cycles": {
+      "cycles_attempted": 10,
+      "cycles_succeeded": 10,
+      "verdict": "PASS"
+    },
+    "uapi_fuzzing": {
+      "tests_executed": ["invalid_verb", "invalid_key", "port_overflow", "oversized_16kb", "abrupt_close"],
+      "daemon_panics": 0,
+      "verdict": "PASS"
+    },
+    "network_impairment_netem": {
+      "simulated_delay_ms": 50,
+      "simulated_jitter_ms": 10,
+      "simulated_loss_pct": 10,
+      "observed_loss_pct": 6,
+      "verdict": "PASS"
+    },
+    "session_reconnection": {
+      "reconnect_packet_loss_pct": 0,
+      "verdict": "PASS"
+    },
+    "sustained_60s_soak": {
+      "duration_sec": 60,
+      "throughput_mbps": 276.04,
+      "retransmits": 1688,
+      "memory_pre_rss_kb": 10188,
+      "memory_post_rss_kb": 10188,
+      "peak_vm_hwm_kb": 10188,
+      "net_drift_kb": 0,
+      "drift_rate_kb_per_min": 0,
+      "verdict": "PASS"
+    }
+  }
+}

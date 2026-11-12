@@ -8,13 +8,14 @@
 # Supported Commands:
 #   sh performance/framework.sh list
 #   sh performance/framework.sh audit [profile]
-#   sh performance/framework.sh apply <profile>
+#   sh performance/framework.sh apply <profile> [--confirm-experimental]
 #   sh performance/framework.sh rollback <profile>
 #   sh performance/framework.sh rollback_all
 #   sh performance/framework.sh verify [profile]
 #
 # Safety Policy:
 #   - NEVER apply all optimizations monolithically; each profile is independent.
+#   - Experimental/Hold profiles require explicit --confirm-experimental flag.
 #   - Atomic apply with mandatory pre-apply state snapshotting.
 #   - Automatic instantaneous rollback if post-apply verification fails.
 #   - Reversible without device reboot or persistent firmware modification.
@@ -48,7 +49,10 @@ get_profile_status() {
             echo "DEGRADED"
         fi
     else
-        if sh "$_script" verify >/dev/null 2>&1; then
+        _exp=$(grep "^PROFILE_STATUS=" "$_script" 2>/dev/null | cut -d'=' -f2- | tr -d '"' || echo "")
+        if [ "$_exp" = "EXPERIMENTAL_HOLD" ]; then
+            echo "EXPERIMENTAL_HOLD"
+        elif sh "$_script" verify >/dev/null 2>&1; then
             echo "MATCH_PROPOSED"
         else
             echo "BASELINE"
@@ -58,14 +62,14 @@ get_profile_status() {
 
 cmd_list() {
     echo "================================================================================"
-    printf "%-22s %-12s %-42s\n" "PROFILE" "STATUS" "DESCRIPTION"
+    printf "%-22s %-18s %-38s\n" "PROFILE" "STATUS" "DESCRIPTION"
     echo "--------------------------------------------------------------------------------"
     for script in "$PROFILES_DIR"/*.sh; do
         if [ -f "$script" ]; then
             _name=$(basename "$script" .sh)
             _status=$(get_profile_status "$_name")
             _desc=$(grep "^PROFILE_DESC=" "$script" 2>/dev/null | cut -d'=' -f2- | tr -d '"' || echo "Optimization module")
-            printf "%-22s %-12s %-42s\n" "$_name" "$_status" "$_desc"
+            printf "%-22s %-18s %-38s\n" "$_name" "$_status" "$_desc"
         fi
     done
     echo "================================================================================"
@@ -96,8 +100,10 @@ cmd_audit() {
 
 cmd_apply() {
     _target="${1:-}"
+    _flag="${2:-}"
+
     if [ -z "$_target" ]; then
-        log_err "Usage: $0 apply <profile>"
+        log_err "Usage: $0 apply <profile> [--confirm-experimental]"
         log_err "Monolithic apply is forbidden. Each profile must be independently applied."
         return 1
     fi
@@ -108,6 +114,18 @@ cmd_apply() {
     if [ ! -f "$_script" ]; then
         log_err "Profile '$_target' not found in $PROFILES_DIR"
         return 1
+    fi
+
+    # Check for experimental hold
+    _exp=$(grep "^PROFILE_STATUS=" "$_script" 2>/dev/null | cut -d'=' -f2- | tr -d '"' || echo "")
+    if [ "$_exp" = "EXPERIMENTAL_HOLD" ]; then
+        if [ "$_flag" != "--confirm-experimental" ] && [ "${ALLOW_EXPERIMENTAL:-0}" != "1" ]; then
+            log_err "Profile '$_name' is marked EXPERIMENTAL/HOLD."
+            log_err "Applying it requires service restart (SIGHUP does not re-read main config) and RAM budget sign-off."
+            log_err "To confirm execution on testbed, pass: $0 apply $_name --confirm-experimental"
+            return 1
+        fi
+        log_warn "Experimental profile '$_name' confirmed via execution flag."
     fi
 
     if ! acquire_lock; then
@@ -186,7 +204,6 @@ cmd_rollback_all() {
     fi
 
     # Roll back in reverse order
-    # Read active list into a reverse line list
     _rev_list=$(echo "$_active" | awk '{a[NR]=$0} END {for(i=NR;i>=1;i--) print a[i]}')
 
     _errors=0
@@ -272,7 +289,7 @@ case "$ACTION" in
     rollback_all) cmd_rollback_all ;;
     verify) cmd_verify "$@" ;;
     *)
-        echo "Usage: $0 {list|audit [profile]|apply <profile>|rollback <profile>|rollback_all|verify [profile]}"
+        echo "Usage: $0 {list|audit [profile]|apply <profile> [--confirm-experimental]|rollback <profile>|rollback_all|verify [profile]}"
         exit 1
         ;;
 esac

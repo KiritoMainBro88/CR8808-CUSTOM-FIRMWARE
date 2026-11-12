@@ -162,6 +162,16 @@ AUDIT_OUT=$(sh "$FRAMEWORK" audit dns_stability)
 echo "$AUDIT_OUT" | grep -q "10-dns-stability.conf"
 assert_eq "Framework audits dns_stability correctly" "0" "$?"
 
+# Test safety block for unconfirmed experimental profile
+if sh "$FRAMEWORK" apply dns_stability >/dev/null 2>&1; then
+    echo "  [FAIL] Unconfirmed apply of experimental profile should be blocked"
+    FAILED=$((FAILED + 1))
+    exit 1
+else
+    echo "  [PASS] Unconfirmed experimental profile was safely blocked"
+    PASSED=$((PASSED + 1))
+fi
+
 # ------------------------------------------------------------------------------
 # TEST 2: Individual Profile Atomic Apply and Exact Verification
 # ------------------------------------------------------------------------------
@@ -171,7 +181,11 @@ PROFILES="rps_rfs_tuning irq_affinity netdev_backlog tcp_tuning qdisc_tuning con
 
 for prof in $PROFILES; do
     echo "Testing Profile: $prof"
-    sh "$FRAMEWORK" apply "$prof" >/dev/null 2>&1
+    _extra_flag=""
+    if [ "$prof" = "dns_stability" ]; then
+        _extra_flag="--confirm-experimental"
+    fi
+    sh "$FRAMEWORK" apply "$prof" $_extra_flag >/dev/null 2>&1
     assert_eq "Profile $prof applied with exit code 0" "0" "$?"
 
     # Verify state snapshot file was created
@@ -201,11 +215,11 @@ assert_eq "nf_conntrack_tcp_timeout_established set to 86400" "86400" "$(cat "$M
 assert_eq "ecm accel_delay_pkts set to 4" "4" "$(cat "$MOCK_DIR/sys/module/ecm/parameters/accel_delay_pkts")"
 assert_eq "ecm auto_bypassed set to 0" "0" "$(cat "$MOCK_DIR/sys/module/ecm/parameters/auto_bypassed")"
 
-# Verify dns_stability snippet contents
-grep -q "cache-size=2048" "$MOCK_DIR/etc/dnsmasq.d/10-dns-stability.conf"
-assert_eq "dnsmasq cache-size set to 2048" "0" "$?"
-grep -q "dns-forward-max=512" "$MOCK_DIR/etc/dnsmasq.d/10-dns-stability.conf"
-assert_eq "dnsmasq dns-forward-max set to 512" "0" "$?"
+# Verify dns_stability snippet contents (conservative trial defaults)
+grep -q "cache-size=300" "$MOCK_DIR/etc/dnsmasq.d/10-dns-stability.conf"
+assert_eq "dnsmasq cache-size set to 300 (conservative trial)" "0" "$?"
+grep -q "dns-forward-max=150" "$MOCK_DIR/etc/dnsmasq.d/10-dns-stability.conf"
+assert_eq "dnsmasq dns-forward-max set to 150 (conservative trial)" "0" "$?"
 grep -q "min-cache-ttl=300" "$MOCK_DIR/etc/dnsmasq.d/10-dns-stability.conf"
 assert_eq "dnsmasq min-cache-ttl set to 300" "0" "$?"
 grep -q "timeout:1" "$MOCK_DIR/tmp/resolv.conf.d/options.conf"
@@ -257,7 +271,11 @@ echo "--- TEST 4: Multi-Profile Bulk Apply & rollback_all ---"
 
 # Apply all profiles
 for prof in $PROFILES; do
-    sh "$FRAMEWORK" apply "$prof" >/dev/null 2>&1
+    _extra_flag=""
+    if [ "$prof" = "dns_stability" ]; then
+        _extra_flag="--confirm-experimental"
+    fi
+    sh "$FRAMEWORK" apply "$prof" $_extra_flag >/dev/null 2>&1
 done
 
 assert_eq "tcp_fastopen is 3 after apply" "3" "$(cat "$MOCK_DIR/proc/sys/net/ipv4/tcp_fastopen")"
