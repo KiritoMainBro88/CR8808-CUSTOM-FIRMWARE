@@ -114,6 +114,11 @@ assert_absent "$OUT_TXT" "fe80::" "IPv6 Link-Local (trailing ::)"
 assert_absent "$OUT_TXT" "fe80::/64" "IPv6 Link-Local (CIDR /64)"
 assert_absent "$OUT_TXT" "fe80::1%eth0" "IPv6 Link-Local (Zone ID %eth0)"
 assert_absent "$OUT_TXT" "2402080063A54432E639DFFFE046CFD0" "/proc/net/tcp6 Hex IPv6 Address"
+assert_absent "$OUT_TXT" "ced843fffe50f91e" "/proc/net/if_inet6 EUI-64 MAC Identifier"
+assert_absent "$OUT_TXT" "a1b2c3d4e5f67890" "/proc/net/if_inet6 RFC 7217 Random Identifier"
+assert_absent "$OUT_TXT" "fe80000000000000ced843fffe50f91e" "/proc/net/if_inet6 Raw Link-Local"
+assert_absent "$OUT_TXT" "2402080063a54432ced843fffe50f91e" "/proc/net/if_inet6 Raw GUA"
+assert_absent "$OUT_TXT" "fd000000deadbeef123456789abcdef0" "/proc/net/if_inet6 Raw ULA"
 assert_absent "$OUT_TXT" "4B64A8C0" "/proc/net/tcp Hex WAN IPv4 Address"
 assert_absent "$OUT_TXT" "0164A8C0" "/proc/net/tcp Hex Remote IPv4 Address"
 assert_absent "$OUT_TXT" "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=" "WireGuard Server Key"
@@ -142,6 +147,10 @@ assert_present "$OUT_TXT" "011FA8C0:0035" "Local LAN dnsmasq hex socket (192.168
 assert_present "$OUT_TXT" "255.255.255.255" "Preserved Netmask Host (255.255.255.255)"
 assert_present "$OUT_TXT" "255.255.255.128" "Preserved Netmask Subnet (255.255.255.128)"
 assert_present "$OUT_TXT" "255.255.255.0" "Preserved Netmask Class C (255.255.255.0)"
+
+# Verify /proc/net/if_inet6 preservation and redaction
+assert_present "$OUT_TXT" "[REDACTED_HEX_IF_INET6] 0a 40 20 80 br-lan" "Preserved columns in /proc/net/if_inet6 br-lan"
+assert_present "$OUT_TXT" "00000000000000000000000000000001 01 80 10 80 lo" "Preserved /proc/net/if_inet6 loopback"
 
 echo "--- [PHASE 2] JSON Structure Sanitization Assertions ---"
 assert_absent "$OUT_JSON" "35123/240019283" "JSON Serial"
@@ -183,5 +192,11 @@ assert_absent "$OUT_JSON" "c29tZXJhbmRvbXdpcmVndWFyZHByaXZhdGVrZXkxMjM0NTY=" "JS
 assert_present "$OUT_JSON" "255.255.255.255" "JSON Preserved Netmask Host"
 assert_present "$OUT_JSON" "255.255.255.128" "JSON Preserved Netmask Subnet"
 assert_present "$OUT_JSON" "255.255.255.0" "JSON Preserved Netmask Class C"
+
+# Verify /proc/net/if_inet6 in JSON
+assert_absent "$OUT_JSON" "ced843fffe50f91e" "JSON /proc/net/if_inet6 EUI-64 MAC Identifier"
+assert_absent "$OUT_JSON" "a1b2c3d4e5f67890" "JSON /proc/net/if_inet6 RFC 7217 Random Identifier"
+assert_present "$OUT_JSON" "[REDACTED_HEX_IF_INET6] 0a 40 20 80 br-lan" "JSON Preserved columns in /proc/net/if_inet6"
+assert_present "$OUT_JSON" "00000000000000000000000000000001 01 80 10 80 lo" "JSON Preserved /proc/net/if_inet6 loopback"
 
 echo "=== ALL $ASSERTIONS_PASSED SANITIZER ASSERTIONS PASSED ==="

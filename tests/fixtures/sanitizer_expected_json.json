@@ -36,7 +36,10 @@
       "ipv6_ll_zone": "[REDACTED_IPV6_LL]",
       "mask_host": "255.255.255.255",
       "mask_subnet": "255.255.255.128",
-      "mask_class_c": "255.255.255.0"
+      "mask_class_c": "255.255.255.0",
+      "if_inet6_eui64": "[REDACTED_HEX_IF_INET6] 0a 40 20 80 br-lan",
+      "if_inet6_random": "[REDACTED_HEX_IF_INET6] 02 40 20 80 eth0",
+      "if_inet6_loopback": "00000000000000000000000000000001 01 80 10 80 lo"
     }
   },
   "wireless": {

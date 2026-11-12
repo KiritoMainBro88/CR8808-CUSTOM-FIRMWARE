@@ -374,4 +374,120 @@ fi
 # Cleanup superset rule
 sudo iptables -D "$CHAIN_V4" -p tcp --dport "$PORT" -m comment --comment "$SUPERSET_TAG" -j DROP 2>/dev/null || true
 
-echo "=== ALL 11 FIREWALL OWNERSHIP & TRANSACTIONAL TESTS PASSED ==="
+# -----------------------------------------------------------------------------
+# TEST 12: Independent Single-Stack IPv4 Apply & Rollback
+# -----------------------------------------------------------------------------
+echo "--- [TEST 12] Independent Single-Stack IPv4 Operations ---"
+IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+  sh "$HELPER" apply_v4 "$CHAIN_V4" "$PORT" "$TAG"
+
+# Confirm IPv4 rule present at pos 1, but IPv6 has NO rule with $TAG
+if IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+   sh "$HELPER" verify_v4 "$CHAIN_V4" "$PORT" "$TAG"; then
+    echo "PASS: IPv4 single-stack apply verified at position 1."
+else
+    echo "FAIL: IPv4 single-stack apply verification failed!"
+    exit 1
+fi
+
+if sudo ip6tables -S "$CHAIN_V6" | grep -Fq -- "$TAG"; then
+    echo "FAIL: IPv4 apply leaked into IPv6 chain!"
+    exit 1
+else
+    echo "PASS: IPv4 apply remained 100% isolated from IPv6."
+fi
+
+# Rollback IPv4
+IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+  sh "$HELPER" rollback_v4 "$CHAIN_V4" "$PORT" "$TAG"
+
+if sudo iptables -S "$CHAIN_V4" | grep -Fq -- "$TAG"; then
+    echo "FAIL: IPv4 single-stack rollback failed to remove rule!"
+    exit 1
+else
+    echo "PASS: IPv4 single-stack rollback verified clean."
+fi
+
+# -----------------------------------------------------------------------------
+# TEST 13: Independent Single-Stack IPv6 Apply & Rollback with Interface Filtering
+# -----------------------------------------------------------------------------
+echo "--- [TEST 13] Independent Single-Stack IPv6 Operations with -i eth0 ---"
+IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+  sh "$HELPER" apply_v6 "$CHAIN_V6" "$PORT" "$TAG" "eth0"
+
+if IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+   sh "$HELPER" verify_v6 "$CHAIN_V6" "$PORT" "$TAG"; then
+    echo "PASS: IPv6 single-stack apply verified at position 1."
+else
+    echo "FAIL: IPv6 single-stack apply verification failed!"
+    exit 1
+fi
+
+FIRST_V6_RULE=$(sudo ip6tables -S "$CHAIN_V6" 1)
+if echo "$FIRST_V6_RULE" | grep -Fq -- "-i eth0"; then
+    echo "PASS: IPv6 rule contains strict interface constraint '-i eth0'."
+else
+    echo "FAIL: IPv6 rule missing '-i eth0' constraint! ($FIRST_V6_RULE)"
+    exit 1
+fi
+
+# Confirm IPv4 has NO rule with $TAG
+if sudo iptables -S "$CHAIN_V4" | grep -Fq -- "$TAG"; then
+    echo "FAIL: IPv6 apply leaked into IPv4 chain!"
+    exit 1
+fi
+
+# Rollback IPv6
+IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+  sh "$HELPER" rollback_v6 "$CHAIN_V6" "$PORT" "$TAG" "eth0"
+
+if sudo ip6tables -S "$CHAIN_V6" | grep -Fq -- "$TAG"; then
+    echo "FAIL: IPv6 single-stack rollback failed to remove rule!"
+    exit 1
+else
+    echo "PASS: IPv6 single-stack rollback verified clean."
+fi
+
+# -----------------------------------------------------------------------------
+# TEST 14: Action verify_clean Confirmation
+# -----------------------------------------------------------------------------
+echo "--- [TEST 14] Action verify_clean Confirmation ---"
+if IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+   sh "$HELPER" verify_clean "$CHAIN_V4" "$CHAIN_V6" "$PORT" "$TAG"; then
+    echo "PASS: verify_clean confirmed zero residual rules."
+else
+    echo "FAIL: verify_clean reported residual rules when clean!"
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+# TEST 15: Mock Target Router Chains (IPv4 zone_wan_input & IPv6 INPUT)
+# -----------------------------------------------------------------------------
+echo "--- [TEST 15] Router Target Architecture Mock (IPv4 zone_wan_input & IPv6 INPUT) ---"
+ROUTER_MOCK_V4="M11_WAN_IN_$$"
+sudo iptables -N "$ROUTER_MOCK_V4"
+sudo ip6tables -N "M11_IN_$$"
+
+# Test dual-stack apply using simulated router chains
+IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+  sh "$HELPER" apply "$ROUTER_MOCK_V4" "M11_IN_$$" "$PORT" "$TAG" "eth0"
+
+V4_MOCK_RULE=$(sudo iptables -S "$ROUTER_MOCK_V4" 1)
+V6_MOCK_RULE=$(sudo ip6tables -S "M11_IN_$$" 1)
+
+if echo "$V4_MOCK_RULE" | grep -Fq -- "$TAG" && echo "$V6_MOCK_RULE" | grep -Fq -- "-i eth0"; then
+    echo "PASS: Router architecture mock verified: IPv4 in zone_wan_input, IPv6 in INPUT with -i eth0."
+else
+    echo "FAIL: Router architecture mock failed!"
+    exit 1
+fi
+
+# Rollback and clean up mock router chains
+IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+  sh "$HELPER" rollback "$ROUTER_MOCK_V4" "M11_IN_$$" "$PORT" "$TAG" "eth0"
+
+sudo iptables -F "$ROUTER_MOCK_V4" && sudo iptables -X "$ROUTER_MOCK_V4"
+sudo ip6tables -F "M11_IN_$$" && sudo ip6tables -X "M11_IN_$$"
+echo "PASS: Router architecture mock rollback and chain cleanup completed."
+
+echo "=== ALL 15 FIREWALL OWNERSHIP & TRANSACTIONAL TESTS PASSED ==="

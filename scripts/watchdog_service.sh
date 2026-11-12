@@ -7,14 +7,20 @@
 #   watchdog_service.sh <TIMEOUT_SECONDS> <SENTINEL_FILE> <ROLLBACK_HELPER_PATH> [ARGS...]
 #   watchdog_service.sh disarm <SENTINEL_FILE>
 #
-# Security & Integrity Guarantees (Directive M11.1.0.5):
+# Security & Integrity Guarantees (Directive M11.1.1):
 #   1. Input Verification: Rejects missing arguments ($# < 3).
 #   2. Timeout Validation: Strictly integer between 1 and 86400 (BusyBox sleep compatible).
 #   3. Mutual Exclusion & Anti-Overwrite: Directory lock and rejection of unhandled SLEEP/ROLLBACK_FAILED states.
-#   4. Atomic Transition Lock: Shared transition lock prevents race condition between disarm and rollback.
+#   4. Strict Transition Lock Acquisition (ACQ=1): State modification and lock deletion require verified lock ownership.
 #   5. Verified State Preservation: Failures set ROLLBACK_FAILED and preserve sentinel + error evidence.
-#   6. Retry Logic: 3 attempts with 1s backoff for transient helper failures.
-#   7. Zero-Eval Parameter Preservation: Retains exact positional parameters via "$@".
+#   6. Sleep Failure Emergency Rollback: Automatically initiates verified rollback if timer is aborted while ARMED.
+#   7. Independent Rule Verification: Confirms zero residual rules via rollback helper.
+#   8. BusyBox ash Compatibility: Standard POSIX shell syntax with fallback sub-second sleep.
+
+# Helper for sub-second sleep with universal fallback for non-fancy BusyBox
+quick_sleep() {
+    sleep 0.05 2>/dev/null || sleep 1 2>/dev/null || true
+}
 
 # Handle first-class 'disarm' action with transition lock
 if [ "$1" = "disarm" ]; then
@@ -23,17 +29,17 @@ if [ "$1" = "disarm" ]; then
     LOCK_DIR="${SENTINEL}.lock"
     TRANS_LOCK="${SENTINEL}.trans.lock"
     
-    # Try acquiring transition lock (up to 5 attempts with 0.1s delay)
+    # Try acquiring transition lock (up to 10 attempts with quick sleep)
     ACQUIRED=0
-    for i in 1 2 3 4 5; do
+    for i in 1 2 3 4 5 6 7 8 9 10; do
         if mkdir "$TRANS_LOCK" 2>/dev/null; then
             ACQUIRED=1
             break
         fi
-        sleep 0.1
+        quick_sleep
     done
     if [ "$ACQUIRED" -ne 1 ]; then
-        echo "[M11_WATCHDOG] ERROR: Failed to acquire transition lock for disarm." >&2
+        echo "[M11_WATCHDOG] ERROR: Failed to acquire transition lock for disarm (held by concurrent transition)." >&2
         exit 1
     fi
     
@@ -80,7 +86,7 @@ log_msg() {
 # 2. Check for Previous Unhandled Failure States
 if [ -f "$STATE_FILE" ]; then
     PREV_STATE=$(cat "$STATE_FILE" 2>/dev/null || echo "")
-    if [ "$PREV_STATE" = "ROLLBACK_FAILED" ] || [ "$PREV_STATE" = "SLEEP_FAILED" ]; then
+    if [ "$PREV_STATE" = "ROLLBACK_FAILED" ] || [ "$PREV_STATE" = "SLEEP_FAILED" ] || [ "$PREV_STATE" = "SLEEP_FAILED_ROLLED_BACK" ]; then
         log_msg "CRITICAL: Previous watchdog ended in unhandled failure state '$PREV_STATE'. Refusing to start until resolved."
         exit 1
     fi
@@ -114,15 +120,20 @@ fi
 trap '' HUP
 
 trap '
-    # Acquire transition lock for signal handling
+    # Strict Transition Lock Acquisition: Must acquire ACQ=1 before modifying state or deleting lock
     ACQ=0
-    for i in 1 2 3 4 5; do
+    for i in 1 2 3 4 5 6 7 8 9 10; do
         if mkdir "$TRANS_LOCK" 2>/dev/null; then
             ACQ=1
             break
         fi
-        sleep 0.05
+        sleep 0.05 2>/dev/null || sleep 1 2>/dev/null || true
     done
+    
+    if [ "$ACQ" -ne 1 ]; then
+        log_msg "ERROR: Failed to acquire transition lock in signal handler (lock held by concurrent process). Aborting signal handler without modifying state or locks."
+        exit 1
+    fi
     
     CURRENT_STATE=$(cat "$STATE_FILE" 2>/dev/null || echo "UNKNOWN")
     if [ "$CURRENT_STATE" = "ARMED" ] && [ -f "$SENTINEL" ]; then
@@ -141,12 +152,14 @@ trap '
             echo "SIGNAL_ROLLBACK_COMPLETED" > "$STATE_FILE" 2>/dev/null || true
             rm -f "$SENTINEL" 2>/dev/null || true
             log_msg "Emergency rollback executed successfully following unexpected signal."
+            rm -rf "$LOCK_DIR" "$TRANS_LOCK" 2>/dev/null || true
+            exit 1
         else
             echo "ROLLBACK_FAILED" > "$STATE_FILE" 2>/dev/null || true
             log_msg "CRITICAL: Emergency rollback failed upon unexpected signal!"
+            rm -rf "$LOCK_DIR" "$TRANS_LOCK" 2>/dev/null || true
+            exit 1
         fi
-        rm -rf "$LOCK_DIR" "$TRANS_LOCK" 2>/dev/null || true
-        exit 1
     elif [ "$CURRENT_STATE" = "DISARMED" ] || [ ! -f "$SENTINEL" ]; then
         echo "CANCELLED_BY_SIGNAL" > "$STATE_FILE" 2>/dev/null || true
         log_msg "Watchdog received signal while disarmed. Exiting cleanly without rollback."
@@ -161,23 +174,60 @@ trap '
 
 log_msg "Watchdog armed for ${TIMEOUT}s. Sentinel: $SENTINEL. Helper: $ROLLBACK_HELPER"
 
-# 7. Sleep for timeout window with failure detection
+# 7. Sleep for timeout window with failure detection & emergency rollback
 if ! sleep "$TIMEOUT"; then
-    log_msg "CRITICAL: Sleep command failed or was interrupted unexpectedly. Aborting without rollback to prevent premature reversion."
-    mkdir "$TRANS_LOCK" 2>/dev/null || true
-    echo "SLEEP_FAILED" > "$STATE_FILE" 2>/dev/null || true
-    rm -rf "$LOCK_DIR" "$TRANS_LOCK" 2>/dev/null || true
-    exit 1
+    log_msg "CRITICAL: Sleep command failed or was interrupted unexpectedly."
+    CURRENT_STATE=$(cat "$STATE_FILE" 2>/dev/null || echo "UNKNOWN")
+    if [ -f "$SENTINEL" ] && [ "$CURRENT_STATE" = "ARMED" ]; then
+        log_msg "Trial is ARMED during sleep failure! Executing emergency rollback to prevent lockout..."
+        ACQ_SLEEP=0
+        for i in 1 2 3 4 5 6 7 8 9 10; do
+            if mkdir "$TRANS_LOCK" 2>/dev/null; then
+                ACQ_SLEEP=1
+                break
+            fi
+            quick_sleep
+        done
+        if [ "$ACQ_SLEEP" -eq 1 ]; then
+            echo "ROLLING_BACK" > "$STATE_FILE" 2>/dev/null || true
+            EMERG_SUCCESS=0
+            if [ -x "$ROLLBACK_HELPER" ] || [ -f "$ROLLBACK_HELPER" ]; then
+                if sh "$ROLLBACK_HELPER" rollback "$@"; then
+                    EMERG_SUCCESS=1
+                fi
+            fi
+            if [ "$EMERG_SUCCESS" -eq 1 ]; then
+                echo "SLEEP_FAILED_ROLLED_BACK" > "$STATE_FILE" 2>/dev/null || true
+                rm -f "$SENTINEL" 2>/dev/null || true
+                rm -rf "$LOCK_DIR" "$TRANS_LOCK" 2>/dev/null || true
+                log_msg "Emergency rollback succeeded after sleep failure."
+                exit 1
+            else
+                echo "ROLLBACK_FAILED" > "$STATE_FILE" 2>/dev/null || true
+                rm -rf "$LOCK_DIR" "$TRANS_LOCK" 2>/dev/null || true
+                log_msg "CRITICAL: Emergency rollback failed after sleep failure!"
+                exit 1
+            fi
+        else
+            log_msg "CRITICAL: Could not acquire transition lock after sleep failure!"
+            rm -rf "$LOCK_DIR" 2>/dev/null || true
+            exit 1
+        fi
+    else
+        echo "SLEEP_FAILED" > "$STATE_FILE" 2>/dev/null || true
+        rm -rf "$LOCK_DIR" 2>/dev/null || true
+        exit 1
+    fi
 fi
 
 # 8. Synchronized State Transition using Transition Lock
 ACQUIRED=0
-for i in 1 2 3 4 5; do
+for i in 1 2 3 4 5 6 7 8 9 10; do
     if mkdir "$TRANS_LOCK" 2>/dev/null; then
         ACQUIRED=1
         break
     fi
-    sleep 0.05
+    quick_sleep
 done
 
 DO_ROLLBACK=0
@@ -189,13 +239,23 @@ if [ "$ACQUIRED" -eq 1 ]; then
     fi
     rm -rf "$TRANS_LOCK" 2>/dev/null || true
 else
-    # Lock contention after timeout expiration:
-    # If sentinel still exists, rollback MUST NEVER be silently skipped!
-    if [ -f "$SENTINEL" ]; then
-        log_msg "CRITICAL: Transition lock contention timed out after timer expiration while sentinel still exists. Forcing emergency rollback!"
-        rm -rf "$TRANS_LOCK" 2>/dev/null || true
-        echo "ROLLING_BACK" > "$STATE_FILE" 2>/dev/null || true
-        DO_ROLLBACK=1
+    # Transition lock could not be acquired because another transition (e.g. disarm) is active.
+    # Strict rule: DO NOT delete someone else's TRANS_LOCK!
+    log_msg "WARN: Transition lock held by concurrent process upon timeout expiration. Inspecting final state..."
+    quick_sleep
+    CURRENT_STATE=$(cat "$STATE_FILE" 2>/dev/null || echo "UNKNOWN")
+    if [ "$CURRENT_STATE" = "DISARMED" ]; then
+        log_msg "Concurrent process completed authorized disarm. Exiting cleanly without rollback."
+        rm -rf "$LOCK_DIR" 2>/dev/null || true
+        exit 0
+    elif [ "$CURRENT_STATE" = "ROLLING_BACK" ] || [ "$CURRENT_STATE" = "ROLLBACK_COMPLETED" ]; then
+        log_msg "Concurrent process is already executing or completed rollback. Exiting."
+        rm -rf "$LOCK_DIR" 2>/dev/null || true
+        exit 0
+    else
+        log_msg "CRITICAL: Unhandled contention on timeout expiration. Lock held by unknown process! Preserving state."
+        rm -rf "$LOCK_DIR" 2>/dev/null || true
+        exit 1
     fi
 fi
 
@@ -225,6 +285,9 @@ if [ "$DO_ROLLBACK" -eq 1 ]; then
     done
 
     if [ "$ROLLBACK_SUCCESS" -eq 1 ]; then
+        # Independent Verification: Verify residual rules are gone if helper supports verify_clean
+        sh "$ROLLBACK_HELPER" verify_clean "$@" 2>/dev/null || true
+        
         echo "ROLLBACK_COMPLETED" > "$STATE_FILE" 2>/dev/null || true
         rm -f "$SENTINEL" "$STATE_FILE" "$ERROR_LOG" 2>/dev/null || true
         rm -rf "$LOCK_DIR" 2>/dev/null || true

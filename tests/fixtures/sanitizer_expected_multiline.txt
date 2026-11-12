@@ -71,3 +71,10 @@ wireless.@wifi-iface[0].sae_password='[REDACTED_WIFI_KEY]'
 # WireGuard Process Telemetry
 1420 root      1420 S    /data/wg_server -srvkey [REDACTED_WG_KEY] -srvkey [REDACTED_WG_KEY] -port 51820
 wg set wg0 private-key [REDACTED_WG_KEY] peer abc= preshared-key [REDACTED_WG_KEY]
+
+# /proc/net/if_inet6 Telemetry (EUI-64, GUA, ULA, Randomized Identifiers & Loopback)
+00000000000000000000000000000001 01 80 10 80 lo
+[REDACTED_HEX_IF_INET6] 0a 40 20 80 br-lan
+[REDACTED_HEX_IF_INET6] 0a 40 00 80 br-lan
+[REDACTED_HEX_IF_INET6] 02 40 20 80 eth0
+[REDACTED_HEX_IF_INET6] 0a 40 00 80 br-lan

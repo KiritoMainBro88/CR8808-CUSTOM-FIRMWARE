@@ -20,7 +20,7 @@ if [ -z "${SSHPASS:-}" ]; then
 fi
 
 PINNED_KEY_FILE="${PINNED_KEY_FILE:-config/cr8818_host_key.pub}"
-EXPECTED_FINGERPRINT="SHA256:feZ+NfroyCIlYrC74Z1ZazUSby+WqxRxZM63Q6Q9HmM"
+EXPECTED_FINGERPRINT="${EXPECTED_FINGERPRINT:-SHA256:BwYCFt/UPVQ+Sj6/ZcbKf7yfTK5FqPFYB9uN7isGL64}"
 SANITIZER="scripts/sanitize_telemetry.sh"
 
 if [ ! -f "$PINNED_KEY_FILE" ]; then

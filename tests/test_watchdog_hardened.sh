@@ -320,10 +320,10 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# TEST 10: Sleep Failure Abort Handling
+# TEST 10: Sleep Failure while ARMED triggers Emergency Rollback (SLEEP_FAILED_ROLLED_BACK)
 # -----------------------------------------------------------------------------
-echo "--- [TEST 10] Sleep Failure Abort Handling (SLEEP_FAILED) ---"
-rm -f "$SENTINEL" "$MOCK_LOG"
+echo "--- [TEST 10] Sleep Failure Abort Handling with Emergency Rollback ---"
+rm -f "$SENTINEL" "$MOCK_LOG" "${SENTINEL}.state"
 
 sh "$WATCHDOG_SCRIPT" 10 "$SENTINEL" "$MOCK_HELPER" "$MOCK_LOG" </dev/null >/dev/null 2>&1 &
 SLEEP_WD_PID=$!
@@ -335,20 +335,20 @@ if [ -n "$SLEEP_CHILD_PID" ]; then
 fi
 wait "$SLEEP_WD_PID" 2>/dev/null || true
 
-if [ -f "${SENTINEL}.state" ] && grep -q "SLEEP_FAILED" "${SENTINEL}.state"; then
-    echo "PASS: Watchdog correctly transitioned to SLEEP_FAILED state upon sleep failure."
+if [ -f "${SENTINEL}.state" ] && grep -q "SLEEP_FAILED_ROLLED_BACK" "${SENTINEL}.state"; then
+    echo "PASS: Watchdog correctly executed emergency rollback and recorded SLEEP_FAILED_ROLLED_BACK."
 else
-    echo "FAIL: Expected SLEEP_FAILED state missing."
+    echo "FAIL: Expected SLEEP_FAILED_ROLLED_BACK state missing."
     exit 1
 fi
 
 if [ -f "$MOCK_LOG" ] && grep -q "MOCK_ROLLBACK_EXECUTED" "$MOCK_LOG"; then
-    echo "FAIL: Rollback occurred despite sleep failure!"
-    exit 1
+    echo "PASS: Emergency rollback helper was invoked after sleep failure."
 else
-    echo "PASS: Zero rollback triggered when sleep failed."
+    echo "FAIL: Emergency rollback was NOT triggered when sleep failed!"
+    exit 1
 fi
-rm -f "${SENTINEL}.state"
+rm -f "${SENTINEL}.state" "$MOCK_LOG"
 
 # -----------------------------------------------------------------------------
 # TEST 11: Rollback Helper Failure with 3 Retries and State Preservation
@@ -399,27 +399,91 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# TEST 12: Lock Contention on Timeout Expiration (Forces Emergency Rollback)
+# TEST 12: Strict Lock Ownership (Zero Deletion of Foreign TRANS_LOCK)
 # -----------------------------------------------------------------------------
-echo "--- [TEST 12] Lock Contention on Timeout Expiration ---"
-rm -f "$SENTINEL" "${SENTINEL}.state" "${SENTINEL}.error.log" "$MOCK_LOG"
+echo "--- [TEST 12] Strict Lock Ownership Enforcement (ACQ=1 Requirement) ---"
+rm -rf "$SENTINEL" "${SENTINEL}.lock" "${SENTINEL}.trans.lock" "${SENTINEL}.state" "${SENTINEL}.error.log" "$MOCK_LOG"
 
 sh "$WATCHDOG_SCRIPT" 1 "$SENTINEL" "$MOCK_HELPER" "$MOCK_LOG" </dev/null >/dev/null 2>&1 &
 CONTENTION_PID=$!
 sleep 0.2
 
-# Intentionally create and hold the transition lock to simulate lock contention
+# Foreign process creates and holds the transition lock
 mkdir "${SENTINEL}.trans.lock" 2>/dev/null || true
+echo "FOREIGN_OWNER" > "${SENTINEL}.trans.lock/owner"
 
-# Wait for watchdog sleep (1s) + retry window (~0.3s) to expire
+# Wait for watchdog to time out and attempt lock acquisition
 wait "$CONTENTION_PID" 2>/dev/null || true
 
-# Verify emergency rollback was triggered despite lock contention
-if [ -f "$MOCK_LOG" ] && grep -q "MOCK_ROLLBACK_EXECUTED" "$MOCK_LOG"; then
-    echo "PASS: Watchdog detected lock contention upon timeout and forced emergency rollback."
+# Assert foreign lock was NEVER deleted by the watchdog
+if [ -d "${SENTINEL}.trans.lock" ] && [ -f "${SENTINEL}.trans.lock/owner" ]; then
+    echo "PASS: Foreign transition lock was PRESERVED (no unauthorized deletion when ACQ=0)."
 else
-    echo "FAIL: Lock contention caused watchdog to silently skip rollback!"
+    echo "FAIL: Foreign transition lock was deleted by un-authenticated process!"
+    exit 1
+fi
+rm -rf "$SENTINEL" "${SENTINEL}.lock" "${SENTINEL}.trans.lock" "${SENTINEL}.state" "${SENTINEL}.error.log"
+
+# -----------------------------------------------------------------------------
+# TEST 13: Disarm Race Resolution via Transition Lock
+# -----------------------------------------------------------------------------
+echo "--- [TEST 13] Disarm Race Resolution via Transition Lock ---"
+rm -rf "$SENTINEL" "${SENTINEL}.lock" "${SENTINEL}.trans.lock" "${SENTINEL}.state" "${SENTINEL}.error.log" "$MOCK_LOG"
+
+sh "$WATCHDOG_SCRIPT" 2 "$SENTINEL" "$MOCK_HELPER" "$MOCK_LOG" </dev/null >/dev/null 2>&1 &
+RACE_WD_PID=$!
+sleep 0.3
+
+# Invoke authorized disarm
+sh "$WATCHDOG_SCRIPT" disarm "$SENTINEL"
+DISARM_RET=$?
+wait "$RACE_WD_PID" 2>/dev/null || true
+
+if [ "$DISARM_RET" -eq 0 ]; then
+    echo "PASS: Authorized disarm completed successfully."
+else
+    echo "FAIL: Authorized disarm returned non-zero code $DISARM_RET."
     exit 1
 fi
 
-echo "=== ALL 12 WATCHDOG HARDENING TESTS PASSED ==="
+if [ -f "$MOCK_LOG" ] && grep -q "MOCK_ROLLBACK_EXECUTED" "$MOCK_LOG"; then
+    echo "FAIL: Rollback executed despite authorized disarm!"
+    exit 1
+else
+    echo "PASS: Zero rollback executed following authorized disarm."
+fi
+rm -rf "$SENTINEL" "${SENTINEL}.lock" "${SENTINEL}.trans.lock" "${SENTINEL}.state" "${SENTINEL}.error.log"
+
+# -----------------------------------------------------------------------------
+# TEST 14: Independent Rule Verification via Helper verify_clean
+# -----------------------------------------------------------------------------
+echo "--- [TEST 14] Independent Rule Verification Post-Rollback ---"
+rm -rf "$SENTINEL" "${SENTINEL}.lock" "${SENTINEL}.trans.lock" "${SENTINEL}.state" "${SENTINEL}.error.log" "$MOCK_LOG"
+
+cat << 'EOF' > "${TMP_DIR}/verifying_helper.sh"
+#!/bin/sh
+ACTION="$1"
+LOG="$2"
+if [ "$ACTION" = "rollback" ]; then
+    echo "ROLLBACK_CALLED" >> "$LOG"
+    exit 0
+elif [ "$ACTION" = "verify_clean" ]; then
+    echo "VERIFY_CLEAN_CALLED" >> "$LOG"
+    exit 0
+fi
+exit 1
+EOF
+chmod +x "${TMP_DIR}/verifying_helper.sh"
+
+sh "$WATCHDOG_SCRIPT" 1 "$SENTINEL" "${TMP_DIR}/verifying_helper.sh" "$MOCK_LOG" </dev/null >/dev/null 2>&1 &
+VERIFY_WD_PID=$!
+wait "$VERIFY_WD_PID" 2>/dev/null || true
+
+if grep -q "ROLLBACK_CALLED" "$MOCK_LOG" && grep -q "VERIFY_CLEAN_CALLED" "$MOCK_LOG"; then
+    echo "PASS: Watchdog invoked rollback and independently verified clean state via helper."
+else
+    echo "FAIL: Watchdog failed to invoke verify_clean on helper!"
+    exit 1
+fi
+
+echo "=== ALL 14 WATCHDOG HARDENING TESTS PASSED ==="

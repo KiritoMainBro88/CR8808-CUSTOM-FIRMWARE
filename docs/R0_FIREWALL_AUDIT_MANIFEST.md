@@ -17,7 +17,7 @@ This manifest defines the comprehensive read-only interrogation commands require
 > **PRE-FLIGHT HOLD:** This manifest is strictly a PC-side design document. **NO SSH COMMAND WILL BE EXECUTED ON THE ROUTER** until this specification is reviewed and formally authorized in writing by the Chief Architect.
 
 ### Cryptographic Safeguards:
-1. **Out-of-Band Host Key Pinning:** Host authentication MUST verify against [`config/cr8818_host_key.pub`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/config/cr8818_host_key.pub) (`SHA256:feZ+NfroyCIlYrC74Z1ZazUSby+WqxRxZM63Q6Q9HmM`). No dynamic `ssh-keyscan` is permitted.
+1. **Out-of-Band Host Key Pinning:** Host authentication MUST verify against [`config/cr8818_host_key.pub`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/config/cr8818_host_key.pub) (`SHA256:BwYCFt/UPVQ+Sj6/ZcbKf7yfTK5FqPFYB9uN7isGL64`). No dynamic `ssh-keyscan` is permitted. Key is classified as `PINNED_HISTORICAL_CACHE`.
 2. **Pure In-Memory Pipeline:** Commands stream directly into standard output over the SSH session; zero temporary files are written to `/tmp` or persistent storage.
 3. **Mandatory Sanitization:** Output streams directly through [`scripts/sanitize_telemetry.sh`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/scripts/sanitize_telemetry.sh) before any data is written to disk on the workstation.
 

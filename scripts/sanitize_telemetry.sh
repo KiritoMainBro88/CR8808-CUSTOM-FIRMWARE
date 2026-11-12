@@ -35,6 +35,11 @@ sed -E \
   -e 's/\b[0-9A-Fa-f]{32}:([0-9A-Fa-f]{4})\b/[REDACTED_HEX_IPV6]:\1/g' \
   -e 's/__PRESERVE_HEX6_WILDCARD__/00000000000000000000000000000000/g' \
   \
+  `# 6a. Hexadecimal IPv6 Addresses in /proc/net/if_inet6 (32 hex chars followed by ifindex, prefix, scope, flags, dev)` \
+  -e 's/\b00000000000000000000000000000001([ \t]+[0-9a-fA-F]{2}[ \t]+[0-9a-fA-F]{2}[ \t]+[0-9a-fA-F]{2}[ \t]+[0-9a-fA-F]{2}[ \t]+[^ \t\r\n]+)/__PRESERVE_HEX_IFINET6_LOOPBACK__\1/g' \
+  -e 's/\b[0-9A-Fa-f]{32}([ \t]+[0-9a-fA-F]{2}[ \t]+[0-9a-fA-F]{2}[ \t]+[0-9a-fA-F]{2}[ \t]+[0-9a-fA-F]{2}[ \t]+[^ \t\r\n]+)/[REDACTED_HEX_IF_INET6]\1/g' \
+  -e 's/__PRESERVE_HEX_IFINET6_LOOPBACK__/00000000000000000000000000000001/g' \
+  \
   `# 7. Hexadecimal IPv4 Addresses in /proc/net/tcp (8 hex characters)` \
   -e 's/\b00000000:([0-9A-Fa-f]{4})\b/__PRESERVE_HEX4_WILDCARD__:\1/g' \
   -e 's/\b0100007F:([0-9A-Fa-f]{4})\b/__PRESERVE_HEX4_LOOPBACK__:\1/g' \

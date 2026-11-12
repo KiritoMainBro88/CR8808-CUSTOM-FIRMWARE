@@ -28,28 +28,28 @@ The physical device's Dropbear SSH daemon identity has been recorded and pinned:
 - **Key Algorithm:** RSA 2048-bit (`ssh-rsa`)
 - **Public Key File:** [`config/cr8818_host_key.pub`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/config/cr8818_host_key.pub)
 - **Cryptographic Fingerprints:**
-  - **SHA-256 Fingerprint:** `SHA256:feZ+NfroyCIlYrC74Z1ZazUSby+WqxRxZM63Q6Q9HmM`
-  - **MD5 Fingerprint:** `MD5:d9:83:8c:a3:23:fa:54:95:52:1e:bb:96:a9:85:cf:32`
+  - **SHA-256 Fingerprint:** `SHA256:BwYCFt/UPVQ+Sj6/ZcbKf7yfTK5FqPFYB9uN7isGL64`
+  - **MD5 Fingerprint:** `MD5:b6:1e:4e:71:04:84:60:f1:1b:d4:81:26:1d:b7:6d:f2`
 - **Key Body:**
   ```text
-  AAAAB3NzaC1yc2EAAAADAQABAAABAQDs/ojWVnbLTVelbMXmOgIwGUKUMpw8mXMhmycIo8vXBYdux9XNyEaW3L5MY4Pq8JwBScYw0j4DFx+atYtgF0TmRzEJfGm0NnbYz6qukpREKKAe0+IadbxTMekxRRS4/eMbG9QYwcPqrsUiHT7Qy/XTV/IiWslMargB2l8RsEjIlQYt6TlNVSEP0YzrbS+wStQ+BBCgc+N6FvsvYeWerJJKO2v4ICz9iBi1r/4OSlxJ+loHcrA5R7pHUjMx578RgJABoGhmZM+eKG8Rsxbz1GvEioSDxh/e/yYAuDm5zdNFHbX1YMrXrLg4gULugPpjRsRyxjLlMNPUYmtwQyw6i/Xn
+  AAAAB3NzaC1yc2EAAAADAQABAAABAQCvG1WMXIbdV6H0R+2gI+m/+VefQLOcgQVzAn45DiSOfTEVeU9nbTrC2KeQogRDUIhQJ/iHBtYuT8tmRy/72HGXeDAqo+b0fpvl1vscJKT6Ytt+9fbfMBGzpxrob/WoOi6jXiTrviegXt6ZMcUjWeusWc2KepQHBNJuy7aUmtghZXamMs69+zkuGmswrRQ58WSysOaCisU6MOjWY3cpiNkusZIYgcKFLM+z6WRk6X89Tl35g3Xknj2+gIv8JPTpgvfKeVqq3fSNRe51QwxRdUw9LMUYf6z8qeg/UNT530zW8hB7dPQnRbN/4HQ1icOGTZzj/cyYDl0y689Px9rPmteR
   ```
 
 ### 2.1 Host Key Provenance & Trust Boundary Limitations
 
-In strict adherence to Chief Architect Directive M11.1.0.3, the provenance of this pinned host key is formally disclosed:
+In strict adherence to Chief Architect Directives M11.1.0.3 and M11.1.1, the provenance of this pinned host key is formally disclosed:
 
-1. **Origin of Key Baseline:** The host key and fingerprint were extracted from the operator workstation's historical SSH cache (`%USERPROFILE%\.ssh\known_hosts` entry bound to port `56789`), created during prior management sessions of this physical unit.
-2. **What Key Pinning Guarantees:** 
+1. **Origin of Key Baseline:** The host key and fingerprint `SHA256:BwYCFt/UPVQ+Sj6/ZcbKf7yfTK5FqPFYB9uN7isGL64` were captured from the target router's LAN management interface (`192.168.31.1:56789`) running RA82 v1.4.31 Dropbear SSH daemon. An earlier key (`SHA256:feZ+NfroyCIlYrC74Z1ZazUSby+WqxRxZM63Q6Q9HmM`) had been captured from an upstream WAN endpoint (`118.68.195.158`).
+2. **Classification:** In accordance with the cryptographic trust model, this key is classified strictly as **`PINNED_HISTORICAL_CACHE`**, providing conditional session continuity and anti-MitM protection over the LAN rather than a hardware-rooted cryptographic identity.
+3. **What Key Pinning Guarantees:** 
    - Pinning eliminates dynamic Trust-On-First-Use (`ssh-keyscan`) vulnerability.
-   - It strictly guarantees that no future SSH connection will proceed if the server presents any key other than this pinned RSA key. Under the condition that the historical cached key is authentic, this reliably detects and rejects newly injected Man-in-the-Middle (MitM) attacks or ARP spoofing on the local segment.
-3. **What Key Pinning Does NOT Guarantee:**
+   - It strictly guarantees that no future SSH connection will proceed if the server presents any key other than this pinned RSA key. Under the condition that the cached key is authentic, this reliably detects and rejects newly injected Man-in-the-Middle (MitM) attacks or ARP spoofing on the local segment.
+4. **What Key Pinning Does NOT Guarantee:**
    - It does NOT constitute an independent hardware-level mathematical proof of silicon authenticity. If the historical connection was intercepted at the moment of first initialization, the cache would have preserved the interceptor's key.
-   - Independent verification requires direct out-of-band physical extraction on the router (e.g. via UART or local console):
+   - Independent physical verification requires direct out-of-band extraction on the router (e.g. via UART or local console):
      ```sh
      dropbearkey -y -f /etc/dropbear/dropbear_rsa_host_key | ssh-keygen -l -f -
      ```
-   - Until verified against physical storage or serial console, this key is classified as **`PINNED_HISTORICAL_CACHE`**, providing conditional session continuity protection rather than an absolute hardware root-of-trust.
 
 ---
 
@@ -59,7 +59,7 @@ Before opening an SSH connection to the router, all management and audit scripts
 
 ```sh
 PINNED_KEY_FILE="${WORKSPACE_ROOT}/config/cr8818_host_key.pub"
-EXPECTED_FINGERPRINT="SHA256:feZ+NfroyCIlYrC74Z1ZazUSby+WqxRxZM63Q6Q9HmM"
+EXPECTED_FINGERPRINT="SHA256:BwYCFt/UPVQ+Sj6/ZcbKf7yfTK5FqPFYB9uN7isGL64"
 
 # Step 1: Verify the integrity of the pinned local public key file
 ACTUAL_FINGERPRINT=$(ssh-keygen -l -f "$PINNED_KEY_FILE" 2>/dev/null | awk '{print $2}')

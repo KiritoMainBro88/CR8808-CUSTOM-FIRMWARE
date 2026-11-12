@@ -87,11 +87,11 @@ local [REDACTED_IPV6_LL] dev lo  table local  proto none  metric 0
 unreachable default dev lo  table unspec  proto kernel  metric -1  error -101
 --- /proc/net/if_inet6 ---
 00000000000000000000000000000001 01 80 10 80       lo
-fe80000000000000d0d843fffe50f920 11 40 20 80  br-miot
-fe80000000000000a6a930fffe35a85f 02 40 20 80     eth0
-fe80000000000000ced843fffe50f91f 12 40 20 80      wl0
-fe80000000000000ced843fffe50f920 0f 40 20 80      wl1
-fe80000000000000ced843fffe50f91e 0a 40 20 80   br-lan
+[REDACTED_HEX_IF_INET6] 11 40 20 80  br-miot
+[REDACTED_HEX_IF_INET6] 02 40 20 80     eth0
+[REDACTED_HEX_IF_INET6] 12 40 20 80      wl0
+[REDACTED_HEX_IF_INET6] 0f 40 20 80      wl1
+[REDACTED_HEX_IF_INET6] 0a 40 20 80   br-lan
 [R0-FW-02 STATUS: SUCCESS]
 ================================================================================
 [R0-FW-03] Full iptables Filter Table Rules (-S and -nvL)
