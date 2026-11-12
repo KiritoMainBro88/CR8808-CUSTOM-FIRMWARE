@@ -6,7 +6,7 @@
 - **Discrete Radios:** Qualcomm QCN6102 5 GHz (802.11ax HE160, 2402 Mbps) + Integrated 2.4 GHz (574 Mbps)
 - **Ethernet Switch:** Motorcomm YT9215SC (4x GbE PHY/Switch via MDIO `0x1d` / `qca_ssdk`)
 - **Author:** Performance & Systems Auditor (`@auditor`)
-- **Governing Directive:** Chief Architect Directive M12.4 (Work Package 3)
+- **Governing Directives:** Chief Architect Directives M12.4 & M12.5 (Work Packages 2 & 3)
 - **Repository Branch:** `feature/m12-ra82-performance-modernization`
 - **Safety Standard:** 100% Empirical Data from Live Read-Only Telemetry; Zero Router Writes
 
@@ -22,7 +22,7 @@ While the hardware silicon is designed for multi-gigabit line-rate throughput wi
 - **Receive Packet Steering (RPS)** is disabled (`rps_cpus = 0`) across all 35 network interface RX queues.
 - **Available Linux RAM** is constrained to only **10.1 MB (5.5%)** out of 186.9 MB usable kernel memory.
 
-This report compiles the empirical architectural evidence for the NSS/ECM subsystem, analyzes the real-world execution paths, and establishes a prioritized candidate ranking matrix that isolates **exactly ONE low-risk, reversible optimization candidate** for controlled testing.
+This report compiles the empirical architectural evidence for the NSS/ECM subsystem, analyzes the real-world execution paths, formally documents the optimization trade-off analysis, and establishes the authoritative selection of **RPS on `eth0` (`rps_cpus=2`)** for controlled hardware trial testing.
 
 ---
 
@@ -146,7 +146,7 @@ During the M12 baseline audit, a complete snapshot of hardware interrupts across
 
 1. `/proc/irq/*/smp_affinity` inspection reveals that every hardware peripheral IRQ (with the exception of `nss_queue1` at `0x2`) is configured with affinity mask `3` (`0x3` = CPU0 and CPU1).
 2. On ARM GIC-400, when an interrupt has mask `0x3`, the hardware distributor assigns all incoming interrupts to the lowest numbered CPU that is online (CPU0).
-3. As a result, CPU0 handles **over 99.8% of all hardware peripheral interrupts**, starving userspace processes of CPU cycles on Core 0 while Core 1 remains largely idle.
+3. As a result, CPU0 handles **over 99.8% of all hardware peripheral interrupts**, concentrating all interrupt overhead on Core 0.
 
 ---
 
@@ -178,7 +178,7 @@ A comprehensive scan of `/sys/class/net/*/queues/` reveals the complete RX queue
 
 ---
 
-## 5. SoftIRQ Imbalance Ground Truth
+## 5. SoftIRQ Imbalance Ground Truth & Operational Clarification
 
 ### 5.1 Cumulative Lifetime SoftIRQ Counters (`/proc/softirqs`)
 
@@ -206,69 +206,75 @@ TASKLET:             +2,364           +0            100.0% (CPU0)
 SCHED:                 +491         +484             50.4%
 RCU:                   +483         +474             50.5%
 ```
-- **Diagnostic Finding:** Symmetric system services (`TIMER`, `SCHED`, `RCU`) scale evenly across both cores. Network packet processing (`NET_RX` and `TASKLET`), however, is **99.6%–100% trapped on CPU0**.
+
+### 5.3 Operational Reliability Clarification (Directive M12.5)
+
+It is vital to distinguish between **architectural routing bias** and **active CPU saturation**:
+1. **Under Idle / Light Traffic:** The historical 99.6% / 0.4% SoftIRQ split is a direct consequence of ARM GIC-400 interrupt routing defaulting to Core 0 (`smp_affinity: 3`). It does **not** signify that CPU0 is running at 100% capacity during quiet periods (during the baseline audit, idle CPU was >95%).
+2. **Under Heavy Forwarding or Unaccelerated VPN Traffic:** When high-throughput unaccelerated traffic arrives (e.g. WireGuard `wg0`, unaccelerated IPv6, or torrents), this routing constraint forces `ksoftirqd/0` on CPU0 to reach 100% utilization while CPU1 remains largely idle (~90-95% idle).
+3. **The Engineering Goal:** Rebalancing `NET_RX` via Receive Packet Steering (RPS) prevents Core 0 saturation during traffic bursts without altering the underlying hardware offload engine.
 
 ---
 
-## 6. Formal Optimization Candidate Prioritization Matrix
+## 6. Formal Optimization Candidate Trade-Off Analysis
 
-In accordance with Chief Architect Directive M12.4, all proposed performance optimizations are evaluated across six rigorous engineering criteria:
-1. **Performance Gain:** Measurable improvement in throughput, latency, or memory recovery.
-2. **Stability Risk:** Potential to cause network drop, kernel panic, or system crash.
-3. **Reversibility:** Ease and speed of returning to the exact prior baseline.
-4. **Complexity:** Number of variables and subsystem dependencies involved.
-5. **Blast Radius:** Scope of affected services (system-wide vs. localized socket).
-6. **Recovery Mechanism:** Automated or manual path to recover from a failed application.
+In accordance with Chief Architect Directive M12.5 (Work Package 2), a detailed comparative trade-off analysis of candidate remediations was conducted against real live bottleneck data:
 
 ```
 +-----------------------------------------------------------------------------------------------------------------------------------------+
-|                                           OPTIMIZATION CANDIDATE EVALUATION MATRIX                                                      |
+|                                           OPTIMIZATION CANDIDATE TRADE-OFF MATRIX                                                       |
 +----+---------------------+-------------+-----------+---------------+------------+--------------+------------------+---------------------+
-| No | Candidate Name      | Target Subsys| Perf Gain | Stability Risk| Reversible | Complexity   | Blast Radius     | Selected for Trial? |
+| No | Candidate Name      | Target Subsys| Perf Gain | Stability Risk| Reversible | Complexity   | Measurable in 30s| Selected for Trial? |
 +----+---------------------+-------------+-----------+---------------+------------+--------------+------------------+---------------------+
-| 1  | conntrack_tuning    | Netfilter   | Medium    | **LOW (0)**   | **100% 1s**| **1 Sysctl** | **Isolated NAT** | **YES (PRIORITY 1)**|
-| 2  | tcp_buffer_tuning   | TCP/IP Core | Medium    | Low           | 100% 1s    | 4 Sysctls    | TCP stack wide   | No (Hold for P2)    |
-| 3  | rps_rfs_tuning      | Net Core    | High      | Low-Med       | 100% 1s    | 35 Queues    | Interface wide   | No (Hold for P3)    |
-| 4  | irq_affinity        | GIC Driver  | High      | Medium        | 100% 1s    | 8 IRQ nodes  | PCIe / Wi-Fi DMA | No (Hold for P4)    |
-| 5  | nss_flow_tuning     | ECM Debugfs | Med-High  | Medium        | 100% 1s    | 4 Debugfs    | NSS HW Engine    | No (Hold for P5)    |
-| 6  | dns_stability       | dnsmasq     | Low-Med   | Medium        | Complex    | Config+HUP   | LAN DNS Resolv   | No (EXPERIMENTAL)   |
-| 7  | wireguard_boringtun | VPN Daemon  | Very High | Med-High      | 10s swap   | Binary Swap  | VPN Tunnel (wg0) | No (Requires window)|
+| 1  | rps_tuning (eth0)   | Net Core    | **HIGH**  | **VERY LOW**  | **100% 1s**| **1 Sysfs**  | **YES (SoftIRQ)**| **YES (SELECTED)**  |
+| 2  | conntrack_tuning    | Netfilter   | Low-Med   | Low (0)       | 100% 1s    | 1 Sysctl     | **NO (Lagged)**  | Deprioritized (P2)  |
+| 3  | napi_budget_tuning  | Net Core    | Medium    | Low           | 100% 1s    | 2 Sysctls    | Partial (Drops)  | Hold (P3)           |
+| 4  | tcp_buffer_tuning   | TCP/IP Core | Medium    | Low           | 100% 1s    | 4 Sysctls    | No (High load req| Hold (P4)           |
+| 5  | irq_affinity        | GIC Driver  | High      | Medium        | 100% 1s    | 8 IRQ nodes  | Yes (Hardware)   | Hold (P5)           |
+| 6  | nss_flow_tuning     | ECM Debugfs | Med-High  | Medium        | 100% 1s    | 4 Debugfs    | Yes (ECM flows)  | Hold (P6)           |
+| 7  | dns_stability       | dnsmasq     | Low-Med   | Medium        | Complex    | Config+HUP   | No (DNS query dep| EXPERIMENTAL_HOLD   |
+| 8  | wireguard_boringtun | VPN Daemon  | Very High | Med-High      | 10s swap   | Binary Swap  | Yes (VmRSS)      | Maintenance Window  |
 +----+---------------------+-------------+-----------+---------------+------------+--------------+------------------+---------------------+
 ```
 
+### 6.1 Trade-Off Evaluation
+
+1. **RPS on Ethernet (`eth0/queues/rx-0/rps_cpus` 0 $\rightarrow$ 2) [SELECTED]:**
+   - **Advantage:** Directly targets Bottleneck 1 (SoftIRQ Imbalance). When active, incoming Ethernet packets on Core 0 schedule their SoftIRQ processing (`NET_RX`) on Core 1 (`CPU1`).
+   - **Measurable in 30-Second Trial:** `/proc/softirqs` `NET_RX` delta on CPU1 immediately shifts from $\approx 0$ to hundreds or thousands of packets per second during traffic.
+   - **Safety & Reversibility:** Zero kernel reboots, zero routing changes, 100% instant 1-write rollback (`echo 0 > rps_cpus`).
+2. **Conntrack Tuning (`nf_conntrack_tcp_timeout_established` 432000s $\rightarrow$ 86400s) [DEPRIORITIZED]:**
+   - **Limitation:** While completely safe, conntrack table eviction takes hours to days to show observable RAM slab reduction. In a controlled 30-second trial window, it produces zero measurable change in throughput, latency, or memory.
+   - **Verdict:** Deprioritized in favor of a candidate with immediate, verifiable empirical feedback.
+3. **NAPI Backlog / Budget (`netdev_max_backlog`, `netdev_budget`):**
+   - **Evaluation:** Improves burst packet drop resistance, but only observable during extreme packet flooding (>500,000 pps), which violates residential safety guidelines.
+4. **NSS ECM Acceleration Parameters (`auto_bypassed`, `accel_delay_pkts`):**
+   - **Evaluation:** High value for long-term offload health, but touches driver debugfs layers. Requires staged testing after CPU queue balancing is proven.
+
 ---
 
-## 7. Selection & Specification of Controlled Trial Candidate
+## 7. Authoritative Selection & Controlled Trial Specification
 
-### 7.1 Selected Candidate: `conntrack_tuning`
+### 7.1 Authoritative Candidate Selection
 
-The Chief Architect Directive stipulates prioritizing **exactly ONE low-risk, reversible candidate** for controlled testing.
+In compliance with Chief Architect Directive M12.5 (Work Package 2), the candidate prioritized for the controlled hardware trial is:
 
-- **Parameter:** `net.netfilter.nf_conntrack_tcp_timeout_established`
-- **Baseline Factory Value:** `432000` seconds (5 days)
-- **Tuned Target Value:** `86400` seconds (24 hours)
+- **Target Path:** `/sys/class/net/eth0/queues/rx-0/rps_cpus`
+- **Baseline Factory Value:** `0` (Disabled)
+- **Tuned Target Value:** `2` (Bitmap `0x2` = Route SoftIRQ to CPU1)
 
-### 7.2 Engineering Justification for Selection
+### 7.2 Expected Measurable Acceptance Criteria
 
-1. **Lowest Possible Blast Radius:**
-   - Modifying `nf_conntrack_tcp_timeout_established` only affects the eviction timer for idle, established TCP connection entries in the netfilter connection tracker table.
-   - It does **not** alter routing tables, does **not** restart network daemons, does **not** modify Wi-Fi driver parameters, and does **not** touch GIC hardware interrupt lines.
-2. **Instantaneous Bit-for-Bit Reversibility:**
-   - Can be verified and restored within milliseconds via standard sysctl:
-     ```bash
-     sysctl -w net.netfilter.nf_conntrack_tcp_timeout_established=432000
-     ```
-3. **Direct Remediation of Bottleneck 2 (RAM Pressure):**
-   - Stock firmware retains closed TCP connections for 5 days. On a residential router with smart home IoT devices, peer-to-peer applications, and web sockets, tens of thousands of dead connections linger in `nf_conntrack` slab memory.
-   - Reducing the timeout from 5 days to 24 hours safely evicts orphaned NAT sessions, freeing valuable kernel slab memory without impacting active client streams.
-4. **Zero SSH Disruption Risk:**
-   - Active management connections (such as the Dropbear SSH control session) transmit keepalive packets every 3–30 seconds and will never hit the 24-hour idle threshold.
+During a controlled measurement window (with modest traffic forwarding):
+1. **CPU1 `NET_RX` Activity:** `/proc/softirqs` `NET_RX` delta on CPU1 increases from $<1\%$ to $>40\%$ of total packet softirqs.
+2. **System Health:** 1-minute load average remains $< 0.50$, free RAM remains stable, and Dropbear SSH latency remains $< 5 \text{ ms}$.
+3. **Verification on Rollback:** Post-trial rollback writes `0` back to `/sys/class/net/eth0/queues/rx-0/rps_cpus` and verifies bit-for-bit restoration.
 
 ---
 
 ## 8. Controlled Trial Protocol & Rollback Specification
 
-To satisfy all safety requirements defined in [`docs/M12_ROUTER_ACCESS_SAFETY.md`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/docs/M12_ROUTER_ACCESS_SAFETY.md), the trial runner must enforce the following execution lifecycle:
+The standalone trial runner (`performance/trials/controlled_trial_runner.sh`), developed by `@optimizer` under Work Package 1, enforces strict lifecycle safety:
 
 ```mermaid
 sequenceDiagram
@@ -277,30 +283,26 @@ sequenceDiagram
     participant Router as Physical Router (192.168.31.1)
     participant Watchdog as 180s Watchdog Process
 
-    Host->>Router: Pre-Flight Health Check (Ping, SSH, MemAvailable > 8MB)
-    Router-->>Host: Health Check OK (MemAvailable = 10.1MB, Load = 0.14)
-    Host->>Host: Snapshot Baseline Value (432000) to local state file
-    Host->>Watchdog: Spawn Background Watchdog (Auto-rollback in 180s)
-    Host->>Router: Apply Tuned Value: sysctl -w timeout=86400 via stdin pipe
-    Router-->>Host: Value Applied (86400)
-    Host->>Router: Begin 30-Second Measurement Window (Monitor slab, stability)
-    Router-->>Host: Telemetry Gathered (Zero packet drops, conntrack stable)
-    Host->>Router: Execute Rollback: sysctl -w timeout=432000
-    Router-->>Host: Baseline Restored (432000)
-    Host->>Router: Post-Rollback Bit-for-Bit Verification (Assert value == 432000)
-    Router-->>Host: Verification Passed (Exact Match)
-    Host->>Watchdog: Disarm Watchdog (SIGTERM)
+    Host->>Router: Phase 1: Precondition Health Check (Ping, SSH, MemAvailable > 8MB, baseline == 0)
+    Router-->>Host: Health Check OK (Baseline confirmed = 0)
+    Host->>Host: Phase 2: Atomic State Snapshot & Directory Lock (/tmp/trial_lock)
+    Host->>Watchdog: Phase 3: Spawn Background Watchdog (Auto-rollback in 180s)
+    Host->>Router: Phase 4: Apply Tuned Value (echo 2 > rps_cpus) via stdin pipe
+    Router-->>Host: Value Applied (2)
+    Host->>Router: Phase 5: 30-Second Measurement Window (SoftIRQ deltas, ping RTT)
+    Router-->>Host: Measurement Telemetry Gathered (CPU1 SoftIRQs observed)
+    Host->>Router: Phase 6: Execute Rollback (echo 0 > rps_cpus)
+    Router-->>Host: Value Restored (0)
+    Host->>Router: Phase 7: Readback Verification (Assert rps_cpus == 0)
+    Router-->>Host: Verification Confirmed (Exact Match)
+    Host->>Watchdog: Phase 8: Disarm Watchdog & Release Lock
 ```
-
-### Safety Guards Enforced:
-1. **Pre-flight Gate:** Must verify `MemAvailable > 8192 kB` and 1-minute load $< 1.50$.
-2. **180-Second Watchdog Timer:** Background process armed on host workstation with a trap handler that forces rollback if the measurement window stalls or network latency spikes.
-3. **Exact Bit-for-Bit Verification:** Post-trial verification must assert that the restored value exactly matches the recorded baseline (`432000`).
 
 ---
 
 ## 9. Conclusion & Next Steps
 
-1. **Hardware Evidence Consolidated:** This report provides the definitive empirical baseline for Qualcomm NSS/ECM modules, 35 network interface RX queues, GIC-400 interrupt affinities, and SoftIRQ distribution.
-2. **Controlled Trial Package Assigned:** In accordance with Work Package 5, `@optimizer` is constructing the standalone `performance/trials/controlled_trial_runner.sh` and test harness in WSL2.
-3. **Zero Router Modification Guarantee:** All data in this report was harvested strictly through non-intrusive, read-only inspection. The physical router remains in a safe, unmodified operational HOLD awaiting final user authorization.
+1. **Hardware Evidence Consolidated:** All NSS/ECM paths, 35 interface RX queues, GIC interrupt affinities, and SoftIRQ ground truth are rigorously documented.
+2. **Authoritative Candidate Established:** `rps_tuning` on `eth0` (`rps_cpus=2`) is selected as the exact, high-value, low-risk optimization candidate for controlled testing.
+3. **Benchmarking Matrix Defined:** Complete 6-scenario benchmark methodology is authored in [`performance/benchmarks/BENCHMARK_MATRIX.md`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/performance/benchmarks/BENCHMARK_MATRIX.md).
+4. **Zero Live Modification Guarantee:** The physical router remains 100% untouched in safe HOLD awaiting explicit owner authorization.

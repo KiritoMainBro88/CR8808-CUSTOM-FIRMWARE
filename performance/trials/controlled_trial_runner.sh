@@ -1,37 +1,35 @@
 #!/bin/sh
 # performance/trials/controlled_trial_runner.sh
 # ==============================================================================
-# Controlled Performance Trial Runner: Single-Variable Optimization
+# Controlled Performance Trial Runner: RPS Steering on eth0 (Single-Variable)
 # Workstream B & G: Network Performance & Automated Optimization
 # Target: Xiaomi CR8808 / RA82 (Qualcomm IPQ5018 Dual-Core Cortex-A53, Linux 4.4.60)
 #
-# CANDIDATE SELECTION:
+# CANDIDATE SELECTION & ARCHITECTURAL JUSTIFICATION:
 # ------------------------------------------------------------------------------
-# Candidate: net.netfilter.nf_conntrack_tcp_timeout_established
-# Baseline:  432000s (5 days) -> Trial Target: 86400s (24 hours)
+# Target Parameter: /sys/class/net/eth0/queues/rx-0/rps_cpus
+# Baseline Value:   0 (Disabled)
+# Trial Target:     2 (CPU1 affinity mask 0x2)
 #
-# ARCHITECTURAL JUSTIFICATION:
-#   1. Lowest Operational Risk: Modifies only the idle timeout for established TCP
-#      connections. Active traffic continuously resets timer; zero packet drop risk.
-#   2. Zero Routing / Wi-Fi Impact: Completely decoupled from PHY, SGMII, DSA, and
-#      Wi-Fi 6 radio drivers.
-#   3. Zero NSS Offload Conflict: Qualcomm NSS hardware offload queries conntrack
-#      only during flow initiation and teardown. 86400s is orders of magnitude
-#      higher than OS keepalives (7200s) and app keepalives (60s).
-#   4. 100% Instantaneous Reversibility: Atomic sysctl write without service restart.
+# Rationale:
+#   1. Immediate Measurable Metric: Shifting packet softirqs from 99.6% CPU0
+#      saturation to CPU1 produces an immediate, empirical delta in /proc/softirqs
+#      (NET_RX counter on CPU1 vs CPU0) during forwarding traffic.
+#   2. Zero Routing / Wi-Fi Impact: Operates purely at the softirq backlog steering
+#      layer; zero disruption to DSA switch tags, Wi-Fi 6 radio, or routing tables.
+#   3. Zero NSS Conflict: Flows already accelerated by Qualcomm NSS bypass the Linux
+#      stack; RPS applies strictly to non-offloaded ingress (VPN, local sockets, IPv6).
+#   4. 100% Instantaneous Reversibility: Single sysfs write to 0 instantly restores
+#      factory queue steering without daemon restart or socket drops.
 #
-# EXECUTION PHASES:
-#   Phase 1: Precondition health check (ping, memory headroom, baseline match).
-#   Phase 2: Atomic baseline snapshot to /tmp/trial_state/.
-#   Phase 3: 180s watchdog auto-rollback timer with trap handler.
-#   Phase 4: Single-variable runtime apply (86400s).
-#   Phase 5: Fixed-duration measurement window (monitoring stability & slab).
-#   Phase 6: Independent rollback restoring exact baseline (432000s).
-#   Phase 7: Exact bit-for-bit post-rollback verification.
-#   Phase 8: Abort procedure preserving SSH.
-#
-# SAFETY NOTICE:
-#   DO NOT execute on physical router without explicit architecture authorization.
+# DEFENSE-IN-DEPTH ARCHITECTURE:
+#   - Atomic Directory Lock: /tmp/trial_lock.d prevents concurrent executions.
+#   - State Snapshot Verification: Confirms snapshot non-zero size, readability,
+#     and valid key-value format before touching system state.
+#   - 180s Independent Watchdog: Background process forces revert if runner stalls.
+#   - Verified Rollback Guarantee: Never disarms watchdog or deletes state file
+#     unless actual readback matches baseline value.
+#   - Robust Signal Traps: Catches INT, TERM, HUP with verified restoration.
 # ==============================================================================
 
 set -u
@@ -39,24 +37,30 @@ set -u
 # Base paths (supports MOCK_ROOT for hermetic PC/WSL2 testing)
 MOCK_ROOT="${MOCK_ROOT:-}"
 TRIAL_STATE_DIR="${TRIAL_STATE_DIR:-/tmp/trial_state}"
+TRIAL_LOCK_DIR="${TRIAL_LOCK_DIR:-/tmp/trial_lock.d}"
 
 if [ -n "$MOCK_ROOT" ]; then
     case "$TRIAL_STATE_DIR" in
         "$MOCK_ROOT"*) ;;
         *) TRIAL_STATE_DIR="${MOCK_ROOT}${TRIAL_STATE_DIR}" ;;
     esac
+    case "$TRIAL_LOCK_DIR" in
+        "$MOCK_ROOT"*) ;;
+        *) TRIAL_LOCK_DIR="${MOCK_ROOT}${TRIAL_LOCK_DIR}" ;;
+    esac
 fi
 
-TARGET_PARAM="net.netfilter.nf_conntrack_tcp_timeout_established"
-BASELINE_VALUE="432000"
-TRIAL_VALUE="86400"
+TARGET_REL_PATH="/sys/class/net/eth0/queues/rx-0/rps_cpus"
+BASELINE_VALUE="0"
+TRIAL_VALUE="2"
 WATCHDOG_TIMEOUT="180"
 MEASURE_SECONDS="${MEASURE_SECONDS:-30}"
 MIN_FREE_RAM_KB="${MIN_FREE_RAM_KB:-6144}" # 6 MB minimum headroom
 
-TRIAL_STATE_FILE="${TRIAL_STATE_DIR}/conntrack_trial.state"
+TRIAL_STATE_FILE="${TRIAL_STATE_DIR}/rps_trial.state"
 WATCHDOG_PID=""
 TRIAL_IN_PROGRESS=0
+LOCK_ACQUIRED=0
 
 # Logging helpers
 log_info() {
@@ -75,43 +79,43 @@ log_success() {
     echo "[TRIAL-OK]    $*"
 }
 
-# Resolve sysctl to proc path
-sysctl_file() {
-    _param="$1"
-    _rel=$(echo "$_param" | tr '.' '/')
-    echo "${MOCK_ROOT}/proc/sys/${_rel}"
+# Resolve target path (supports MOCK_ROOT)
+target_sysfs_path() {
+    case "$TARGET_REL_PATH" in
+        "$MOCK_ROOT"*) echo "$TARGET_REL_PATH" ;;
+        *) echo "${MOCK_ROOT}${TARGET_REL_PATH}" ;;
+    esac
 }
 
-read_param() {
-    _file=$(sysctl_file "$TARGET_PARAM")
-    if [ -f "$_file" ]; then
-        cat "$_file" 2>/dev/null | tr -d ' \t\r\n'
-        return 0
-    elif [ -z "$MOCK_ROOT" ] && command -v sysctl >/dev/null 2>&1; then
-        sysctl -n "$TARGET_PARAM" 2>/dev/null | tr -d ' \t\r\n'
+read_target_val() {
+    _path=$(target_sysfs_path)
+    if [ -f "$_path" ]; then
+        _val=$(cat "$_path" 2>/dev/null | tr -d ' \t\r\n' | sed 's/^0*//')
+        if [ -z "$_val" ]; then
+            echo "0"
+        else
+            echo "$_val"
+        fi
         return 0
     fi
     return 1
 }
 
-write_param() {
+write_target_val() {
     _val="$1"
-    _file=$(sysctl_file "$TARGET_PARAM")
+    _path=$(target_sysfs_path)
     if [ -n "$MOCK_ROOT" ]; then
-        mkdir -p "$(dirname "$_file")" 2>/dev/null || true
-        printf '%s\n' "$_val" > "$_file" 2>/dev/null || return 1
+        mkdir -p "$(dirname "$_path")" 2>/dev/null || true
+        printf '%s\n' "$_val" > "$_path" 2>/dev/null || return 1
         return 0
-    elif [ -w "$_file" ]; then
-        printf '%s\n' "$_val" > "$_file" 2>/dev/null || return 1
-        return 0
-    elif command -v sysctl >/dev/null 2>&1; then
-        sysctl -w "${TARGET_PARAM}=${_val}" >/dev/null 2>&1 || return 1
+    elif [ -w "$_path" ]; then
+        printf '%s\n' "$_val" > "$_path" 2>/dev/null || return 1
         return 0
     fi
     return 1
 }
 
-# Read system memory headroom (in kB)
+# Memory headroom in kB
 get_mem_available_kb() {
     _meminfo="${MOCK_ROOT}/proc/meminfo"
     if [ -f "$_meminfo" ]; then
@@ -126,79 +130,126 @@ get_mem_available_kb() {
             return 0
         fi
     fi
-    # Default fallback if meminfo absent
     echo "10240"
 }
 
-# Read active conntrack count
-get_conntrack_count() {
-    _cfile="${MOCK_ROOT}/proc/sys/net/netfilter/nf_conntrack_count"
-    if [ -f "$_cfile" ]; then
-        cat "$_cfile" 2>/dev/null | tr -d ' \t\r\n'
+# Read NET_RX softirqs for CPU0 and CPU1
+get_net_rx_softirqs() {
+    _softirqs="${MOCK_ROOT}/proc/softirqs"
+    if [ -f "$_softirqs" ]; then
+        grep "NET_RX:" "$_softirqs" 2>/dev/null | awk '{print $2, $3}' || echo "0 0"
     else
-        echo "N/A"
+        echo "0 0"
     fi
 }
 
-# Read slab unreclaimable memory (in kB)
-get_sunreclaim_kb() {
-    _meminfo="${MOCK_ROOT}/proc/meminfo"
-    if [ -f "$_meminfo" ]; then
-        _sunrec=$(grep "^SUnreclaim:" "$_meminfo" 2>/dev/null | awk '{print $2}')
-        if [ -n "$_sunrec" ]; then
-            echo "$_sunrec"
+# ------------------------------------------------------------------------------
+# LOCK MANAGEMENT & CONCURRENCY PROTECTION
+# ------------------------------------------------------------------------------
+acquire_trial_lock() {
+    _retries=3
+    while [ "$_retries" -gt 0 ]; do
+        if mkdir "$TRIAL_LOCK_DIR" 2>/dev/null; then
+            echo "$$" > "${TRIAL_LOCK_DIR}/pid"
+            LOCK_ACQUIRED=1
             return 0
         fi
-    fi
-    echo "N/A"
+        # Check if existing lock is stale
+        if [ -f "${TRIAL_LOCK_DIR}/pid" ]; then
+            _lpid=$(cat "${TRIAL_LOCK_DIR}/pid" 2>/dev/null || echo "")
+            if [ -n "$_lpid" ] && ! kill -0 "$_lpid" 2>/dev/null; then
+                log_warn "Detected stale trial lock from dead PID ${_lpid}. Purging stale lock."
+                rm -rf "$TRIAL_LOCK_DIR" 2>/dev/null || true
+                continue
+            fi
+        fi
+        sleep 1
+        _retries=$((_retries - 1))
+    done
+    log_err "Failed to acquire trial lock (${TRIAL_LOCK_DIR}). Another trial is active."
+    return 1
 }
 
-# Emergency cleanup handler invoked on signal or abort
-emergency_abort() {
-    log_err "Emergency abort triggered! Restoring baseline parameter immediately."
-    if [ "$TRIAL_IN_PROGRESS" -eq 1 ]; then
-        write_param "$BASELINE_VALUE" 2>/dev/null || true
-        TRIAL_IN_PROGRESS=0
+release_trial_lock() {
+    if [ "$LOCK_ACQUIRED" -eq 1 ]; then
+        rm -rf "$TRIAL_LOCK_DIR" 2>/dev/null || true
+        LOCK_ACQUIRED=0
     fi
+}
+
+# ------------------------------------------------------------------------------
+# DEFECT (a) EMERGENCY ABORT HANDLER
+# ------------------------------------------------------------------------------
+emergency_abort() {
+    log_err "Emergency abort signal caught! Executing fail-safe rollback."
+    if [ "$TRIAL_IN_PROGRESS" -eq 1 ]; then
+        if write_target_val "$BASELINE_VALUE"; then
+            _rb_check=$(read_target_val || echo "")
+            if [ "$_rb_check" = "$BASELINE_VALUE" ] || [ -z "$_rb_check" -a "$BASELINE_VALUE" = "0" ]; then
+                log_success "Emergency abort: parameter restored to verified baseline ($BASELINE_VALUE)."
+                rm -f "$TRIAL_STATE_FILE" 2>/dev/null || true
+                TRIAL_IN_PROGRESS=0
+            else
+                log_err "CRITICAL: Emergency readback verification failed! State file preserved at $TRIAL_STATE_FILE."
+            fi
+        else
+            log_err "CRITICAL: Emergency write failed! NEVER deleting state file. Manual inspection required."
+        fi
+    fi
+
     if [ -n "$WATCHDOG_PID" ]; then
         kill "$WATCHDOG_PID" 2>/dev/null || true
     fi
-    rm -rf "$TRIAL_STATE_DIR" 2>/dev/null || true
-    log_warn "Emergency abort completed. Baseline restored. Exiting."
-    exit 1
+    release_trial_lock
+    exit 2
 }
 
 trap emergency_abort INT TERM HUP
 
 # ------------------------------------------------------------------------------
-# PHASE 1: Precondition Health Check
+# PHASE 1: Precondition Health Check & Stale State Recovery
 # ------------------------------------------------------------------------------
 run_preflight_checks() {
     log_info "--- Phase 1: Precondition Health Check ---"
 
+    # Stale state check: If state file exists from previous uncompleted run
+    if [ -f "$TRIAL_STATE_FILE" ]; then
+        log_warn "Previous trial state file found at $TRIAL_STATE_FILE. Checking system state."
+        _cur_val=$(read_target_val || echo "")
+        if [ "$_cur_val" = "$BASELINE_VALUE" ] || [ -z "$_cur_val" -a "$BASELINE_VALUE" = "0" ]; then
+            log_info "System is already at verified baseline ($BASELINE_VALUE). Cleaning orphaned state file."
+            rm -f "$TRIAL_STATE_FILE" 2>/dev/null || true
+        else
+            log_err "Precondition Failed: Stale trial state detected and parameter is currently '$_cur_val' (not baseline $BASELINE_VALUE)."
+            log_err "Execute: $0 rollback to resolve previous state before starting a new trial."
+            return 1
+        fi
+    fi
+
     # Check 1: Free RAM Headroom
     _avail_kb=$(get_mem_available_kb)
-    log_info "Memory Headroom: ${_avail_kb} kB (Minimum required: ${MIN_FREE_RAM_KB} kB)"
+    log_info "Available RAM: ${_avail_kb} kB (Minimum required: ${MIN_FREE_RAM_KB} kB)"
     if [ "$_avail_kb" -lt "$MIN_FREE_RAM_KB" ] 2>/dev/null; then
         log_err "Precondition Failed: Available RAM (${_avail_kb} kB) is below safe threshold (${MIN_FREE_RAM_KB} kB)."
         return 1
     fi
 
     # Check 2: Verify Baseline Parameter Value
-    _current_val=$(read_param || echo "")
-    log_info "Current Parameter Value: ${_current_val} (Expected baseline: ${BASELINE_VALUE})"
+    _current_val=$(read_target_val || echo "")
+    if [ -z "$_current_val" ]; then _current_val="0"; fi
+    log_info "Current Parameter Value: '${_current_val}' (Expected baseline: '${BASELINE_VALUE}')"
     if [ "$_current_val" != "$BASELINE_VALUE" ]; then
-        log_err "Precondition Failed: Parameter does not match expected baseline (${BASELINE_VALUE}). Current: '$_current_val'."
+        log_err "Precondition Failed: Target does not match expected baseline (${BASELINE_VALUE}). Current: '$_current_val'."
         log_err "Trial aborted to prevent overwriting unmanaged custom state."
         return 1
     fi
 
-    # Check 3: Check Sysctl File Writability
-    _sfile=$(sysctl_file "$TARGET_PARAM")
+    # Check 3: Check Sysfs Interface Writability
+    _path=$(target_sysfs_path)
     if [ -n "$MOCK_ROOT" ]; then
-        mkdir -p "$(dirname "$_sfile")" 2>/dev/null || true
-    elif [ ! -w "$_sfile" ] && ! command -v sysctl >/dev/null 2>&1; then
-        log_err "Precondition Failed: Sysctl interface is not writable."
+        mkdir -p "$(dirname "$_path")" 2>/dev/null || true
+    elif [ ! -w "$_path" ]; then
+        log_err "Precondition Failed: Target sysfs interface is not writable: $_path"
         return 1
     fi
 
@@ -207,19 +258,40 @@ run_preflight_checks() {
 }
 
 # ------------------------------------------------------------------------------
-# PHASE 2: Atomic Baseline Snapshot
+# DEFECT (c) PHASE 2: Atomic Baseline Snapshot with Strict Validation
 # ------------------------------------------------------------------------------
 take_snapshot() {
-    log_info "--- Phase 2: Atomic Baseline Snapshot ---"
+    log_info "--- Phase 2: Atomic Baseline Snapshot & Validation ---"
     mkdir -p "$TRIAL_STATE_DIR" 2>/dev/null || true
+
     cat << EOF > "$TRIAL_STATE_FILE"
-TARGET_PARAM=${TARGET_PARAM}
+TARGET_PATH=${TARGET_REL_PATH}
 BASELINE_VALUE=${BASELINE_VALUE}
 TRIAL_VALUE=${TRIAL_VALUE}
 START_TIMESTAMP=$(date +%s)
 PID=$$
 EOF
-    log_success "Baseline state snapshot saved to $TRIAL_STATE_FILE"
+
+    # Strict snapshot verification
+    if [ ! -f "$TRIAL_STATE_FILE" ]; then
+        log_err "Snapshot validation failed: State file was not created!"
+        return 1
+    fi
+
+    if [ ! -s "$TRIAL_STATE_FILE" ]; then
+        log_err "Snapshot validation failed: State file is empty (0 bytes)!"
+        rm -f "$TRIAL_STATE_FILE" 2>/dev/null || true
+        return 1
+    fi
+
+    if ! grep -q "^TARGET_PATH=" "$TRIAL_STATE_FILE" || ! grep -q "^BASELINE_VALUE=" "$TRIAL_STATE_FILE"; then
+        log_err "Snapshot validation failed: State file has invalid format or missing keys!"
+        rm -f "$TRIAL_STATE_FILE" 2>/dev/null || true
+        return 1
+    fi
+
+    log_success "Snapshot validated successfully at $TRIAL_STATE_FILE."
+    return 0
 }
 
 # ------------------------------------------------------------------------------
@@ -227,23 +299,18 @@ EOF
 # ------------------------------------------------------------------------------
 arm_watchdog() {
     log_info "--- Phase 3: Arming 180s Independent Watchdog Auto-Rollback ---"
-    _target_param="$TARGET_PARAM"
+    _target_rel="$TARGET_REL_PATH"
     _base_val="$BASELINE_VALUE"
     _state_file="$TRIAL_STATE_FILE"
     _mock_root="$MOCK_ROOT"
 
-    # Spawn asynchronous background watchdog
+    # Background watchdog subshell
     (
         sleep "$WATCHDOG_TIMEOUT"
         if [ -f "$_state_file" ]; then
-            # Watchdog timeout reached: trial script did not disarm watchdog
-            echo "[WATCHDOG] 180s timeout expired! Forcing emergency rollback to ${_base_val}" >&2
-            if [ -n "$_mock_root" ]; then
-                _f="${_mock_root}/proc/sys/$(echo "$_target_param" | tr '.' '/')"
-                printf '%s\n' "$_base_val" > "$_f" 2>/dev/null || true
-            else
-                sysctl -w "${_target_param}=${_base_val}" 2>/dev/null || true
-            fi
+            echo "[WATCHDOG] 180s timeout expired! Forcing emergency rollback of ${_target_rel} to ${_base_val}" >&2
+            _p="${_mock_root}${_target_rel}"
+            printf '%s\n' "$_base_val" > "$_p" 2>/dev/null || true
             rm -f "$_state_file" 2>/dev/null || true
             logger -t CONTROLLED_TRIAL "WATCHDOG FIRED: Emergency rollback executed" 2>/dev/null || true
         fi
@@ -265,33 +332,33 @@ disarm_watchdog() {
 # ------------------------------------------------------------------------------
 apply_trial_param() {
     log_info "--- Phase 4: Single-Variable Runtime Apply (${BASELINE_VALUE} -> ${TRIAL_VALUE}) ---"
-    if ! write_param "$TRIAL_VALUE"; then
+    if ! write_target_val "$TRIAL_VALUE"; then
         log_err "Failed to write trial parameter value (${TRIAL_VALUE})."
         return 1
     fi
 
-    # Read back to verify
-    _applied_val=$(read_param || echo "")
+    _applied_val=$(read_target_val || echo "")
     if [ "$_applied_val" != "$TRIAL_VALUE" ]; then
         log_err "Verification failed: Parameter readback ('$_applied_val') does not match trial target (${TRIAL_VALUE})."
         return 1
     fi
 
     TRIAL_IN_PROGRESS=1
-    log_success "Trial parameter applied successfully: ${TARGET_PARAM} = ${TRIAL_VALUE}"
+    log_success "Trial parameter applied: ${TARGET_REL_PATH} = ${TRIAL_VALUE}"
     return 0
 }
 
 # ------------------------------------------------------------------------------
-# PHASE 5: Measurement Window & Stability Monitoring
+# PHASE 5: Measurement Window & SoftIRQ Balancing Telemetry
 # ------------------------------------------------------------------------------
 run_measurement_window() {
     log_info "--- Phase 5: Measurement Window (${MEASURE_SECONDS}s) ---"
-    _start_conn=$(get_conntrack_count)
+    _start_rx=$(get_net_rx_softirqs)
+    _rx0_start=$(echo "$_start_rx" | awk '{print $1}')
+    _rx1_start=$(echo "$_start_rx" | awk '{print $2}')
     _start_mem=$(get_mem_available_kb)
-    _start_sunrec=$(get_sunreclaim_kb)
 
-    log_info "Measurement Baseline: Active Connections: $_start_conn | Available RAM: ${_start_mem} kB | SUnreclaim: ${_start_sunrec} kB"
+    log_info "Initial Telemetry: NET_RX [CPU0: $_rx0_start, CPU1: $_rx1_start] | MemAvailable: ${_start_mem} kB"
 
     _elapsed=0
     _step=5
@@ -302,60 +369,76 @@ run_measurement_window() {
     while [ "$_elapsed" -lt "$MEASURE_SECONDS" ]; do
         sleep "$_step"
         _elapsed=$((_elapsed + _step))
-        _cur_conn=$(get_conntrack_count)
+        _cur_rx=$(get_net_rx_softirqs)
+        _rx0_cur=$(echo "$_cur_rx" | awk '{print $1}')
+        _rx1_cur=$(echo "$_cur_rx" | awk '{print $2}')
         _cur_mem=$(get_mem_available_kb)
-        log_info "  [T+${_elapsed}s] Active Conn: $_cur_conn | Available RAM: ${_cur_mem} kB"
+        log_info "  [T+${_elapsed}s] NET_RX: [CPU0: $_rx0_cur, CPU1: $_rx1_cur] | Available RAM: ${_cur_mem} kB"
 
-        # Check for catastrophic RAM drop (>4MB drop in 5s)
+        # Check for catastrophic RAM drop
         if [ "$_cur_mem" -lt "$MIN_FREE_RAM_KB" ] 2>/dev/null; then
-            log_err "Stability Anomaly Detected: Available RAM dropped below safe threshold during trial!"
+            log_err "Stability Anomaly: Available RAM dropped below safe threshold during trial!"
             return 1
         fi
     done
 
-    _end_conn=$(get_conntrack_count)
+    _end_rx=$(get_net_rx_softirqs)
+    _rx0_end=$(echo "$_end_rx" | awk '{print $1}')
+    _rx1_end=$(echo "$_end_rx" | awk '{print $2}')
     _end_mem=$(get_mem_available_kb)
-    _end_sunrec=$(get_sunreclaim_kb)
+
+    _d0=$((_rx0_end - _rx0_start)) 2>/dev/null || _d0="N/A"
+    _d1=$((_rx1_end - _rx1_start)) 2>/dev/null || _d1="N/A"
 
     log_success "Measurement Window Completed (${MEASURE_SECONDS}s)."
-    log_info "Summary: Conn Delta: $_start_conn -> $_end_conn | RAM Delta: ${_start_mem} kB -> ${_end_mem} kB"
+    log_info "Summary Deltas: NET_RX CPU0 Delta: +$_d0 | NET_RX CPU1 Delta: +$_d1 | RAM Delta: ${_start_mem} -> ${_end_mem} kB"
     return 0
 }
 
 # ------------------------------------------------------------------------------
-# PHASE 6: Independent Rollback
+# DEFECT (b) PHASE 6 & 7: Verified Rollback with Readback Gate
 # ------------------------------------------------------------------------------
 rollback_baseline() {
-    log_info "--- Phase 6: Independent Rollback to Baseline ---"
-    if ! write_param "$BASELINE_VALUE"; then
-        log_err "Failed to write baseline parameter value (${BASELINE_VALUE}) during rollback!"
+    log_info "--- Phase 6: Verified Rollback to Baseline ---"
+    if ! write_target_val "$BASELINE_VALUE"; then
+        log_err "Failed to write baseline value (${BASELINE_VALUE})! Leaving state file intact."
         return 1
     fi
 
+    # Read back actual value BEFORE disarming watchdog or deleting state file
+    _rb_val=$(read_target_val || echo "")
+    if [ -z "$_rb_val" ]; then _rb_val="0"; fi
+
+    if [ "$_rb_val" != "$BASELINE_VALUE" ]; then
+        log_err "CRITICAL: Rollback readback verification failed! Read: '$_rb_val' (Expected: '$BASELINE_VALUE')."
+        log_err "Watchdog remains ARMED and state file is PRESERVED for forensic recovery."
+        return 1
+    fi
+
+    # Verification confirmed: parameter restored to verified baseline
     TRIAL_IN_PROGRESS=0
     disarm_watchdog
     rm -f "$TRIAL_STATE_FILE" 2>/dev/null || true
-    log_success "Parameter reverted to baseline: ${TARGET_PARAM} = ${BASELINE_VALUE}"
+    log_success "Parameter restored to verified baseline: ${TARGET_REL_PATH} = ${BASELINE_VALUE}"
     return 0
 }
 
-# ------------------------------------------------------------------------------
-# PHASE 7: Exact Bit-for-Bit Post-Rollback Verification
-# ------------------------------------------------------------------------------
 verify_post_rollback() {
-    log_info "--- Phase 7: Post-Rollback Bit-for-Bit Verification ---"
-    _final_val=$(read_param || echo "")
+    log_info "--- Phase 7: Post-Rollback Integrity Verification ---"
+    _final_val=$(read_target_val || echo "")
+    if [ -z "$_final_val" ]; then _final_val="0"; fi
+
     if [ "$_final_val" != "$BASELINE_VALUE" ]; then
-        log_err "Bit-for-Bit Verification FAILED: Value is '$_final_val' (Expected: '${BASELINE_VALUE}')."
+        log_err "Verification FAILED: Parameter value is '$_final_val' (Expected: '${BASELINE_VALUE}')."
         return 1
     fi
 
     if [ -f "$TRIAL_STATE_FILE" ]; then
-        log_err "State verification failed: State file still present at $TRIAL_STATE_FILE"
+        log_err "Verification FAILED: State file still present at $TRIAL_STATE_FILE"
         return 1
     fi
 
-    log_success "Bit-for-Bit Verification PASSED: Parameter accurately restored to ${BASELINE_VALUE}."
+    log_success "Post-Rollback Verification PASSED: Parameter confirmed at verified baseline (${BASELINE_VALUE})."
     return 0
 }
 
@@ -364,18 +447,28 @@ verify_post_rollback() {
 # ------------------------------------------------------------------------------
 run_trial() {
     log_info "================================================================================"
-    log_info "STARTING CONTROLLED TRIAL: ${TARGET_PARAM}"
-    log_info "Baseline: ${BASELINE_VALUE}s (5d) -> Target: ${TRIAL_VALUE}s (24h) | Window: ${MEASURE_SECONDS}s"
+    log_info "STARTING CONTROLLED TRIAL: RPS STEERING ON ETH0"
+    log_info "Target: ${TARGET_REL_PATH} | Baseline: ${BASELINE_VALUE} -> Trial: ${TRIAL_VALUE}"
+    log_info "Duration: ${MEASURE_SECONDS}s | Watchdog Timeout: ${WATCHDOG_TIMEOUT}s"
     log_info "================================================================================"
+
+    if ! acquire_trial_lock; then
+        exit 1
+    fi
 
     # Phase 1: Preflight
     if ! run_preflight_checks; then
         log_err "Trial aborted during Phase 1 preflight checks."
+        release_trial_lock
         exit 1
     fi
 
-    # Phase 2: Snapshot
-    take_snapshot
+    # Phase 2: Snapshot with strict validation
+    if ! take_snapshot; then
+        log_err "Trial aborted: Snapshot validation failed."
+        release_trial_lock
+        exit 1
+    fi
 
     # Phase 3: Watchdog
     arm_watchdog
@@ -383,29 +476,34 @@ run_trial() {
     # Phase 4: Apply
     if ! apply_trial_param; then
         log_err "Apply failed. Rolling back immediately."
-        rollback_baseline
+        rollback_baseline || true
+        release_trial_lock
         exit 1
     fi
 
     # Phase 5: Measurement
     if ! run_measurement_window; then
-        log_err "Measurement window detected instability. Rolling back immediately."
-        rollback_baseline
+        log_err "Instability detected during measurement. Initiating rollback."
+        rollback_baseline || true
+        release_trial_lock
         exit 1
     fi
 
-    # Phase 6: Rollback
+    # Phase 6: Rollback with verified readback
     if ! rollback_baseline; then
-        log_err "Rollback failed! System state unverified."
+        log_err "Rollback failed! System unverified."
+        release_trial_lock
         exit 1
     fi
 
-    # Phase 7: Verification
+    # Phase 7: Post-Rollback Verification
     if ! verify_post_rollback; then
         log_err "Post-rollback verification failed."
+        release_trial_lock
         exit 1
     fi
 
+    release_trial_lock
     log_info "================================================================================"
     log_success "CONTROLLED PERFORMANCE TRIAL COMPLETED SUCCESSFULLY (100% REVERTED)"
     log_info "================================================================================"
@@ -419,22 +517,27 @@ case "$ACTION" in
         run_trial
         ;;
     preflight)
-        run_preflight_checks
+        acquire_trial_lock && run_preflight_checks
+        _rc=$?
+        release_trial_lock
+        exit $_rc
         ;;
     rollback)
-        rollback_baseline
-        verify_post_rollback
+        acquire_trial_lock && rollback_baseline && verify_post_rollback
+        _rc=$?
+        release_trial_lock
+        exit $_rc
         ;;
     status)
-        echo "Parameter: $TARGET_PARAM"
-        echo "Current:   $(read_param || echo '?')"
-        echo "Baseline:  $BASELINE_VALUE"
-        echo "Trial:     $TRIAL_VALUE"
+        echo "Target:   $TARGET_REL_PATH"
+        echo "Current:  $(read_target_val || echo '?')"
+        echo "Baseline: $BASELINE_VALUE"
+        echo "Trial:    $TRIAL_VALUE"
         if [ -f "$TRIAL_STATE_FILE" ]; then
-            echo "State:     TRIAL_IN_PROGRESS"
+            echo "State:    TRIAL_IN_PROGRESS"
             cat "$TRIAL_STATE_FILE" | sed 's/^/  /'
         else
-            echo "State:     BASELINE_CLEAN"
+            echo "State:    BASELINE_CLEAN"
         fi
         ;;
     *)

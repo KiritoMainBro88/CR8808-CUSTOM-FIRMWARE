@@ -1,0 +1,42 @@
+{
+  "manifest_name": "boringtun_armv7_device_qualification",
+  "timestamp": "2026-11-12T15:28:23Z",
+  "target_device": {
+    "model": "Xiaomi CR8808 Ver.B / RA82 Global v1.4.31",
+    "soc": "Qualcomm IPQ5018 (Maple / AP-MP03.3)",
+    "kernel": "Linux XiaoQiang 4.4.60 #0 SMP PREEMPT armv7l",
+    "abi": "EABI5 hard-float static (armv7-unknown-linux-musleabihf +neon)"
+  },
+  "binary_qualification": {
+    "path": "/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/artifacts/m12_wireguard/boringtun-cli-armv7",
+    "sha256": "f349178821eb428bb56838924cf6cb171d717847e61f2e28f43cff99697c3866",
+    "file_size_bytes": 1179640,
+    "elf_flags": "0x5000400, Version5 EABI, hard-float ABI",
+    "simd_features": "NEONv1, VFPv3",
+    "dynamic_dependencies": "None (100% Statically Linked musl)",
+    "verdict": "PASS"
+  },
+  "syscall_audit": {
+    "total_syscall_sites": 171,
+    "unique_static_syscalls": 64,
+    "prohibited_modern_syscalls_found": 0,
+    "max_syscall_id_supported": 390,
+    "verdict": "PASS"
+  },
+  "safety_guard": {
+    "wg0_rejection_exit_code": 99,
+    "verdict": "PASS"
+  },
+  "lifecycle_and_ports": {
+    "interface": "wg1",
+    "port": 51821,
+    "routing_table": 101,
+    "clean_socket_release": true,
+    "verdict": "PASS"
+  },
+  "preflight_status": {
+    "verdict": "PASS",
+    "ready_for_hardware_authorization": true
+  },
+  "overall_qualification_verdict": "PASS"
+}

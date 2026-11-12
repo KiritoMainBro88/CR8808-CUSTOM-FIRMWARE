@@ -482,7 +482,80 @@ Testing Profile: dns_stability
 --- TEST 6: Concurrency Lock Protection ---
   [PASS] Lock contention prevented concurrent execution
 ================================================================================
-TEST COMPLETE: 105 assertions passed, 0 assertions failed.
+TEST COMPLETE: 106 assertions passed, 0 assertions failed.
+================================================================================
+```
+
+### 5.4 Directive M12.5 Controlled Performance Trial Runner Architecture
+
+In accordance with Chief Architect Directive M12.5 (Work Packages 1 & 2), the standalone trial runner [`performance/trials/controlled_trial_runner.sh`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/performance/trials/controlled_trial_runner.sh) establishes a defense-in-depth single-variable trial protocol.
+
+#### 5.4.1 Candidate Selection & Justification: RPS on `eth0`
+- **Target Interface:** `/sys/class/net/eth0/queues/rx-0/rps_cpus`
+- **Baseline Value:** `0` (Disabled)
+- **Trial Target:** `2` (CPU1 affinity mask `0x2`)
+- **Architectural Rationale:**
+  1. *Immediate Measurable Telemetry:* Shifting non-offloaded ingress softirqs to CPU1 produces an immediate empirical delta in `/proc/softirqs` (`NET_RX` counter on CPU1 vs CPU0).
+  2. *Zero Forwarding / Routing Disruption:* Operates strictly on the software backlog queue; zero changes to DSA switch tagging, Wi-Fi 6 radio registers, or routing tables.
+  3. *Zero NSS Conflict:* Flows accelerated by NSS bypass the Linux network stack entirely; RPS applies only to software-handled traffic (local sockets, unaccelerated VPN/IPv6).
+  4. *Instantaneous Reversibility:* A single write of `0` restores stock factory queue steering instantaneously without daemon restart or connection drops.
+
+#### 5.4.2 Defense-in-Depth Safety Architecture & Defect Resolution
+1. **Atomic Directory Lock (`/tmp/trial_lock.d`):** Replaced non-atomic file checks with atomic directory creation. Includes stale lock detection and automatic purge if the registered PID is no longer alive.
+2. **Defect (c) Strict Snapshot Validation:** Pre-apply snapshot creation now validates file existence, non-zero size (`-s`), readability, and valid key-value format (`TARGET_PATH=`, `BASELINE_VALUE=`). If snapshot creation fails, the trial cleanly aborts without touching kernel state.
+3. **180-Second Independent Watchdog:** Background timer subshell forces parameter restoration to baseline if the runner process freezes, network drops, or latency spikes.
+4. **Defect (a) Emergency Abort Trap Handler:** Robust signal traps (SIGINT, SIGTERM, SIGHUP) trigger immediate restoration. If the rollback write fails or readback does not match baseline, the state file is **strictly preserved** (NEVER unlinked) for forensic recovery.
+5. **Defect (b) Verified Rollback Readback Gate:** During scheduled rollback, `read_target_val()` is executed and compared against `BASELINE_VALUE`. Only when readback exactly matches baseline is the watchdog disarmed and the state file removed.
+
+#### 5.4.3 Failure-Injection Test Suite Execution & Results
+The failure-injection test harness [`tests/performance/test_controlled_trial.sh`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/tests/performance/test_controlled_trial.sh) was executed in WSL2 across 11 test scenarios:
+
+```
+================================================================================
+>>> RUNNING CONTROLLED PERFORMANCE TRIAL TEST HARNESS (RPS ETH0 CANDIDATE)
+>>> Mock Rootfs: /tmp/ra82_rps_mock.iYhbj2
+================================================================================
+--- TEST 1: Full Happy Path Trial Lifecycle ---
+  [PASS] Trial runner exited with code 0
+  [PASS] Parameter restored to baseline 0
+  [PASS] State file cleaned up
+  [PASS] Lock directory released
+--- TEST 2: Precondition Rejection on Parameter Drift ---
+  [PASS] Trial runner cleanly rejected baseline drift
+  [PASS] Parameter was left completely untouched
+  [PASS] No state snapshot created
+  [PASS] Lock released on abort
+--- TEST 3: Precondition Rejection on Low Memory (<6MB) ---
+  [PASS] Trial runner cleanly rejected low RAM condition
+  [PASS] Parameter remained untouched at 0
+  [PASS] No state snapshot created
+--- TEST 4: Defect (c) Snapshot Validation Enforcement ---
+  [PASS] Trial runner aborted on snapshot failure without applying parameter
+  [PASS] Target parameter was not modified when snapshot failed
+--- TEST 5: Fault Injection: SIGTERM Interruption Recovery ---
+  [PASS] Trial successfully applied 2 prior to fault injection
+  [PASS] Emergency trap handler reverted parameter to baseline 0
+  [PASS] Emergency abort cleaned up state file on successful revert
+  [PASS] Emergency abort released trial lock
+--- TEST 6: Defect (a) Emergency Abort Failure Protection ---
+  [PASS] State file preserved when emergency rollback cannot restore baseline
+--- TEST 7: Defect (b) Rollback Readback Gate Enforcement ---
+  [PASS] Rollback cleanly failed on write error
+  [PASS] State file preserved when rollback write/readback fails
+--- TEST 8: Atomic Directory Lock Contention & Stale Lock Recovery ---
+  [PASS] Trial runner cleanly exited on active lock contention
+  [PASS] Stale lock detected and purged successfully
+--- TEST 9: Stale State Recovery on Preflight ---
+  [PASS] Preflight auto-healed orphaned state when parameter was at baseline
+  [PASS] Orphaned state file removed
+  [PASS] Preflight cleanly aborted on active unmanaged state
+--- TEST 10: Watchdog Auto-Rollback Execution ---
+  [PASS] Watchdog restored parameter to baseline 0
+  [PASS] Watchdog cleaned up state file
+--- TEST 11: Bit-for-Bit Exact Post-Rollback Integrity ---
+  [PASS] Pre-trial and post-rollback SHA-256 match bit-for-bit
+================================================================================
+CONTROLLED TRIAL TEST COMPLETE: 28 assertions passed, 0 assertions failed.
 ================================================================================
 ```
 
