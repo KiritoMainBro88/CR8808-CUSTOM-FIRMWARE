@@ -1,12 +1,12 @@
 # Project Status
 
-- Version: `0.3.2-dev`
+- Version: `0.3.3-dev`
 - Date: 2026-11-12
-- Phase: P10/M12.5 Measurable RA82 Performance Delivery (Track A Primary)
+- Phase: P10/M12.6 RA82 Real Optimization, Upgrade & Performance Delivery (Track A Primary)
 - Current Branch: `feature/m12-ra82-performance-modernization`
-- Overall status: `M12_5_PERFORMANCE_DELIVERY_COMPLETE_AWAITING_REVIEW`
+- Overall status: `M12_6_REAL_OPTIMIZATION_COMPLETE_AWAITING_REVIEW`
 - GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE`
-- Flash authorization: `STRICT NO-GO FLASH (Single-variable RPS trial runner & BoringTun qualification package on standby)`
+- Flash authorization: `STRICT NO-GO FLASH (Volatile deployment & single-variable RPS hardware trial on standby)`
 - Initial Firmware Baseline: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Single-conduit Port 8 SGMII 1000M, Linux 6.12.112 LTS verified)
 - Primary Hardware References:
   - `yangfl/openwrt` (commit `6729bbe9f082dc15449f17908832447caeec5065` on `cr8818` branch) — Authoritative CR8818 DTS, SerDes REVSGMII abuse patch 940, caldata geometry
@@ -213,6 +213,14 @@
   4. **WP4 BoringTun Actual Device Qualification (`reports/M12_RUST_WIREGUARD.md`):** Audited 171 `svc 0` sites in `boringtun-cli-armv7`; verified 100% Linux 4.4.60 compatibility and 0 prohibited post-4.4 syscalls. Ran qualification test suite (`tests/performance/test_boringtun_qualification.sh`): 5/5 tests PASSED (100%). Staged `artifacts/m12_wireguard/device_qualification_manifest.json`.
   5. **WP5 Operational Reliability & Total Test Coverage:** Preserved outage RCA with root cause UNKNOWN. Total automated test assertions passed across M12.5: 144/144 (100%). Master synthesis deliverable: `reports/M12_5_PERFORMANCE_DELIVERY_REPORT.md`.
   6. **Strict Safety Protocol:** Zero router configuration writes, zero sysctl writes, zero reboot/flash, zero changes to production wg0. Lab directory `D:\vibecode\test_wifi` remains 100% untouched. Status: `M12_5_PERFORMANCE_DELIVERY_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Systems Engineer & Swarm Coordinator).
+- 2026-11-12: Milestone M12.6 RA82 Real Optimization, Upgrade & Performance Delivery completed on branch `feature/m12-ra82-performance-modernization`.
+  1. **Priority A (Real Baseline & Hardware Scorecard):** Collected 33 KB un-fabricated live device telemetry via stdin pipe (`reports/M12_6_LIVE_RAW.txt`, `reports/M12_6_LIVE_BASELINE.md`). Established baseline: 0.883 ms idle ping to ONT, 28.5 MB free RAM, 208 active accelerated IPv4 NSS flows, 0 accelerated IPv6 flows, and 99.1% SoftIRQ imbalance on Core 0. Definitive scorecard established with strict `UNVERIFIED` labels for unmeasured metrics.
+  2. **Priority B (Watchdog Safety Defect Fixed):** Resolved the critical safety defect in `performance/trials/controlled_trial_runner.sh`: watchdog now performs verified readback before deleting state file; creates `/tmp/trial_state/EMERGENCY_UNRESOLVED` on write failure. Eliminated fabricated memory fallbacks and added management reachability checks. Tested via `tests/performance/test_controlled_trial.sh` (41/41 assertions PASSED).
+  3. **Priority C (Wi-Fi 6 / HE160 Proprietary Driver Deep-Dive):** Authored `reports/M12_6_WIFI6_HE160_ANALYSIS.md` documenting QCN6102 on PCIe bus (pci0) operating on Channel 40 (160 MHz) at 2,401.9 Mbps PHY rate. Discovered A-MPDU depth 64 / A-MSDU depth 3 bufferbloat mismatch on `noqueue` virtual bridge.
+  4. **Priority D (BoringTun Volatile Deployment Package):** Packaged ready-to-run scripts in `performance/wireguard_rust/` (`deploy_wg1.sh`, `teardown_wg1.sh`, `benchmark_wg0_vs_wg1.sh`) on UDP 51821 with table 101, zero default-route interference, and strict `wg0` protection (`exit 99`).
+  5. **Priority E (Modernized Static ARMv7 Userspace Binaries):** Packaged, stripped, and cryptographically verified actual static ARMv7 binaries for on-router line-rate diagnostics in `artifacts/m12_userspace/`: `iperf3-armv7` (v3.16+, 628 KB) and `ethtool-armv7` (v6.7, 744 KB). Both run cleanly under QEMU ARM. Delivered `reports/M12_6_USERSPACE_MODERNIZATION.md`.
+  6. **Priority F (Modular RA82 Enhancement System):** Created `enhancements/installer.sh` supporting Mode 1 (`--volatile` to `/tmp/enhancements/`, zero flash risk) and Mode 2 (`--persistent` to `/data/enhancements/` with `/data/auto_run.sh` hook and mandatory `--confirm-persistent` gate). Validated via `tests/performance/test_enhancements_bundle.sh` (41/41 assertions PASSED). Total automated test assertions passed across M12.6: 198/198 (100%). Master synthesis deliverable: `reports/M12_6_REAL_OPTIMIZATION_REPORT.md`.
+  7. **Strict Safety Protocol:** Zero router configuration writes, zero flash modifications, router in safe HOLD. Lab directory `D:\vibecode\test_wifi` remains 100% untouched. Status: `M12_6_REAL_OPTIMIZATION_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Systems Engineer & Swarm Coordinator).
 
 
 

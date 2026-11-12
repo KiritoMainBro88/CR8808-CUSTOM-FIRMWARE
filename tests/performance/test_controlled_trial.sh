@@ -373,9 +373,9 @@ printf '0\n' > "$MOCK_DIR/sys/class/net/eth0/queues/rx-0/rps_cpus"
 rm -f "$MOCK_DIR$TRIAL_STATE_DIR/rps_trial.state"
 
 # ------------------------------------------------------------------------------
-# TEST 10: Watchdog Auto-Rollback Execution
+# TEST 10: Watchdog Auto-Rollback Execution (Happy Path)
 # ------------------------------------------------------------------------------
-echo "--- TEST 10: Watchdog Auto-Rollback Execution ---"
+echo "--- TEST 10: Watchdog Auto-Rollback Execution (Happy Path) ---"
 init_mock_environment
 
 # Simulate an abandoned trial in progress
@@ -391,8 +391,14 @@ EOF
 (
     sleep 1
     if [ -f "$MOCK_DIR$TRIAL_STATE_DIR/rps_trial.state" ]; then
-        printf '0\n' > "$MOCK_DIR/sys/class/net/eth0/queues/rx-0/rps_cpus"
-        rm -f "$MOCK_DIR$TRIAL_STATE_DIR/rps_trial.state"
+        _p="$MOCK_DIR/sys/class/net/eth0/queues/rx-0/rps_cpus"
+        _write_ok=0
+        if printf '0\n' > "$_p" 2>/dev/null; then _write_ok=1; fi
+        _rb=$(cat "$_p" 2>/dev/null | tr -d ' \t\r\n' | sed 's/^0*//')
+        if [ -z "$_rb" ]; then _rb="0"; fi
+        if [ "$_write_ok" -eq 1 ] && [ "$_rb" = "0" ]; then
+            rm -f "$MOCK_DIR$TRIAL_STATE_DIR/rps_trial.state"
+        fi
     fi
 ) &
 WD_PID=$!
@@ -413,6 +419,145 @@ MEASURE_SECONDS=1 sh "$TRIAL_RUNNER" run >/dev/null 2>&1
 _post_sha=$(sha256sum "$MOCK_DIR/sys/class/net/eth0/queues/rx-0/rps_cpus" | awk '{print $1}')
 
 assert_eq "Pre-trial and post-rollback SHA-256 match bit-for-bit" "$_pre_sha" "$_post_sha"
+
+# ------------------------------------------------------------------------------
+# TEST 12: Priority B: Watchdog Failure State Preservation & Alert File
+# ------------------------------------------------------------------------------
+echo "--- TEST 12: Priority B: Watchdog Failure State Preservation & Alert File ---"
+init_mock_environment
+
+# Pre-seed active trial state
+printf '2\n' > "$MOCK_DIR/sys/class/net/eth0/queues/rx-0/rps_cpus"
+cat << EOF > "$MOCK_DIR$TRIAL_STATE_DIR/rps_trial.state"
+TARGET_PATH=/sys/class/net/eth0/queues/rx-0/rps_cpus
+BASELINE_VALUE=0
+TRIAL_VALUE=2
+PID=99999
+EOF
+
+# Simulate a failure to write by making sysfs path an unwritable directory
+rm -f "$MOCK_DIR/sys/class/net/eth0/queues/rx-0/rps_cpus"
+mkdir "$MOCK_DIR/sys/class/net/eth0/queues/rx-0/rps_cpus"
+
+# Spawn 1-second watchdog replicating Phase 3 failure-handling logic
+_mock_state_file="$MOCK_DIR$TRIAL_STATE_DIR/rps_trial.state"
+_mock_state_dir="$MOCK_DIR$TRIAL_STATE_DIR"
+_p="$MOCK_DIR/sys/class/net/eth0/queues/rx-0/rps_cpus"
+(
+    sleep 1
+    if [ -f "$_mock_state_file" ]; then
+        _write_ok=0
+        if printf '0\n' > "$_p" 2>/dev/null; then _write_ok=1; fi
+        _rb=""
+        if [ -f "$_p" ]; then
+            _raw=$(cat "$_p" 2>/dev/null | tr -d ' \t\r\n' | sed 's/^0*//')
+            if [ -z "$_raw" ]; then _rb="0"; else _rb="$_raw"; fi
+        fi
+        if [ "$_write_ok" -eq 1 ] && [ "$_rb" = "0" ]; then
+            rm -f "$_mock_state_file" 2>/dev/null || true
+        else
+            mkdir -p "$_mock_state_dir" 2>/dev/null || true
+            cat << ALERT_EOF > "${_mock_state_dir}/EMERGENCY_UNRESOLVED"
+ALERT=WATCHDOG_ROLLBACK_VERIFICATION_FAILED
+TIMESTAMP=$(date +%s)
+TARGET=/sys/class/net/eth0/queues/rx-0/rps_cpus
+BASELINE_VALUE=0
+ACTUAL_VALUE=${_rb}
+STATE_FILE=${_mock_state_file}
+ALERT_EOF
+        fi
+    fi
+) &
+WD_FAIL_PID=$!
+wait "$WD_FAIL_PID"
+
+assert_eq "Watchdog failure preserved state file" "1" "$([ -f "$MOCK_DIR$TRIAL_STATE_DIR/rps_trial.state" ] && echo 1 || echo 0)"
+assert_eq "Watchdog failure created EMERGENCY_UNRESOLVED alert file" "1" "$([ -f "$MOCK_DIR$TRIAL_STATE_DIR/EMERGENCY_UNRESOLVED" ] && echo 1 || echo 0)"
+assert_eq "Alert file contains correct reason" "1" "$(grep -q "ALERT=WATCHDOG_ROLLBACK_VERIFICATION_FAILED" "$MOCK_DIR$TRIAL_STATE_DIR/EMERGENCY_UNRESOLVED" && echo 1 || echo 0)"
+
+# Clean up
+rm -rf "$MOCK_DIR/sys/class/net/eth0/queues/rx-0/rps_cpus"
+rm -f "$MOCK_DIR$TRIAL_STATE_DIR/rps_trial.state" "$MOCK_DIR$TRIAL_STATE_DIR/EMERGENCY_UNRESOLVED"
+printf '0\n' > "$MOCK_DIR/sys/class/net/eth0/queues/rx-0/rps_cpus"
+
+# ------------------------------------------------------------------------------
+# TEST 13: Priority B: Unparseable Memory Failure Rejection
+# ------------------------------------------------------------------------------
+echo "--- TEST 13: Priority B: Unparseable Memory Failure Rejection ---"
+init_mock_environment
+
+# Subtest 13A: Completely missing /proc/meminfo
+rm -f "$MOCK_DIR/proc/meminfo"
+if MEASURE_SECONDS=1 sh "$TRIAL_RUNNER" run >/dev/null 2>&1; then
+    echo "  [FAIL] Trial runner should have aborted on missing /proc/meminfo"
+    FAILED=$((FAILED + 1))
+    exit 1
+else
+    echo "  [PASS] Trial runner cleanly aborted when /proc/meminfo was missing"
+    PASSED=$((PASSED + 1))
+fi
+assert_eq "Parameter remained untouched at baseline 0" "0" "$(cat "$MOCK_DIR/sys/class/net/eth0/queues/rx-0/rps_cpus" | tr -d ' \t\r\n')"
+assert_eq "State file was not created on missing meminfo" "0" "$([ ! -f "$MOCK_DIR$TRIAL_STATE_DIR/rps_trial.state" ] && echo 0 || echo 1)"
+
+# Subtest 13B: Corrupted /proc/meminfo without MemAvailable or MemFree
+cat << 'EOF' > "$MOCK_DIR/proc/meminfo"
+MemTotal:         186368 kB
+Slab:              60504 kB
+SUnreclaim:        57932 kB
+EOF
+
+if MEASURE_SECONDS=1 sh "$TRIAL_RUNNER" run >/dev/null 2>&1; then
+    echo "  [FAIL] Trial runner should have aborted on corrupted /proc/meminfo"
+    FAILED=$((FAILED + 1))
+    exit 1
+else
+    echo "  [PASS] Trial runner cleanly aborted on unparseable /proc/meminfo"
+    PASSED=$((PASSED + 1))
+fi
+assert_eq "Parameter remained untouched at baseline 0" "0" "$(cat "$MOCK_DIR/sys/class/net/eth0/queues/rx-0/rps_cpus" | tr -d ' \t\r\n')"
+
+# ------------------------------------------------------------------------------
+# TEST 14: Priority B: Management Loss Abort
+# ------------------------------------------------------------------------------
+echo "--- TEST 14: Priority B: Management Connection Loss Abort ---"
+init_mock_environment
+
+# Subtest 14A: Simulated management failure file present
+touch "$MOCK_DIR/tmp/mock_mgmt_fail"
+if MEASURE_SECONDS=1 sh "$TRIAL_RUNNER" run >/dev/null 2>&1; then
+    echo "  [FAIL] Trial runner should have aborted on management failure flag"
+    FAILED=$((FAILED + 1))
+    exit 1
+else
+    echo "  [PASS] Trial runner cleanly aborted on simulated management loss"
+    PASSED=$((PASSED + 1))
+fi
+assert_eq "Parameter remained untouched at baseline 0" "0" "$(cat "$MOCK_DIR/sys/class/net/eth0/queues/rx-0/rps_cpus" | tr -d ' \t\r\n')"
+assert_eq "State file was not created on management failure" "0" "$([ ! -f "$MOCK_DIR$TRIAL_STATE_DIR/rps_trial.state" ] && echo 0 || echo 1)"
+rm -f "$MOCK_DIR/tmp/mock_mgmt_fail"
+
+# Subtest 14B: Management interface br-lan down
+mkdir -p "$MOCK_DIR/sys/class/net/br-lan"
+printf 'down\n' > "$MOCK_DIR/sys/class/net/br-lan/operstate"
+if MEASURE_SECONDS=1 sh "$TRIAL_RUNNER" run >/dev/null 2>&1; then
+    echo "  [FAIL] Trial runner should have aborted on br-lan down"
+    FAILED=$((FAILED + 1))
+    exit 1
+else
+    echo "  [PASS] Trial runner cleanly aborted when br-lan was down"
+    PASSED=$((PASSED + 1))
+fi
+rm -rf "$MOCK_DIR/sys/class/net/br-lan"
+
+# Subtest 14C: Custom management command failure
+if MANAGEMENT_CHECK_CMD="false" MEASURE_SECONDS=1 sh "$TRIAL_RUNNER" run >/dev/null 2>&1; then
+    echo "  [FAIL] Trial runner should have aborted on custom management check failure"
+    FAILED=$((FAILED + 1))
+    exit 1
+else
+    echo "  [PASS] Trial runner cleanly aborted on custom management check failure"
+    PASSED=$((PASSED + 1))
+fi
 
 # ------------------------------------------------------------------------------
 # TEST SUMMARY

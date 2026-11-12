@@ -1,6 +1,6 @@
 {
   "manifest_name": "boringtun_armv7_device_qualification",
-  "timestamp": "2026-11-12T15:28:23Z",
+  "timestamp": "2026-11-12T16:18:16Z",
   "target_device": {
     "model": "Xiaomi CR8808 Ver.B / RA82 Global v1.4.31",
     "soc": "Qualcomm IPQ5018 (Maple / AP-MP03.3)",

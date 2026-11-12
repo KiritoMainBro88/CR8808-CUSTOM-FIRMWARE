@@ -125,12 +125,12 @@ get_mem_available_kb() {
             return 0
         fi
         _free=$(grep "^MemFree:" "$_meminfo" 2>/dev/null | awk '{print $2}')
-        if [ -n "$_free" ]; then
+        if [ -n "$_free" ] && [ "$_free" -gt 0 ] 2>/dev/null; then
             echo "$_free"
             return 0
         fi
     fi
-    echo "10240"
+    return 1
 }
 
 # Read NET_RX softirqs for CPU0 and CPU1
@@ -141,6 +141,67 @@ get_net_rx_softirqs() {
     else
         echo "0 0"
     fi
+}
+
+# Management connection reachability check
+check_management_connection() {
+    log_info "Verifying management connection reachability..."
+
+    # Custom command override (e.g. for test harnesses or custom health scripts)
+    if [ -n "${MANAGEMENT_CHECK_CMD:-}" ]; then
+        if ! eval "$MANAGEMENT_CHECK_CMD" >/dev/null 2>&1; then
+            log_err "Precondition Failed: Custom management check failed (${MANAGEMENT_CHECK_CMD})."
+            return 1
+        fi
+        log_success "Management connection verified via custom check."
+        return 0
+    fi
+
+    # In MOCK_ROOT environment, simulate management reachability
+    if [ -n "$MOCK_ROOT" ]; then
+        _mock_mgmt_fail="${MOCK_ROOT}/tmp/mock_mgmt_fail"
+        if [ -f "$_mock_mgmt_fail" ]; then
+            log_err "Precondition Failed: Simulated management connection failure detected."
+            return 1
+        fi
+        _mock_br_lan="${MOCK_ROOT}/sys/class/net/br-lan"
+        if [ -d "$_mock_br_lan" ] && [ -f "$_mock_br_lan/operstate" ]; then
+            _state=$(cat "$_mock_br_lan/operstate" 2>/dev/null | tr -d ' \t\r\n')
+            if [ "$_state" = "down" ]; then
+                log_err "Precondition Failed: Local management interface br-lan is DOWN."
+                return 1
+            fi
+        fi
+        log_success "Management connection verified (mock environment healthy)."
+        return 0
+    fi
+
+    # Live hardware verification
+    # 1. Check if br-lan interface exists and is up
+    if [ -d "/sys/class/net/br-lan" ]; then
+        _oper=$(cat /sys/class/net/br-lan/operstate 2>/dev/null || echo "unknown")
+        if [ "$_oper" = "down" ]; then
+            log_err "Precondition Failed: Management interface br-lan is DOWN."
+            return 1
+        fi
+    fi
+
+    # 2. Check if Dropbear SSH daemon is active and listening
+    if ! pidof dropbear >/dev/null 2>&1 && ! pgrep dropbear >/dev/null 2>&1; then
+        log_err "Precondition Failed: Management daemon (dropbear) is not running."
+        return 1
+    fi
+
+    # 3. If MANAGEMENT_IP is provided, verify ICMP reachability
+    if [ -n "${MANAGEMENT_IP:-}" ]; then
+        if ! ping -c 1 -W 2 "$MANAGEMENT_IP" >/dev/null 2>&1; then
+            log_err "Precondition Failed: Management IP ${MANAGEMENT_IP} is unreachable."
+            return 1
+        fi
+    fi
+
+    log_success "Management connection verified."
+    return 0
 }
 
 # ------------------------------------------------------------------------------
@@ -226,8 +287,17 @@ run_preflight_checks() {
         fi
     fi
 
-    # Check 1: Free RAM Headroom
-    _avail_kb=$(get_mem_available_kb)
+    # Check 0: Management Connection Reachability
+    if ! check_management_connection; then
+        log_err "Precondition Failed: Management reachability verification failed. Aborting trial."
+        return 1
+    fi
+
+    # Check 1: Free RAM Headroom (without fabricated fallback)
+    if ! _avail_kb=$(get_mem_available_kb); then
+        log_err "Precondition Failed: Unable to parse available memory from /proc/meminfo (no valid MemAvailable/MemFree)."
+        return 1
+    fi
     log_info "Available RAM: ${_avail_kb} kB (Minimum required: ${MIN_FREE_RAM_KB} kB)"
     if [ "$_avail_kb" -lt "$MIN_FREE_RAM_KB" ] 2>/dev/null; then
         log_err "Precondition Failed: Available RAM (${_avail_kb} kB) is below safe threshold (${MIN_FREE_RAM_KB} kB)."
@@ -303,6 +373,7 @@ arm_watchdog() {
     _base_val="$BASELINE_VALUE"
     _state_file="$TRIAL_STATE_FILE"
     _mock_root="$MOCK_ROOT"
+    _state_dir="$TRIAL_STATE_DIR"
 
     # Background watchdog subshell
     (
@@ -310,9 +381,36 @@ arm_watchdog() {
         if [ -f "$_state_file" ]; then
             echo "[WATCHDOG] 180s timeout expired! Forcing emergency rollback of ${_target_rel} to ${_base_val}" >&2
             _p="${_mock_root}${_target_rel}"
-            printf '%s\n' "$_base_val" > "$_p" 2>/dev/null || true
-            rm -f "$_state_file" 2>/dev/null || true
-            logger -t CONTROLLED_TRIAL "WATCHDOG FIRED: Emergency rollback executed" 2>/dev/null || true
+            _write_ok=0
+            if printf '%s\n' "$_base_val" > "$_p" 2>/dev/null; then
+                _write_ok=1
+            fi
+
+            _rb_val=""
+            if [ -f "$_p" ]; then
+                _raw=$(cat "$_p" 2>/dev/null | tr -d ' \t\r\n' | sed 's/^0*//')
+                if [ -z "$_raw" ]; then _rb_val="0"; else _rb_val="$_raw"; fi
+            fi
+
+            if [ "$_write_ok" -eq 1 ] && [ "$_rb_val" = "$_base_val" ]; then
+                echo "[WATCHDOG] Verified rollback succeeded: ${_target_rel} restored to ${_base_val}" >&2
+                rm -f "$_state_file" 2>/dev/null || true
+                logger -t CONTROLLED_TRIAL "WATCHDOG FIRED: Verified emergency rollback executed" 2>/dev/null || true
+            else
+                echo "[WATCHDOG] CRITICAL FAILURE: Rollback write or readback verification failed!" >&2
+                echo "[WATCHDOG] State file preserved at ${_state_file}. Generating EMERGENCY_UNRESOLVED alert." >&2
+                mkdir -p "$_state_dir" 2>/dev/null || true
+                _alert_file="${_state_dir}/EMERGENCY_UNRESOLVED"
+                cat << ALERT_EOF > "$_alert_file"
+ALERT=WATCHDOG_ROLLBACK_VERIFICATION_FAILED
+TIMESTAMP=$(date +%s)
+TARGET=${_target_rel}
+BASELINE_VALUE=${_base_val}
+ACTUAL_VALUE=${_rb_val}
+STATE_FILE=${_state_file}
+ALERT_EOF
+                logger -s -t CONTROLLED_TRIAL "CRITICAL: Watchdog rollback verification failed! State preserved in ${_state_file}" 2>/dev/null || true
+            fi
         fi
     ) &
     WATCHDOG_PID=$!
@@ -356,7 +454,7 @@ run_measurement_window() {
     _start_rx=$(get_net_rx_softirqs)
     _rx0_start=$(echo "$_start_rx" | awk '{print $1}')
     _rx1_start=$(echo "$_start_rx" | awk '{print $2}')
-    _start_mem=$(get_mem_available_kb)
+    _start_mem=$(get_mem_available_kb || echo "0")
 
     log_info "Initial Telemetry: NET_RX [CPU0: $_rx0_start, CPU1: $_rx1_start] | MemAvailable: ${_start_mem} kB"
 
@@ -372,7 +470,7 @@ run_measurement_window() {
         _cur_rx=$(get_net_rx_softirqs)
         _rx0_cur=$(echo "$_cur_rx" | awk '{print $1}')
         _rx1_cur=$(echo "$_cur_rx" | awk '{print $2}')
-        _cur_mem=$(get_mem_available_kb)
+        _cur_mem=$(get_mem_available_kb || echo "0")
         log_info "  [T+${_elapsed}s] NET_RX: [CPU0: $_rx0_cur, CPU1: $_rx1_cur] | Available RAM: ${_cur_mem} kB"
 
         # Check for catastrophic RAM drop
@@ -385,7 +483,7 @@ run_measurement_window() {
     _end_rx=$(get_net_rx_softirqs)
     _rx0_end=$(echo "$_end_rx" | awk '{print $1}')
     _rx1_end=$(echo "$_end_rx" | awk '{print $2}')
-    _end_mem=$(get_mem_available_kb)
+    _end_mem=$(get_mem_available_kb || echo "0")
 
     _d0=$((_rx0_end - _rx0_start)) 2>/dev/null || _d0="N/A"
     _d1=$((_rx1_end - _rx1_start)) 2>/dev/null || _d1="N/A"

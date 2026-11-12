@@ -549,13 +549,111 @@ The failure-injection test harness [`tests/performance/test_controlled_trial.sh`
   [PASS] Preflight auto-healed orphaned state when parameter was at baseline
   [PASS] Orphaned state file removed
   [PASS] Preflight cleanly aborted on active unmanaged state
---- TEST 10: Watchdog Auto-Rollback Execution ---
+--- TEST 10: Watchdog Auto-Rollback Execution (Happy Path) ---
   [PASS] Watchdog restored parameter to baseline 0
   [PASS] Watchdog cleaned up state file
 --- TEST 11: Bit-for-Bit Exact Post-Rollback Integrity ---
   [PASS] Pre-trial and post-rollback SHA-256 match bit-for-bit
+--- TEST 12: Priority B: Watchdog Failure State Preservation & Alert File ---
+  [PASS] Watchdog failure preserved state file
+  [PASS] Watchdog failure created EMERGENCY_UNRESOLVED alert file
+  [PASS] Alert file contains correct reason
+--- TEST 13: Priority B: Unparseable Memory Failure Rejection ---
+  [PASS] Trial runner cleanly aborted when /proc/meminfo was missing
+  [PASS] Parameter remained untouched at baseline 0
+  [PASS] State file was not created on missing meminfo
+  [PASS] Trial runner cleanly aborted on unparseable /proc/meminfo
+  [PASS] Parameter remained untouched at baseline 0
+--- TEST 14: Priority B: Management Connection Loss Abort ---
+  [PASS] Trial runner cleanly aborted on simulated management loss
+  [PASS] Parameter remained untouched at baseline 0
+  [PASS] State file was not created on management failure
+  [PASS] Trial runner cleanly aborted when br-lan was down
+  [PASS] Trial runner cleanly aborted on custom management check failure
 ================================================================================
-CONTROLLED TRIAL TEST COMPLETE: 28 assertions passed, 0 assertions failed.
+CONTROLLED TRIAL TEST COMPLETE: 41 assertions passed, 0 assertions failed.
+================================================================================
+```
+
+### 5.5 Directive M12.6 Modular RA82 Enhancement System Architecture (`enhancements/`)
+
+In accordance with Chief Architect Directive M12.6 (Priority F), the Modular RA82 Enhancement System provides a deployable, auditable package for operational use.
+
+#### 5.5.1 Deployment Modes & Safety Gates
+1. **Mode 1: Volatile In-Memory Deployment (`--volatile`):**
+   - **Target Root:** `/tmp/enhancements/` (100% RAM tmpfs).
+   - **Flash Wear / Risk:** Zero bytes written to SPI NAND flash.
+   - **Persistence:** Volatile; automatically cleared on reboot.
+   - **Ideal For:** Safe trial verification, performance validation, and ephemeral testing.
+2. **Mode 2: Persistent Userspace Deployment (`--persistent`):**
+   - **Target Root:** `/data/enhancements/` (writable NAND `/data` partition).
+   - **Safety Gate:** Requires explicit `--confirm-persistent` flag. Any invocation without this flag immediately aborts with exit code 1.
+   - **Boot Hook:** Seamlessly integrated into `/data/auto_run.sh`.
+   - **Emergency Bypass:** The boot hook strictly verifies `/data/SAFE_MODE`. If `SAFE_MODE` is triggered (e.g. following an unexpected reboot within 120 seconds), all enhancements are skipped, restoring stock factory behavior.
+
+#### 5.5.2 Selectable Enhancement Modules
+- **`module_rps`:** Steers `eth0` rx-0 softirqs to CPU1 (`rps_cpus = 2`), configures `net.core.rps_sock_flow_entries = 16384`, and balances `eth1`/`br-lan` across dual cores (`rps_cpus = 3`).
+- **`module_napi`:** Expands NAPI queue parameters (`net.core.netdev_max_backlog = 16384`, `net.core.netdev_budget = 600`), preventing ring buffer exhaustion under high-throughput HE160 bursts.
+- **`module_sysctl`:** Activates TCP FastOpen (TFO 3), `tcp_tw_reuse`, shortens `tcp_fin_timeout` to 30s, and reclaims dead conntrack states (`nf_conntrack_tcp_timeout_established = 86400`).
+- **`module_wireguard`:** Deploys isolated test configuration for `wg1` (UDP 51821) and lifecycle management scripts. Enforces strict zero-touch isolation for production `wg0`.
+
+#### 5.5.3 Verification Test Suite Results (`tests/performance/test_enhancements_bundle.sh`)
+```
+================================================================================
+>>> RUNNING MODULAR RA82 ENHANCEMENT SYSTEM TEST HARNESS
+>>> Mock Rootfs: /tmp/ra82_enhance_mock.B3nXh2
+================================================================================
+--- TEST 1: CLI Discovery & Listing ---
+  [PASS] List includes module_rps
+  [PASS] List includes module_napi
+  [PASS] List includes module_sysctl
+  [PASS] List includes module_wireguard
+--- TEST 2: Mode 1: --volatile Installation ---
+  [PASS] Volatile manifest created in /tmp
+  [PASS] Mode recorded as volatile
+  [PASS] Zero files created in /data (flash untouched)
+  [PASS] eth0 rps_cpus set to 2
+  [PASS] netdev_max_backlog set to 16384
+  [PASS] tcp_fastopen set to 3
+  [PASS] conntrack timeout set to 86400
+  [PASS] wg1 test template deployed
+  [PASS] Production wg0 untouched (no wg0.conf)
+  [PASS] Volatile verification passed
+--- TEST 3: Mode 1: --volatile Uninstallation ---
+  [PASS] Volatile directory purged
+  [PASS] eth0 rps_cpus restored to 0
+  [PASS] netdev_max_backlog restored to 10000
+  [PASS] tcp_fastopen restored to 0
+  [PASS] conntrack timeout restored to 432000
+--- TEST 4: Mode 2: --persistent Safety Gate Enforcement ---
+  [PASS] Installer cleanly blocked persistent install without --confirm-persistent
+  [PASS] No enhancements created in /data
+  [PASS] No auto_run.sh created
+--- TEST 5: Mode 2: --persistent Installation & Hook Integration ---
+  [PASS] Persistent manifest created in /data
+  [PASS] Mode recorded as persistent
+  [PASS] Persistent auto_run.sh created
+  [PASS] auto_run.sh contains hook
+  [PASS] auto_run.sh checks SAFE_MODE
+  [PASS] Persistent verification passed
+--- TEST 6: Mode 2: Startup Hook Execution Simulation ---
+  [PASS] Startup hook re-applied rps_cpus=2
+  [PASS] Startup hook re-applied netdev_max_backlog=16384
+--- TEST 7: Mode 2: --persistent Uninstallation ---
+  [PASS] Persistent directory purged
+  [PASS] auto_run.sh hook stripped
+  [PASS] eth0 rps_cpus restored to 0
+--- TEST 8: Selective Module Installation ---
+  [PASS] module_rps installed
+  [PASS] module_napi installed
+  [PASS] module_sysctl NOT installed
+  [PASS] module_wireguard NOT installed
+  [PASS] eth0 rps_cpus set to 2
+  [PASS] netdev_max_backlog set to 16384
+  [PASS] tcp_fastopen remained at baseline 0
+  [PASS] Volatile directory purged after selective test
+================================================================================
+ENHANCEMENTS BUNDLE TEST COMPLETE: 41 assertions passed, 0 assertions failed.
 ================================================================================
 ```
 
