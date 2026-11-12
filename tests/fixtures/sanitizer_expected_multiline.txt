@@ -1,0 +1,73 @@
+# Raw Router Audit Output Simulation (Multiline Text)
+Hardware        : Qualcomm IPQ5018
+Revision        : 0000
+Serial		: [REDACTED_SERIAL]
+
+eth0      Link encap:Ethernet  HWaddr [REDACTED_MAC]
+          inet addr:[REDACTED_WAN_IP]  Bcast:[REDACTED_WAN_IP]  Mask:255.255.255.0
+          inet6 addr: [REDACTED_IPV6_LL] Scope:Link
+          inet6 addr: [REDACTED_IPV6_GUA] Scope:Global
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+
+eth1      Link encap:Ethernet  HWaddr [REDACTED_MAC]
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+
+# Diverse IPv6 Formats:
+# GUA 3xxx & 2xxx prefix (expanded, compressed, CIDR, trailing ::)
+[REDACTED_IPV6_GUA]
+[REDACTED_IPV6_GUA]
+[REDACTED_IPV6_GUA]
+[REDACTED_IPV6_GUA]
+# Chief Architect M11.1.0.5 Reproduction Edge Cases
+[REDACTED_IPV6_EMBEDDED]
+[REDACTED_IPV6_GUA]
+[REDACTED_IPV6_MAPPED]
+[REDACTED_IPV6_MAPPED]
+[REDACTED_IPV6_MC]
+[REDACTED_IPV6_MC]
+[REDACTED_IPV6_EMBEDDED]
+# ULA [REDACTED_IPV6_ULA] (fcxx and fdxx, compressed, trailing ::)
+[REDACTED_IPV6_ULA]
+[REDACTED_IPV6_ULA]
+[REDACTED_IPV6_ULA]
+[REDACTED_IPV6_ULA]
+# Link-Local [REDACTED_IPV6_LL] (fe80 and fe90, trailing ::, CIDR, Zone ID)
+[REDACTED_IPV6_LL]
+[REDACTED_IPV6_LL]
+[REDACTED_IPV6_LL]
+[REDACTED_IPV6_LL]
+[REDACTED_IPV6_LL]
+
+# Diverse Public IPv4 Addresses
+Public DNS 1: [REDACTED_PUBLIC_IP]
+Public DNS 2: [REDACTED_PUBLIC_IP]
+Server IP A: [REDACTED_PUBLIC_IP]
+Server IP B: [REDACTED_PUBLIC_IP]
+Documentation IP: [REDACTED_PUBLIC_IP]
+
+# Preserved Netmasks (must remain exact values)
+Netmask Host: 255.255.255.255
+Netmask Subnet: 255.255.255.128
+Netmask Class C: 255.255.255.0
+
+# Hex Socket Tables:
+# /proc/net/tcp6 format
+   0: 00000000000000000000000000000000:DE09 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 1393 1 0000000000000000 100 0 0 10 0
+   1: [REDACTED_HEX_IPV6]:DE09 [REDACTED_HEX_IPV6]:C350 01 00000000:00000000 00:00000000 00000000     0        0 1393 1 0000000000000000 100 0 0 10 0
+
+# /proc/net/tcp format
+   0: 00000000:DE09 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 1393 1 0000000000000000 100 0 0 10 0
+   1: [REDACTED_HEX_IPV4]:DE09 [REDACTED_HEX_IPV4]:C350 01 00000000:00000000 00:00000000 00000000     0        0 1393 1 0000000000000000 100 0 0 10 0
+   2: 011FA8C0:0035 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 3139 1 0000000000000000 100 0 0 10 0
+
+wl0       IEEE 802.11ax  ESSID:"[REDACTED_SSID]"  Nickname:""
+          Mode:Master  Frequency:5.2 GHz  Access Point: [REDACTED_MAC]
+          Bit Rate:2.4019 Gb/s   Tx-Power:23 dBm
+
+wireless.@wifi-iface[0].ssid='[REDACTED_SSID]'
+wireless.@wifi-iface[0].key='[REDACTED_WIFI_KEY]'
+wireless.@wifi-iface[0].sae_password='[REDACTED_WIFI_KEY]'
+
+# WireGuard Process Telemetry
+1420 root      1420 S    /data/wg_server -srvkey [REDACTED_WG_KEY] -srvkey [REDACTED_WG_KEY] -port 51820
+wg set wg0 private-key [REDACTED_WG_KEY] peer abc= preshared-key [REDACTED_WG_KEY]

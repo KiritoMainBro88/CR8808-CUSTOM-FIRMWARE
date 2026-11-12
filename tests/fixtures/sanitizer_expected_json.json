@@ -1,0 +1,53 @@
+{
+  "system": {
+    "model": "Xiaomi CR8808",
+    "serial": "[REDACTED_SERIAL]",
+    "sn": "[REDACTED_SERIAL]",
+    "mac": "[REDACTED_MAC]"
+  },
+  "network": {
+    "wan": {
+      "proto": "dhcp",
+      "ip": "[REDACTED_WAN_IP]",
+      "gateway": "[REDACTED_WAN_IP]",
+      "public_dns_1": "[REDACTED_PUBLIC_IP]",
+      "public_dns_2": "[REDACTED_PUBLIC_IP]",
+      "server_ip_1": "[REDACTED_PUBLIC_IP]",
+      "server_ip_2": "[REDACTED_PUBLIC_IP]",
+      "ipv6_gua_2xxx": "[REDACTED_IPV6_GUA]",
+      "ipv6_gua_3xxx": "[REDACTED_IPV6_GUA]",
+      "ipv6_gua_db8": "[REDACTED_IPV6_GUA]",
+      "ipv6_gua_cidr": "[REDACTED_IPV6_GUA]",
+      "ipv6_embedded_ipv4": "[REDACTED_IPV6_EMBEDDED]",
+      "ipv6_hex_suffix": "[REDACTED_IPV6_GUA]",
+      "ipv6_mapped_hex": "[REDACTED_IPV6_MAPPED]",
+      "ipv6_mapped_dotted": "[REDACTED_IPV6_MAPPED]",
+      "ipv6_multicast_nodes": "[REDACTED_IPV6_MC]",
+      "ipv6_multicast_solicited": "[REDACTED_IPV6_MC]",
+      "ipv6_nat64": "[REDACTED_IPV6_EMBEDDED]",
+      "ipv6_ula_fc": "[REDACTED_IPV6_ULA]",
+      "ipv6_ula_fd": "[REDACTED_IPV6_ULA]",
+      "ipv6_ula_short_fc": "[REDACTED_IPV6_ULA]",
+      "ipv6_ula_short_fd": "[REDACTED_IPV6_ULA]",
+      "ipv6_ll_fe80": "[REDACTED_IPV6_LL]",
+      "ipv6_ll_fe90": "[REDACTED_IPV6_LL]",
+      "ipv6_ll_short": "[REDACTED_IPV6_LL]",
+      "ipv6_ll_cidr": "[REDACTED_IPV6_LL]",
+      "ipv6_ll_zone": "[REDACTED_IPV6_LL]",
+      "mask_host": "255.255.255.255",
+      "mask_subnet": "255.255.255.128",
+      "mask_class_c": "255.255.255.0"
+    }
+  },
+  "wireless": {
+    "ssid": "[REDACTED_SSID]",
+    "bssid": "[REDACTED_MAC]",
+    "key": "[REDACTED_WIFI_KEY]",
+    "sae_password": "[REDACTED_WIFI_KEY]"
+  },
+  "vpn": {
+    "srvkey": "[REDACTED_WG_KEY]",
+    "clientkey": "[REDACTED_WG_KEY]",
+    "private_key": "[REDACTED_WG_KEY]"
+  }
+}

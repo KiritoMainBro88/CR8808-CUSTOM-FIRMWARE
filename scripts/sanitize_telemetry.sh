@@ -44,12 +44,17 @@ sed -E \
   -e 's/__PRESERVE_HEX4_LOOPBACK__/0100007F/g' \
   -e 's/__PRESERVE_HEX4_LAN__/011FA8C0/g' \
   \
-  `# 8. IPv6 Addresses: GUA (2000::/3: 2xxx and 3xxx, expanded, compressed ending in ::, CIDR, Zone ID)` \
-  -e 's/\b([23][0-9a-fA-F]{1,3})((:[0-9a-fA-F]{1,4})+::?|::[0-9a-fA-F:]*|(:[0-9a-fA-F]{1,4}){1,7})([0-9a-fA-F]{1,4})?(\/[0-9]{1,3})?(%[a-zA-Z0-9_-]+)?/[REDACTED_IPV6_GUA]/g' \
-  `# IPv6 ULA (fc00::/7: fcxx and fdxx, expanded, compressed ending in ::, CIDR, Zone ID)` \
-  -e 's/\b(f[cdCD][0-9a-fA-F]{0,2})((:[0-9a-fA-F]{1,4})+::?|::[0-9a-fA-F:]*|(:[0-9a-fA-F]{1,4}){1,7})([0-9a-fA-F]{1,4})?(\/[0-9]{1,3})?(%[a-zA-Z0-9_-]+)?/[REDACTED_IPV6_ULA]/g' \
-  `# IPv6 Link-Local (fe80::/10: fe80 to febf, expanded, compressed ending in ::, CIDR, Zone ID)` \
-  -e 's/\b(fe[89abAB][0-9a-fA-F]{0,1})((:[0-9a-fA-F]{1,4})+::?|::[0-9a-fA-F:]*|(:[0-9a-fA-F]{1,4}){1,7})([0-9a-fA-F]{1,4})?(\/[0-9]{1,3})?(%[a-zA-Z0-9_-]+)?/[REDACTED_IPV6_LL]/g' \
+  `# 8. IPv6 Mapped & Embedded IPv4 (::ffff:x.x.x.x, ::ffff:hhhh:hhhh, and 2001:db8::x.x.x.x)` \
+  -e 's/(::ffff(:0{1,4})?:(([0-9]{1,3}\.){3}[0-9]{1,3}|[0-9a-fA-F]{1,4}:[0-9a-fA-F]{1,4}))(\/[0-9]{1,3})?(%[a-zA-Z0-9_-]+)?/[REDACTED_IPV6_MAPPED]/g' \
+  -e 's/\b([0-9a-fA-F]{1,4}:)+(:[0-9a-fA-F]{1,4})*::?([0-9a-fA-F]{1,4}:)*([0-9]{1,3}\.){3}[0-9]{1,3}(\/[0-9]{1,3})?(%[a-zA-Z0-9_-]+)?/[REDACTED_IPV6_EMBEDDED]/g' \
+  \
+  `# 9. IPv6 Multicast (ff00::/8)` \
+  -e 's/\b(ff[0-9a-fA-F]{2}(:[0-9a-fA-F]{1,4}|:)+[0-9a-fA-F]{0,4})(\/[0-9]{1,3})?(%[a-zA-Z0-9_-]+)?/[REDACTED_IPV6_MC]/g' \
+  \
+  `# 10. IPv6 Addresses: GUA (2000::/3: 2xxx and 3xxx), ULA (fc00::/7), Link-Local (fe80::/10)` \
+  -e 's/\b([23][0-9a-fA-F]{1,3})(:[0-9a-fA-F]{1,4}|:)+[0-9a-fA-F]{0,4}(\/[0-9]{1,3})?(%[a-zA-Z0-9_-]+)?/[REDACTED_IPV6_GUA]/g' \
+  -e 's/\b(f[cdCD][0-9a-fA-F]{0,2})(:[0-9a-fA-F]{1,4}|:)+[0-9a-fA-F]{0,4}(\/[0-9]{1,3})?(%[a-zA-Z0-9_-]+)?/[REDACTED_IPV6_ULA]/g' \
+  -e 's/\b(fe[89abAB][0-9a-fA-F]{0,1})(:[0-9a-fA-F]{1,4}|:)+[0-9a-fA-F]{0,4}(\/[0-9]{1,3})?(%[a-zA-Z0-9_-]+)?/[REDACTED_IPV6_LL]/g' \
   \
   `# 9. Netmask Preservation (Accurate group capture: preserve exact original value 255.255.255.X)` \
   -e 's/\b(255\.255\.255\.[0-9]+)\b/__NETMASK_\1__/g' \

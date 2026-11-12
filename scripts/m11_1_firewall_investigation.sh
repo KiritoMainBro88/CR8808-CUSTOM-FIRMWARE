@@ -12,9 +12,9 @@ ROUTER_IP="${ROUTER_IP:-192.168.31.1}"
 ROUTER_PORT="${ROUTER_PORT:-56789}"
 ROUTER_USER="${ROUTER_USER:-root}"
 OUTPUT_FILE="${OUTPUT_FILE:-reports/M11_1_FIREWALL_AUDIT_RAW.txt}"
-PINNED_KEY_FILE="config/cr8818_host_key.pub"
+PINNED_KEY_FILE="${PINNED_KEY_FILE:-config/cr8818_host_key.pub}"
 EXPECTED_FINGERPRINT="SHA256:feZ+NfroyCIlYrC74Z1ZazUSby+WqxRxZM63Q6Q9HmM"
-SANITIZER="scripts/sanitize_telemetry.sh"
+SANITIZER="${SANITIZER:-scripts/sanitize_telemetry.sh}"
 
 # Pre-flight Gate: Require explicit environment variable authorization
 if [ "${AUTHORIZE_R0_FIREWALL_EXECUTION:-0}" != "1" ]; then
@@ -43,8 +43,13 @@ fi
 # Step 2: Synthesize Verified Known Hosts File
 KNOWN_HOSTS_DIR="$(mktemp -d /tmp/cr8818_ssh.XXXXXX)"
 KNOWN_HOSTS_FILE="${KNOWN_HOSTS_DIR}/known_hosts"
-TEMP_RAW_OUTPUT="$(mktemp /tmp/cr8818_fw_raw.XXXXXX)"
-TEMP_SANITIZED="$(mktemp /tmp/cr8818_fw_san.XXXXXX)"
+
+# Create temporary files in the exact same directory/filesystem as OUTPUT_FILE
+# ensuring mv -f is guaranteed atomic rename across all environments
+OUT_DIR="$(dirname "$OUTPUT_FILE")"
+mkdir -p "$OUT_DIR"
+TEMP_RAW_OUTPUT="$(mktemp "${OUT_DIR}/.tmp_raw.XXXXXX")"
+TEMP_SANITIZED="$(mktemp "${OUT_DIR}/.tmp_san.XXXXXX")"
 trap 'rm -rf "$KNOWN_HOSTS_DIR" "$TEMP_RAW_OUTPUT" "$TEMP_SANITIZED"' EXIT
 
 PUB_KEY_DATA=$(awk '{print $1, $2}' "$PINNED_KEY_FILE")
@@ -55,7 +60,8 @@ echo "Host key verified ($EXPECTED_FINGERPRINT). Connecting to CR8808 Ver.B..."
 
 # Step 3: Execute SSH and capture raw output into temporary file first
 # Using Bash set -e to ensure SSH failure aborts before touching destination report
-if ! sshpass -e ssh -p "$ROUTER_PORT" \
+SSH_EXEC_CMD="${SSH_EXEC_CMD:-sshpass -e ssh}"
+if ! $SSH_EXEC_CMD -p "$ROUTER_PORT" \
   -o StrictHostKeyChecking=yes \
   -o UserKnownHostsFile="$KNOWN_HOSTS_FILE" \
   -o GlobalKnownHostsFile=/dev/null \

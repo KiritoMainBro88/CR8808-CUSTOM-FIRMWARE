@@ -18,6 +18,14 @@ eth1      Link encap:Ethernet  HWaddr E4-39-DF-04-6C-FE
 3ffe::1
 2001:db8::
 2001:db8::/32
+# Chief Architect M11.1.0.5 Reproduction Edge Cases
+2001:db8::192.0.2.1
+2001:db8::c000:0201
+::ffff:c000:0201
+::ffff:192.0.2.1
+ff02::1
+ff02::1:ff04:6cfd
+64:ff9b::192.0.2.33
 # ULA fc00::/7 (fcxx and fdxx, compressed, trailing ::)
 fc00:1234:5678:9abc::1
 fd00:dead:beef::1

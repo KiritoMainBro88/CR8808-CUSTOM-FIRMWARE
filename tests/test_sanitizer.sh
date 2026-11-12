@@ -13,11 +13,13 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 SANITIZER="scripts/sanitize_telemetry.sh"
 FIXTURE_TXT="tests/fixtures/sanitizer_test_multiline.txt"
 FIXTURE_JSON="tests/fixtures/sanitizer_test_json.json"
+EXPECTED_TXT="tests/fixtures/sanitizer_expected_multiline.txt"
+EXPECTED_JSON="tests/fixtures/sanitizer_expected_json.json"
 
 OUT_TXT="${TMP_DIR}/sanitized_txt.txt"
 OUT_JSON="${TMP_DIR}/sanitized_json.txt"
 
-echo "=== M11.1.0.4 GENERALIZED SANITIZER TEST SUITE ==="
+echo "=== M11.1.0.5 GENERALIZED SANITIZER TEST SUITE ==="
 
 # Execute Sanitization
 sh "$SANITIZER" < "$FIXTURE_TXT" > "$OUT_TXT"
@@ -30,7 +32,7 @@ assert_absent() {
     FILE="$1"
     PATTERN="$2"
     LABEL="$3"
-    if grep -iq "$PATTERN" "$FILE"; then
+    if grep -Fq "$PATTERN" "$FILE"; then
         echo "FAIL: Sensitive pattern leaked: $LABEL ('$PATTERN') in $FILE"
         exit 1
     else
@@ -43,7 +45,7 @@ assert_present() {
     FILE="$1"
     TOKEN="$2"
     LABEL="$3"
-    if grep -q "$TOKEN" "$FILE"; then
+    if grep -Fq "$TOKEN" "$FILE"; then
         echo "PASS: Token present: $LABEL ($TOKEN)."
         ASSERTIONS_PASSED=$((ASSERTIONS_PASSED + 1))
     else
@@ -51,6 +53,23 @@ assert_present() {
         exit 1
     fi
 }
+
+echo "--- [PHASE 0] Exact Output Fixture Diff Assertions ---"
+if diff -u "$OUT_TXT" "$EXPECTED_TXT"; then
+    echo "PASS: Multiline sanitized output exactly matches expected fixture."
+    ASSERTIONS_PASSED=$((ASSERTIONS_PASSED + 1))
+else
+    echo "FAIL: Multiline output differs from expected fixture!"
+    exit 1
+fi
+
+if diff -u "$OUT_JSON" "$EXPECTED_JSON"; then
+    echo "PASS: JSON sanitized output exactly matches expected fixture."
+    ASSERTIONS_PASSED=$((ASSERTIONS_PASSED + 1))
+else
+    echo "FAIL: JSON output differs from expected fixture!"
+    exit 1
+fi
 
 echo "--- [PHASE 1] Multiline Text Sanitization Assertions ---"
 assert_absent "$OUT_TXT" "35123/240019283" "Serial Number"
@@ -70,6 +89,21 @@ assert_absent "$OUT_TXT" "3ffe:1200:2001:1" "IPv6 GUA (3xxx prefix expanded)"
 assert_absent "$OUT_TXT" "3ffe::1" "IPv6 GUA (3xxx prefix compressed)"
 assert_absent "$OUT_TXT" "2001:db8::" "IPv6 GUA (trailing ::)"
 assert_absent "$OUT_TXT" "2001:db8::/32" "IPv6 GUA (CIDR /32)"
+
+# Specific Chief Architect M11.1.0.5 Reproduction Cases & Partial Redaction Checks:
+assert_absent "$OUT_TXT" "2001:db8::192.0.2.1" "IPv6 with Embedded IPv4"
+assert_absent "$OUT_TXT" "2001:db8::c000:0201" "IPv6 with Hex-Suffix"
+assert_absent "$OUT_TXT" "::ffff:c000:0201" "IPv4-Mapped IPv6 Hex"
+assert_absent "$OUT_TXT" "::ffff:192.0.2.1" "IPv4-Mapped IPv6 Dotted"
+assert_absent "$OUT_TXT" "ff02::1" "IPv6 Multicast All-Nodes"
+assert_absent "$OUT_TXT" "ff02::1:ff04:6cfd" "IPv6 Multicast Solicited"
+assert_absent "$OUT_TXT" "64:ff9b::192.0.2.33" "NAT64 Prefix Address"
+
+# Anti-Partial-Redaction Assertions: Verify no leaked fragments remain
+assert_absent "$OUT_TXT" ".0.2.1" "Leaked tail fragment .0.2.1"
+assert_absent "$OUT_TXT" ":0201" "Leaked tail fragment :0201"
+assert_absent "$OUT_TXT" "::ffff:" "Leaked prefix ::ffff:"
+
 assert_absent "$OUT_TXT" "fc00:1234:5678:9abc" "IPv6 ULA (fc00 prefix)"
 assert_absent "$OUT_TXT" "fd00:dead:beef" "IPv6 ULA (fd00 prefix)"
 assert_absent "$OUT_TXT" "fc00::" "IPv6 ULA (fc00 trailing ::)"
@@ -95,6 +129,9 @@ assert_present "$OUT_TXT" "REDACTED_PUBLIC_IP" "Public IP Token"
 assert_present "$OUT_TXT" "REDACTED_IPV6_GUA" "IPv6 GUA Token"
 assert_present "$OUT_TXT" "REDACTED_IPV6_ULA" "IPv6 ULA Token"
 assert_present "$OUT_TXT" "REDACTED_IPV6_LL" "IPv6 Link-Local Token"
+assert_present "$OUT_TXT" "REDACTED_IPV6_EMBEDDED" "IPv6 Embedded IPv4 Token"
+assert_present "$OUT_TXT" "REDACTED_IPV6_MAPPED" "IPv4-Mapped IPv6 Token"
+assert_present "$OUT_TXT" "REDACTED_IPV6_MC" "IPv6 Multicast Token"
 assert_present "$OUT_TXT" "REDACTED_HEX_IPV6" "Hex IPv6 Token"
 assert_present "$OUT_TXT" "REDACTED_HEX_IPV4" "Hex IPv4 Token"
 
@@ -124,6 +161,11 @@ assert_absent "$OUT_JSON" "2402:800:63a5:4432" "JSON IPv6 GUA 2xxx"
 assert_absent "$OUT_JSON" "3ffe:1200:2001:1" "JSON IPv6 GUA 3xxx"
 assert_absent "$OUT_JSON" "2001:db8::" "JSON IPv6 GUA db8"
 assert_absent "$OUT_JSON" "2001:db8::/32" "JSON IPv6 GUA CIDR"
+assert_absent "$OUT_JSON" "2001:db8::192.0.2.1" "JSON IPv6 Embedded"
+assert_absent "$OUT_JSON" "2001:db8::c000:0201" "JSON IPv6 Hex Suffix"
+assert_absent "$OUT_JSON" "::ffff:c000:0201" "JSON IPv4-Mapped Hex"
+assert_absent "$OUT_JSON" "::ffff:192.0.2.1" "JSON IPv4-Mapped Dotted"
+assert_absent "$OUT_JSON" "ff02::1" "JSON IPv6 Multicast"
 assert_absent "$OUT_JSON" "fc00:1234:5678" "JSON IPv6 ULA fc"
 assert_absent "$OUT_JSON" "fd00:dead:beef" "JSON IPv6 ULA fd"
 assert_absent "$OUT_JSON" "fc00::" "JSON IPv6 ULA short fc"
