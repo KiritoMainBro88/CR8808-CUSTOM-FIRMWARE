@@ -1,12 +1,12 @@
 # Project Status
 
-- Version: `0.2.1-dev`
+- Version: `0.3.0-dev`
 - Date: 2026-11-12
-- Phase: P10/M11.1.1 Post-Audit Security Remediation & Runtime Readiness (Track A Primary)
-- Current Branch: `fix/m11-1-1-post-audit-remediation`
-- Overall status: `M11_1_1_REMEDIATION_COMPLETED_AWAITING_REVIEW`
+- Phase: P10/M12 RA82 Performance Engineering & Modernization Program (Track A Primary)
+- Current Branch: `feature/m12-ra82-performance-modernization`
+- Overall status: `M12_PERFORMANCE_MODERNIZATION_COMPLETE_AWAITING_REVIEW`
 - GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE`
-- Flash authorization: `STRICT NO-GO FLASH (Live read-only device audit, static partition verification & optimization analysis only)`
+- Flash authorization: `STRICT NO-GO FLASH (In-memory read-only device audit, modular optimization framework & static ARMv7 BoringTun testbed only)`
 - Initial Firmware Baseline: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Single-conduit Port 8 SGMII 1000M, Linux 6.12.112 LTS verified)
 - Primary Hardware References:
   - `yangfl/openwrt` (commit `6729bbe9f082dc15449f17908832447caeec5065` on `cr8818` branch) — Authoritative CR8818 DTS, SerDes REVSGMII abuse patch 940, caldata geometry
@@ -185,6 +185,14 @@
   4. **Firewall Investigation Pipeline Hardening:** Rewrote `scripts/m11_1_firewall_investigation.sh` in Bash with `set -Eeuo pipefail`. Decoupled SSH execution to capture raw output into a temporary file first, verifying SSH exit code before sanitization, and adding `HostKeyAlgorithms=+ssh-rsa` and `PubkeyAcceptedKeyTypes=+ssh-rsa`.
   5. **Host Key Provenance Formalized:** Updated `docs/SSH_HOST_VERIFICATION.md` formally categorizing the pinned Dropbear RSA key as `PINNED_HISTORICAL_CACHE` originating from the operator's Windows SSH known_hosts file, clarifying that while pinning prevents future MitM, absolute silicon root-of-trust requires local serial/UART extraction.
   6. **Deliverables & Strict Safety Boundary:** Authored `reports/M11_1_0_3_PREFLIGHT_INTEGRITY_REPORT.md`. Workstation-only execution (0 router SSH, 0 firewall edits, 0 router commands). Lab directory `D:\vibecode\test_wifi` 100% untouched (323 objects verified). Status: `M11_1_0_3_PREFLIGHT_INTEGRITY_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Systems Engineer).
+- 2026-11-12: Milestone M12 RA82 Performance Engineering & Modernization Program completed on branch `feature/m12-ra82-performance-modernization`.
+  1. **Comprehensive Hardware & Kernel Performance Audit (Task A):** Interrogated live router passively via in-memory SSH stream (`scripts/m12_audit_collector.sh`). Pinned to Dropbear host key `SHA256:BwYCFt/UPVQ+Sj6/ZcbKf7yfTK5FqPFYB9uN7isGL64`. Zero files created on the router. Produced `reports/M12_BASELINE_SANITIZED.txt` and `reports/M12_BASELINE.md`.
+  2. **Top 5 Bottlenecks & 3-Way Kernel Feasibility (Task B, E):** Authored `reports/M12_PERFORMANCE_ANALYSIS.md` diagnosing SoftIRQ 99.6% saturation on CPU0, 5.5% free RAM (56.3 MB unevictable slab), NSS tunnel bypass, Wi-Fi `noqueue` jitter risk, and socket backlog drops. Proved 3-path feasibility matrix: Option A (Keep & Tune RA82, 1 Gbps line-rate, NSS+HE160 intact - RECOMMENDED), Option B (Backport - REJECTED), Option C (Community OpenWrt - EXPERIMENTAL / LAB).
+  3. **Modular Optimization Framework with Bit-for-Bit Rollback (Task D):** Developed 7 atomic tuning modules under `performance/profiles/` (`rps_rfs_tuning.sh`, `irq_affinity.sh`, `netdev_backlog.sh`, `tcp_tuning.sh`, `qdisc_tuning.sh`, `conntrack_tuning.sh`, `nss_flow_tuning.sh`) managed by `performance/framework.sh`. Enforced anti-monolithic isolation and atomic state snapshots under `/tmp/performance_state/`. Tested in WSL2 harness (`tests/performance/test_optimization_framework.sh`): 88/88 assertions PASSED (100%).
+  4. **BoringTun Rust ARMv7 Cross-Compilation (Task C):** Forensic ABI confirmed Qualcomm IPQ5018 runs Cortex-A53 in AArch32 mode (`armv7l`) with uClibc softfp ABI (`0x5000200`). Resolved LLVM vectorizer softening compiler crash by compiling for `armv7-unknown-linux-musleabihf` with static musl and NEON vectorization (`-C target-feature=+crt-static,+neon`). Built stripped binary `artifacts/m12_wireguard/boringtun-cli-armv7` (1,179,640 bytes, SHA256: `e2a455a00a780e824b5b56e340410dcbd8c2ab01933663d8cfe7d623df64de2b`), verified fully functional in QEMU ARM static. Authored `reports/M12_RUST_WIREGUARD.md`.
+  5. **Isolated wg1 Testbed Specification (Task C):** Configured isolated `wg1` testbed (UDP 51821, subnet `10.99.1.1/24`, table 101) with dry-run scripts (`performance/benchmarks/wg1_testbed_setup.sh`, `performance/benchmarks/wg1_testbed_teardown.sh`). Verified zero interference with active Go `wg0` (`10.99.0.1:51820`, 20.3 MB RSS). Projected RAM recovery: ~17.2 MB (+170% free RAM).
+  6. **Reusable Diagnostic Benchmarking Suite (Task F):** Authored 5 standalone diagnostic profilers in `performance/benchmarks/` (`softirq_profiler.sh`, `memory_profiler.sh`, `network_latency_suite.sh`, `wireguard_benchmark.sh`, `run_all_benchmarks.sh`) for live load testing.
+  7. **Deliverables & Strict Safety Boundary:** Authored master architectural blueprint `docs/M12_ARCHITECTURE.md` and master synthesis report `reports/M12_FINAL_REPORT.md`. Maintained STRICT HOLD prior to router runtime execution. Zero router configuration writes, zero firmware flashing, zero NAND writes, zero reboots. Lab directory `D:\vibecode\test_wifi` remains 100% untouched. Status: `M12_PERFORMANCE_MODERNIZATION_COMPLETE_AWAITING_REVIEW`. Author: Gemini (Lead Systems Engineer & Swarm Coordinator).
 
 
 

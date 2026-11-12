@@ -1,0 +1,14 @@
+# config/wireguard/wg1_server.conf.example
+# Milestone M12: Experimental WireGuard wg1 Server Configuration (BoringTun Rust)
+# Subnet: 10.99.1.0/24 | Port: 51821 UDP | MTU: 1420
+
+[Interface]
+# Generate via: wg genkey
+PrivateKey = <SERVER_PRIVATE_KEY_REPLACE_ME>
+ListenPort = 51821
+
+[Peer]
+# Benchmark Client
+PublicKey = <CLIENT_PUBLIC_KEY_REPLACE_ME>
+AllowedIPs = 10.99.1.2/32
+PersistentKeepalive = 25

@@ -1,0 +1,15 @@
+# config/wireguard/wg1_client.conf.example
+# Milestone M12: Experimental WireGuard wg1 Client Configuration (Benchmarking Host)
+# Subnet: 10.99.1.0/24 | Peer: 192.168.31.1:51821 | MTU: 1420
+
+[Interface]
+# Generate via: wg genkey
+PrivateKey = <CLIENT_PRIVATE_KEY_REPLACE_ME>
+Address = 10.99.1.2/24
+
+[Peer]
+# Router RA82 wg1 Endpoint
+PublicKey = <SERVER_PUBLIC_KEY_REPLACE_ME>
+Endpoint = 192.168.31.1:51821
+AllowedIPs = 10.99.1.0/24
+PersistentKeepalive = 25
