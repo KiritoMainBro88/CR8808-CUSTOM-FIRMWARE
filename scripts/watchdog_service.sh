@@ -114,7 +114,7 @@ fi
 trap '' HUP
 
 trap '
-    # Acquire transition lock
+    # Acquire transition lock for signal handling
     ACQ=0
     for i in 1 2 3 4 5; do
         if mkdir "$TRANS_LOCK" 2>/dev/null; then
@@ -125,9 +125,31 @@ trap '
     done
     
     CURRENT_STATE=$(cat "$STATE_FILE" 2>/dev/null || echo "UNKNOWN")
-    if [ "$CURRENT_STATE" = "ARMED" ] || [ "$CURRENT_STATE" = "DISARMED" ]; then
+    if [ "$CURRENT_STATE" = "ARMED" ] && [ -f "$SENTINEL" ]; then
+        log_msg "CRITICAL: Unexpected termination signal received while ARMED without authorized disarm! Triggering immediate emergency rollback..."
+        echo "ROLLING_BACK" > "$STATE_FILE" 2>/dev/null || true
+        
+        # Execute immediate emergency rollback
+        EMERG_SUCCESS=0
+        if [ -x "$ROLLBACK_HELPER" ] || [ -f "$ROLLBACK_HELPER" ]; then
+            if sh "$ROLLBACK_HELPER" rollback "$@"; then
+                EMERG_SUCCESS=1
+            fi
+        fi
+        
+        if [ "$EMERG_SUCCESS" -eq 1 ]; then
+            echo "SIGNAL_ROLLBACK_COMPLETED" > "$STATE_FILE" 2>/dev/null || true
+            rm -f "$SENTINEL" 2>/dev/null || true
+            log_msg "Emergency rollback executed successfully following unexpected signal."
+        else
+            echo "ROLLBACK_FAILED" > "$STATE_FILE" 2>/dev/null || true
+            log_msg "CRITICAL: Emergency rollback failed upon unexpected signal!"
+        fi
+        rm -rf "$LOCK_DIR" "$TRANS_LOCK" 2>/dev/null || true
+        exit 1
+    elif [ "$CURRENT_STATE" = "DISARMED" ] || [ ! -f "$SENTINEL" ]; then
         echo "CANCELLED_BY_SIGNAL" > "$STATE_FILE" 2>/dev/null || true
-        log_msg "Watchdog received signal while $CURRENT_STATE. Exiting cleanly without rollback."
+        log_msg "Watchdog received signal while disarmed. Exiting cleanly without rollback."
         rm -f "$SENTINEL" "$STATE_FILE" 2>/dev/null || true
         rm -rf "$LOCK_DIR" "$TRANS_LOCK" 2>/dev/null || true
         exit 0
@@ -166,6 +188,15 @@ if [ "$ACQUIRED" -eq 1 ]; then
         DO_ROLLBACK=1
     fi
     rm -rf "$TRANS_LOCK" 2>/dev/null || true
+else
+    # Lock contention after timeout expiration:
+    # If sentinel still exists, rollback MUST NEVER be silently skipped!
+    if [ -f "$SENTINEL" ]; then
+        log_msg "CRITICAL: Transition lock contention timed out after timer expiration while sentinel still exists. Forcing emergency rollback!"
+        rm -rf "$TRANS_LOCK" 2>/dev/null || true
+        echo "ROLLING_BACK" > "$STATE_FILE" 2>/dev/null || true
+        DO_ROLLBACK=1
+    fi
 fi
 
 if [ "$DO_ROLLBACK" -eq 1 ]; then

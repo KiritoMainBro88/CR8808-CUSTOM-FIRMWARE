@@ -81,7 +81,8 @@ rule_exists() {
         return 2
     fi
     
-    if echo "$RULES" | grep -Fq -- "$TARGET_TAG"; then
+    # Match exact comment tag: ensure $TARGET_TAG is bordered by comment flags and boundary
+    if echo "$RULES" | grep -Eq "(--comment|-m comment)[ =]+[\"']?${TARGET_TAG}[\"']?([[:space:]]|$)"; then
         return 0
     else
         return 1
@@ -145,39 +146,73 @@ do_apply() {
 }
 
 do_rollback() {
-    # Check chain existence and accessibility
-    if ! check_chains; then
-        echo "[CRITICAL ERROR] Cannot execute rollback: one or more chains do not exist or are inaccessible!" >&2
+    ROLLBACK_V4_STATUS=0
+    ROLLBACK_V6_STATUS=0
+    
+    # 1. Independent IPv4 Rollback
+    echo "[FIREWALL] Initiating independent IPv4 rollback for tag '$TAG' on chain '$CHAIN_V4'..."
+    if ! $IPTABLES_CMD -S "$CHAIN_V4" >/dev/null 2>&1; then
+        echo "[ERROR] IPv4 chain '$CHAIN_V4' does not exist or is inaccessible!" >&2
+        ROLLBACK_V4_STATUS=2
+    else
+        while $IPTABLES_CMD -D "$CHAIN_V4" -p tcp --dport "$PORT" -m comment --comment "$TAG" -j DROP 2>/dev/null; do
+            :
+        done
+        rule_exists "ipv4" "$CHAIN_V4" "$TAG"
+        RES_V4=$?
+        if [ "$RES_V4" -eq 1 ]; then
+            echo "[FIREWALL] IPv4 rollback verified: 0 residual rules."
+            ROLLBACK_V4_STATUS=0
+        elif [ "$RES_V4" -eq 0 ]; then
+            echo "[ERROR] IPv4 rollback failed: residual rules still present!" >&2
+            ROLLBACK_V4_STATUS=1
+        else
+            echo "[ERROR] IPv4 rollback check failed with code $RES_V4!" >&2
+            ROLLBACK_V4_STATUS=2
+        fi
+    fi
+    
+    # 2. Independent IPv6 Rollback
+    echo "[FIREWALL] Initiating independent IPv6 rollback for tag '$TAG' on chain '$CHAIN_V6'..."
+    if ! $IP6TABLES_CMD -S "$CHAIN_V6" >/dev/null 2>&1; then
+        echo "[ERROR] IPv6 chain '$CHAIN_V6' does not exist or is inaccessible!" >&2
+        ROLLBACK_V6_STATUS=2
+    else
+        while $IP6TABLES_CMD -D "$CHAIN_V6" -p tcp --dport "$PORT" -m comment --comment "$TAG" -j DROP 2>/dev/null; do
+            :
+        done
+        rule_exists "ipv6" "$CHAIN_V6" "$TAG"
+        RES_V6=$?
+        if [ "$RES_V6" -eq 1 ]; then
+            echo "[FIREWALL] IPv6 rollback verified: 0 residual rules."
+            ROLLBACK_V6_STATUS=0
+        elif [ "$RES_V6" -eq 0 ]; then
+            echo "[ERROR] IPv6 rollback failed: residual rules still present!" >&2
+            ROLLBACK_V6_STATUS=1
+        else
+            echo "[ERROR] IPv6 rollback check failed with code $RES_V6!" >&2
+            ROLLBACK_V6_STATUS=2
+        fi
+    fi
+    
+    # 3. Aggregate Evaluation
+    if [ "$ROLLBACK_V4_STATUS" -eq 0 ] && [ "$ROLLBACK_V6_STATUS" -eq 0 ]; then
+        echo "[FIREWALL] Dual-stack idempotent targeted rollback completed and verified successfully."
+        return 0
+    fi
+    
+    if [ "$ROLLBACK_V4_STATUS" -eq 0 ] && [ "$ROLLBACK_V6_STATUS" -ne 0 ]; then
+        echo "[CRITICAL ERROR] PARTIAL_ROLLBACK: IPv4 rollback succeeded, but IPv6 rollback failed (status $ROLLBACK_V6_STATUS)!" >&2
         return 2
     fi
     
-    echo "[FIREWALL] Rolling back IPv4 rules matching tag '$TAG'..."
-    while $IPTABLES_CMD -D "$CHAIN_V4" -p tcp --dport "$PORT" -m comment --comment "$TAG" -j DROP 2>/dev/null; do
-        :
-    done
-    
-    echo "[FIREWALL] Rolling back IPv6 rules matching tag '$TAG'..."
-    while $IP6TABLES_CMD -D "$CHAIN_V6" -p tcp --dport "$PORT" -m comment --comment "$TAG" -j DROP 2>/dev/null; do
-        :
-    done
-    
-    # Verify zero residual rules matching $TAG remain in either chain
-    rule_exists "ipv4" "$CHAIN_V4" "$TAG"
-    RES_V4=$?
-    rule_exists "ipv6" "$CHAIN_V6" "$TAG"
-    RES_V6=$?
-    
-    if [ "$RES_V4" -eq 2 ] || [ "$RES_V6" -eq 2 ]; then
-        echo "[CRITICAL ERROR] Cannot verify rollback: query failed for one or more chains!" >&2
+    if [ "$ROLLBACK_V4_STATUS" -ne 0 ] && [ "$ROLLBACK_V6_STATUS" -eq 0 ]; then
+        echo "[CRITICAL ERROR] PARTIAL_ROLLBACK: IPv6 rollback succeeded, but IPv4 rollback failed (status $ROLLBACK_V4_STATUS)!" >&2
         return 2
     fi
-    if [ "$RES_V4" -ne 1 ] || [ "$RES_V6" -ne 1 ]; then
-        echo "[CRITICAL ERROR] Rollback verification failed! Residual rules matching tag '$TAG' still remain in chains!" >&2
-        return 1
-    fi
     
-    echo "[FIREWALL] Idempotent targeted rollback completed and verified."
-    return 0
+    echo "[CRITICAL ERROR] TOTAL_ROLLBACK_FAILURE: Both IPv4 and IPv6 rollbacks failed (V4: $ROLLBACK_V4_STATUS, V6: $ROLLBACK_V6_STATUS)!" >&2
+    return 2
 }
 
 do_verify() {

@@ -1,0 +1,542 @@
+================================================================================
+[R0-FW-01] IPv4 Address & Routing Table
+================================================================================
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet [REDACTED_WAN_IP] brd [REDACTED_WAN_IP] scope global eth0
+       valid_lft forever preferred_lft forever
+9: wg0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1420 qdisc fq_codel state UNKNOWN qlen 2000
+    inet 10.99.0.1/24 scope global wg0
+       valid_lft forever preferred_lft forever
+10: br-lan: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP qlen 1000
+    inet 192.168.31.1/24 brd 192.168.31.255 scope global br-lan
+       valid_lft forever preferred_lft forever
+17: br-miot: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP qlen 1000
+    inet 192.168.32.1/24 brd 192.168.32.255 scope global br-miot
+       valid_lft forever preferred_lft forever
+--- Routes ---
+default via [REDACTED_WAN_IP] dev eth0  proto static  src [REDACTED_WAN_IP] 
+default via [REDACTED_WAN_IP] dev eth0  metric 50 
+10.99.0.0/24 dev wg0  proto kernel  scope link  src 10.99.0.1 
+192.168.31.0/24 dev br-lan  proto kernel  scope link  src 192.168.31.1 
+192.168.32.0/24 dev br-miot  proto kernel  scope link  src 192.168.32.1 
+[REDACTED_WAN_IP] dev eth0  proto kernel  scope link  src [REDACTED_WAN_IP] 
+broadcast 10.99.0.0 dev wg0  table local  proto kernel  scope link  src 10.99.0.1 
+local 10.99.0.1 dev wg0  table local  proto kernel  scope host  src 10.99.0.1 
+broadcast 10.99.0.255 dev wg0  table local  proto kernel  scope link  src 10.99.0.1 
+broadcast [REDACTED_PUBLIC_IP] dev lo  table local  proto kernel  scope link  src 127.0.0.1 
+local [REDACTED_PUBLIC_IP] dev lo  table local  proto kernel  scope host  src 127.0.0.1 
+local 127.0.0.1 dev lo  table local  proto kernel  scope host  src 127.0.0.1 
+broadcast [REDACTED_PUBLIC_IP] dev lo  table local  proto kernel  scope link  src 127.0.0.1 
+broadcast 192.168.31.0 dev br-lan  table local  proto kernel  scope link  src 192.168.31.1 
+local 192.168.31.1 dev br-lan  table local  proto kernel  scope host  src 192.168.31.1 
+broadcast 192.168.31.255 dev br-lan  table local  proto kernel  scope link  src 192.168.31.1 
+broadcast 192.168.32.0 dev br-miot  table local  proto kernel  scope link  src 192.168.32.1 
+local 192.168.32.1 dev br-miot  table local  proto kernel  scope host  src 192.168.32.1 
+broadcast 192.168.32.255 dev br-miot  table local  proto kernel  scope link  src 192.168.32.1 
+broadcast [REDACTED_WAN_IP] dev eth0  table local  proto kernel  scope link  src [REDACTED_WAN_IP] 
+local [REDACTED_WAN_IP] dev eth0  table local  proto kernel  scope host  src [REDACTED_WAN_IP] 
+broadcast [REDACTED_WAN_IP] dev eth0  table local  proto kernel  scope link  src [REDACTED_WAN_IP] 
+[R0-FW-01 STATUS: SUCCESS]
+================================================================================
+[R0-FW-02] IPv6 Address, Routing Table & Interface Counters
+================================================================================
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 state UNKNOWN qlen 1
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 state UP qlen 1000
+    inet6 [REDACTED_IPV6_LL][REDACTED_IPV6_GUA] scope link 
+       valid_lft forever preferred_lft forever
+10: br-lan: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 state UP qlen 1000
+    inet6 [REDACTED_IPV6_LL] scope link 
+       valid_lft forever preferred_lft forever
+15: wl1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 state UP 
+    inet6 [REDACTED_IPV6_LL] scope link 
+       valid_lft forever preferred_lft forever
+17: br-miot: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 state UP qlen 1000
+    inet6 [REDACTED_IPV6_LL] scope link 
+       valid_lft forever preferred_lft forever
+18: wl0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 state UP 
+    inet6 [REDACTED_IPV6_LL] scope link 
+       valid_lft forever preferred_lft forever
+--- IPv6 Routes ---
+[REDACTED_IPV6_LL] dev br-lan  proto kernel  metric 256 
+[REDACTED_IPV6_LL] dev eth0  proto kernel  metric 256  mtu 1500
+[REDACTED_IPV6_LL] dev wl1  proto kernel  metric 256 
+[REDACTED_IPV6_LL] dev br-miot  proto kernel  metric 256 
+[REDACTED_IPV6_LL] dev wl0  proto kernel  metric 256 
+unreachable default dev lo  table unspec  proto kernel  metric -1  error -101
+local ::1 dev lo  table local  proto none  metric 0 
+local [REDACTED_IPV6_LL] dev lo  table local  proto none  metric 0 
+local [REDACTED_IPV6_LL] dev lo  table local  proto none  metric 0 
+local [REDACTED_IPV6_LL] dev lo  table local  proto none  metric 0 
+local [REDACTED_IPV6_LL] dev lo  table local  proto none  metric 0 
+local [REDACTED_IPV6_LL] dev lo  table local  proto none  metric 0 
+local [REDACTED_IPV6_LL][REDACTED_IPV6_GUA] dev lo  table local  proto none  metric 0 
+local [REDACTED_IPV6_LL] dev lo  table local  proto none  metric 0 
+local [REDACTED_IPV6_LL] dev lo  table local  proto none  metric 0 
+local [REDACTED_IPV6_LL] dev lo  table local  proto none  metric 0 
+local [REDACTED_IPV6_LL] dev lo  table local  proto none  metric 0 
+[REDACTED_IPV6_MC] dev br-lan  table local  metric 256 
+[REDACTED_IPV6_MC] dev eth0  table local  metric 256  mtu 1500
+[REDACTED_IPV6_MC] dev wl1  table local  metric 256 
+[REDACTED_IPV6_MC] dev br-miot  table local  metric 256 
+[REDACTED_IPV6_MC] dev wl0  table local  metric 256 
+unreachable default dev lo  table unspec  proto kernel  metric -1  error -101
+--- /proc/net/if_inet6 ---
+00000000000000000000000000000001 01 80 10 80       lo
+fe80000000000000d0d843fffe50f920 11 40 20 80  br-miot
+fe80000000000000a6a930fffe35a85f 02 40 20 80     eth0
+fe80000000000000ced843fffe50f91f 12 40 20 80      wl0
+fe80000000000000ced843fffe50f920 0f 40 20 80      wl1
+fe80000000000000ced843fffe50f91e 0a 40 20 80   br-lan
+[R0-FW-02 STATUS: SUCCESS]
+================================================================================
+[R0-FW-03] Full iptables Filter Table Rules (-S and -nvL)
+================================================================================
+-P INPUT ACCEPT
+-P FORWARD DROP
+-P OUTPUT ACCEPT
+-N MINIUPNPD
+-N forwarding_lan_rule
+-N forwarding_ready_rule
+-N forwarding_rule
+-N forwarding_wan_rule
+-N input_lan_rule
+-N input_ready_rule
+-N input_rule
+-N input_wan_rule
+-N macfilter_input
+-N macfilter_wan
+-N miot_input
+-N output_lan_rule
+-N output_ready_rule
+-N output_rule
+-N output_wan_rule
+-N parentalctl_device_filter
+-N parentalctl_host_filter
+-N reject
+-N zone_lan_dest_ACCEPT
+-N zone_lan_dest_REJECT
+-N zone_lan_forward
+-N zone_lan_input
+-N zone_lan_output
+-N zone_lan_src_ACCEPT
+-N zone_ready_dest_ACCEPT
+-N zone_ready_dest_DROP
+-N zone_ready_forward
+-N zone_ready_input
+-N zone_ready_output
+-N zone_ready_src_DROP
+-N zone_wan_dest_ACCEPT
+-N zone_wan_dest_REJECT
+-N zone_wan_forward
+-N zone_wan_input
+-N zone_wan_output
+-N zone_wan_src_REJECT
+-A INPUT -p udp -m udp --dport 51821 -j ACCEPT
+-A INPUT -p udp -m udp --dport 51820 -j ACCEPT
+-A INPUT -i br-miot -j miot_input
+-A INPUT -i lo -m comment --comment "!fw3" -j ACCEPT
+-A INPUT -m comment --comment "!fw3: Custom input rule chain" -j input_rule
+-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment "!fw3" -j ACCEPT
+-A INPUT -m conntrack --ctstate INVALID -m comment --comment "!fw3" -j DROP
+-A INPUT -i br-lan -m comment --comment "!fw3" -j zone_lan_input
+-A INPUT -i eth0 -m comment --comment "!fw3" -j zone_wan_input
+-A FORWARD -p udp -m set --match-set zapret_unblock dst -m udp --dport 443 -j REJECT --reject-with icmp-port-unreachable
+-A FORWARD -o wg1 -j ACCEPT
+-A FORWARD -i wg1 -j ACCEPT
+-A FORWARD -i br-miot -j DROP
+-A FORWARD -i wg0 -j ACCEPT
+-A FORWARD -o wg0 -j ACCEPT
+-A FORWARD -m physdev --physdev-is-bridged -j ACCEPT
+-A FORWARD -m comment --comment "!fw3: Custom forwarding rule chain" -j forwarding_rule
+-A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment "!fw3" -j ACCEPT
+-A FORWARD -m conntrack --ctstate INVALID -m comment --comment "!fw3" -j DROP
+-A FORWARD -i br-lan -m comment --comment "!fw3" -j zone_lan_forward
+-A FORWARD -i eth0 -m comment --comment "!fw3" -j zone_wan_forward
+-A FORWARD -m comment --comment "!fw3" -j reject
+-A OUTPUT -o lo -m comment --comment "!fw3" -j ACCEPT
+-A OUTPUT -m comment --comment "!fw3: Custom output rule chain" -j output_rule
+-A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment "!fw3" -j ACCEPT
+-A OUTPUT -m conntrack --ctstate INVALID -m comment --comment "!fw3" -j DROP
+-A OUTPUT -o br-lan -m comment --comment "!fw3" -j zone_lan_output
+-A OUTPUT -o eth0 -m comment --comment "!fw3" -j zone_wan_output
+-A forwarding_rule -j macfilter_wan
+-A input_lan_rule -j macfilter_input
+-A macfilter_wan -m mac --mac-source [REDACTED_MAC] -j REJECT --reject-with icmp-port-unreachable
+-A miot_input -p udp -m udp --sport 54321 -j ACCEPT
+-A miot_input -p udp -m udp --sport 67:68 --dport 67:68 -j ACCEPT
+-A miot_input -j DROP
+-A reject -p tcp -m comment --comment "!fw3" -j REJECT --reject-with tcp-reset
+-A reject -m comment --comment "!fw3" -j REJECT --reject-with icmp-port-unreachable
+-A zone_lan_dest_ACCEPT -o br-lan -m comment --comment "!fw3" -j ACCEPT
+-A zone_lan_dest_REJECT -o br-lan -m comment --comment "!fw3" -j reject
+-A zone_lan_forward -j parentalctl_device_filter
+-A zone_lan_forward -j parentalctl_host_filter
+-A zone_lan_forward -m comment --comment "!fw3: Custom lan forwarding rule chain" -j forwarding_lan_rule
+-A zone_lan_forward -m comment --comment "!fw3: Zone lan to wan forwarding policy" -j zone_wan_dest_ACCEPT
+-A zone_lan_forward -m conntrack --ctstate DNAT -m comment --comment "!fw3: Accept port forwards" -j ACCEPT
+-A zone_lan_forward -m comment --comment "!fw3" -j zone_lan_dest_REJECT
+-A zone_lan_input -m comment --comment "!fw3: Custom lan input rule chain" -j input_lan_rule
+-A zone_lan_input -m conntrack --ctstate DNAT -m comment --comment "!fw3: Accept port redirections" -j ACCEPT
+-A zone_lan_input -m comment --comment "!fw3" -j zone_lan_src_ACCEPT
+-A zone_lan_output -m comment --comment "!fw3: Custom lan output rule chain" -j output_lan_rule
+-A zone_lan_output -m comment --comment "!fw3" -j zone_lan_dest_ACCEPT
+-A zone_lan_src_ACCEPT -i br-lan -m comment --comment "!fw3" -j ACCEPT
+-A zone_ready_forward -m comment --comment "!fw3: Custom ready forwarding rule chain" -j forwarding_ready_rule
+-A zone_ready_forward -m conntrack --ctstate DNAT -m comment --comment "!fw3: Accept port forwards" -j ACCEPT
+-A zone_ready_forward -m comment --comment "!fw3" -j zone_ready_dest_DROP
+-A zone_ready_input -m comment --comment "!fw3: Custom ready input rule chain" -j input_ready_rule
+-A zone_ready_input -p udp -m udp --sport 67:68 --dport 67:68 -m comment --comment "!fw3: DHCP for ready" -j ACCEPT
+-A zone_ready_input -m conntrack --ctstate DNAT -m comment --comment "!fw3: Accept port redirections" -j ACCEPT
+-A zone_ready_input -m comment --comment "!fw3" -j zone_ready_src_DROP
+-A zone_ready_output -m comment --comment "!fw3: Custom ready output rule chain" -j output_ready_rule
+-A zone_ready_output -p udp -m udp --sport 67:68 --dport 67:68 -m comment --comment "!fw3: DHCP for ready" -j zone_ready_dest_ACCEPT
+-A zone_ready_output -m comment --comment "!fw3" -j zone_ready_dest_DROP
+-A zone_wan_dest_ACCEPT -o eth0 -m conntrack --ctstate INVALID -m comment --comment "!fw3: Prevent NAT leakage" -j DROP
+-A zone_wan_dest_ACCEPT -o eth0 -m comment --comment "!fw3" -j ACCEPT
+-A zone_wan_dest_REJECT -o eth0 -m comment --comment "!fw3" -j reject
+-A zone_wan_forward -j MINIUPNPD
+-A zone_wan_forward -m comment --comment "!fw3: Custom wan forwarding rule chain" -j forwarding_wan_rule
+-A zone_wan_forward -m conntrack --ctstate DNAT -m comment --comment "!fw3: Accept port forwards" -j ACCEPT
+-A zone_wan_forward -m comment --comment "!fw3" -j zone_wan_dest_REJECT
+-A zone_wan_input -m comment --comment "!fw3: Custom wan input rule chain" -j input_wan_rule
+-A zone_wan_input -p udp -m udp --dport 68 -m comment --comment "!fw3: Allow-DHCP-Renew" -j ACCEPT
+-A zone_wan_input -p tcp -m tcp --dport 56789 -m comment --comment "!fw3: Allow-WAN-SSH" -j ACCEPT
+-A zone_wan_input -p udp -m udp --dport 51820 -m comment --comment "!fw3: Allow-WAN-WireGuard" -j ACCEPT
+-A zone_wan_input -m conntrack --ctstate DNAT -m comment --comment "!fw3: Accept port redirections" -j ACCEPT
+-A zone_wan_input -m comment --comment "!fw3" -j zone_wan_src_REJECT
+-A zone_wan_output -m comment --comment "!fw3: Custom wan output rule chain" -j output_wan_rule
+-A zone_wan_output -m comment --comment "!fw3" -j zone_wan_dest_ACCEPT
+-A zone_wan_src_REJECT -i eth0 -m comment --comment "!fw3" -j reject
+--- iptables -t filter -nvL ---
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+ 1137 1468K ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0            udp dpt:51821
+25436 4126K ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0            udp dpt:51820
+ 122K   14M miot_input  all  --  br-miot *       0.0.0.0/0            0.0.0.0/0           
+ 464K   39M ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+1191K 1492M input_rule  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Custom input rule chain */
+1022K 1482M ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED /* !fw3 */
+ 1420 60725 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate INVALID /* !fw3 */
+61528 4413K zone_lan_input  all  --  br-lan *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+ 106K 5735K zone_wan_input  all  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 REJECT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0            match-set zapret_unblock dst udp dpt:443 reject-with icmp-port-unreachable
+    0     0 ACCEPT     all  --  *      wg1     0.0.0.0/0            0.0.0.0/0           
+    0     0 ACCEPT     all  --  wg1    *       0.0.0.0/0            0.0.0.0/0           
+ 4282 1675K DROP       all  --  br-miot *       0.0.0.0/0            0.0.0.0/0           
+25280 2320K ACCEPT     all  --  wg0    *       0.0.0.0/0            0.0.0.0/0           
+42128   98M ACCEPT     all  --  *      wg0     0.0.0.0/0            0.0.0.0/0           
+ 133K   23M ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            PHYSDEV match --physdev-is-bridged
+ 880K  232M forwarding_rule  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Custom forwarding rule chain */
+ 691K  166M ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED /* !fw3 */
+ 6461  295K DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate INVALID /* !fw3 */
+ 182K   66M zone_lan_forward  all  --  br-lan *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+    0     0 zone_wan_forward  all  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+    0     0 reject     all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain OUTPUT (policy ACCEPT 22 packets, 5835 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+ 464K   39M ACCEPT     all  --  *      lo      0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+1206K 1551M output_rule  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Custom output rule chain */
+ 639K 1504M ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED /* !fw3 */
+    1    60 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate INVALID /* !fw3 */
+  260 45280 zone_lan_output  all  --  *      br-lan  0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+ 536K   39M zone_wan_output  all  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain MINIUPNPD (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain forwarding_lan_rule (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain forwarding_ready_rule (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain forwarding_rule (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+ 880K  232M macfilter_wan  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain forwarding_wan_rule (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain input_lan_rule (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+61542 4416K macfilter_input  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain input_ready_rule (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain input_rule (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain input_wan_rule (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain macfilter_input (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain macfilter_wan (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 REJECT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            MAC [REDACTED_MAC] reject-with icmp-port-unreachable
+
+Chain miot_input (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+ 4906  294K ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0            udp spt:54321
+20078 6746K ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0            udp spts:67:68 dpts:67:68
+97239 6758K DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+Chain output_lan_rule (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain output_ready_rule (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain output_rule (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain output_wan_rule (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain parentalctl_device_filter (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain parentalctl_host_filter (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain reject (4 references)
+ pkts bytes target     prot opt in     out     source               destination         
+89934 4304K REJECT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */ reject-with tcp-reset
+15807 1421K REJECT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */ reject-with icmp-port-unreachable
+
+Chain zone_lan_dest_ACCEPT (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+  260 45280 ACCEPT     all  --  *      br-lan  0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain zone_lan_dest_REJECT (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 reject     all  --  *      br-lan  0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain zone_lan_forward (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+ 182K   66M parentalctl_device_filter  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+ 182K   66M parentalctl_host_filter  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+ 182K   66M forwarding_lan_rule  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Custom lan forwarding rule chain */
+ 182K   66M zone_wan_dest_ACCEPT  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Zone lan to wan forwarding policy */
+    0     0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate DNAT /* !fw3: Accept port forwards */
+    0     0 zone_lan_dest_REJECT  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain zone_lan_input (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+61528 4413K input_lan_rule  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Custom lan input rule chain */
+   20  1088 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate DNAT /* !fw3: Accept port redirections */
+61508 4412K zone_lan_src_ACCEPT  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain zone_lan_output (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+  260 45280 output_lan_rule  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Custom lan output rule chain */
+  260 45280 zone_lan_dest_ACCEPT  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain zone_lan_src_ACCEPT (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+61508 4412K ACCEPT     all  --  br-lan *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain zone_ready_dest_ACCEPT (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain zone_ready_dest_DROP (2 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain zone_ready_forward (0 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 forwarding_ready_rule  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Custom ready forwarding rule chain */
+    0     0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate DNAT /* !fw3: Accept port forwards */
+    0     0 zone_ready_dest_DROP  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain zone_ready_input (0 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 input_ready_rule  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Custom ready input rule chain */
+    0     0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0            udp spts:67:68 dpts:67:68 /* !fw3: DHCP for ready */
+    0     0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate DNAT /* !fw3: Accept port redirections */
+    0     0 zone_ready_src_DROP  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain zone_ready_output (0 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 output_ready_rule  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Custom ready output rule chain */
+    0     0 zone_ready_dest_ACCEPT  udp  --  *      *       0.0.0.0/0            0.0.0.0/0            udp spts:67:68 dpts:67:68 /* !fw3: DHCP for ready */
+    0     0 zone_ready_dest_DROP  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain zone_ready_src_DROP (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain zone_wan_dest_ACCEPT (2 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 DROP       all  --  *      eth0    0.0.0.0/0            0.0.0.0/0            ctstate INVALID /* !fw3: Prevent NAT leakage */
+ 718K  104M ACCEPT     all  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain zone_wan_dest_REJECT (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 reject     all  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain zone_wan_forward (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 MINIUPNPD  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+    0     0 forwarding_wan_rule  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Custom wan forwarding rule chain */
+    0     0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate DNAT /* !fw3: Accept port forwards */
+    0     0 zone_wan_dest_REJECT  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain zone_wan_input (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+ 106K 5735K input_wan_rule  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Custom wan input rule chain */
+   22  9064 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0            udp dpt:68 /* !fw3: Allow-DHCP-Renew */
+   10   504 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:56789 /* !fw3: Allow-WAN-SSH */
+    0     0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0            udp dpt:51820 /* !fw3: Allow-WAN-WireGuard */
+    0     0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate DNAT /* !fw3: Accept port redirections */
+ 106K 5725K zone_wan_src_REJECT  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain zone_wan_output (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+ 536K   39M output_wan_rule  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Custom wan output rule chain */
+ 536K   39M zone_wan_dest_ACCEPT  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+
+Chain zone_wan_src_REJECT (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+ 106K 5725K reject     all  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+[R0-FW-03 STATUS: SUCCESS]
+================================================================================
+[R0-FW-04] Full ip6tables Filter Table Rules (-S and -nvL)
+================================================================================
+-P INPUT ACCEPT
+-P FORWARD ACCEPT
+-P OUTPUT ACCEPT
+--- ip6tables -t filter -nvL ---
+Chain INPUT (policy ACCEPT 225K packets, 36M bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 94711 packets, 21M bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 212K packets, 35M bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+[R0-FW-04 STATUS: SUCCESS]
+================================================================================
+[R0-FW-05] IPv4 WAN Ingress Chains (zone_wan_input & input_wan_rule)
+================================================================================
+Chain zone_wan_input (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+ 106K 5735K input_wan_rule  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3: Custom wan input rule chain */
+   22  9064 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0            udp dpt:68 /* !fw3: Allow-DHCP-Renew */
+   10   504 ACCEPT     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:56789 /* !fw3: Allow-WAN-SSH */
+    0     0 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0            udp dpt:51820 /* !fw3: Allow-WAN-WireGuard */
+    0     0 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate DNAT /* !fw3: Accept port redirections */
+ 106K 5725K zone_wan_src_REJECT  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* !fw3 */
+Chain input_wan_rule (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+[R0-FW-05 STATUS: SUCCESS]
+================================================================================
+[R0-FW-06] IPv6 WAN Ingress Chains (zone_wan_input & input_wan_rule)
+================================================================================
+ip6tables zone_wan_input absent
+ip6tables input_wan_rule absent
+[R0-FW-06 STATUS: SUCCESS]
+================================================================================
+[R0-FW-07] UCI Firewall Zone Configuration
+================================================================================
+firewall.@defaults[0].input='ACCEPT'
+firewall.@zone[0]=zone
+firewall.@zone[0].name='lan'
+firewall.@zone[0].network='lan'
+firewall.@zone[0].input='ACCEPT'
+firewall.@zone[0].output='ACCEPT'
+firewall.@zone[0].forward='REJECT'
+firewall.@zone[1]=zone
+firewall.@zone[1].name='wan'
+firewall.@zone[1].network='wan' 'wan6'
+firewall.@zone[1].input='REJECT'
+firewall.@zone[1].output='ACCEPT'
+firewall.@zone[1].forward='REJECT'
+firewall.@zone[1].masq='1'
+firewall.@zone[1].mtu_fix='1'
+firewall.@forwarding[0].dest='wan'
+firewall.@rule[0].src='wan'
+firewall.@rule[1].src='wan'
+firewall.@rule[2].src='wan'
+firewall.@rule[3].src='wan'
+firewall.Forbidden_Wan_RA.dest='wan'
+firewall.ready_zone=zone
+firewall.ready_zone.name='ready'
+firewall.ready_zone.network='ready'
+firewall.ready_zone.input='DROP'
+firewall.ready_zone.forward='DROP'
+firewall.ready_zone.output='DROP'
+firewall.allow_wan_ssh=rule
+firewall.allow_wan_ssh.name='Allow-WAN-SSH'
+firewall.allow_wan_ssh.src='wan'
+firewall.allow_wan_ssh.proto='tcp'
+firewall.allow_wan_ssh.dest_port='56789'
+firewall.allow_wan_ssh.target='ACCEPT'
+firewall.allow_wan_wg=rule
+firewall.allow_wan_wg.name='Allow-WAN-WireGuard'
+firewall.allow_wan_wg.src='wan'
+firewall.allow_wan_wg.proto='udp'
+firewall.allow_wan_wg.target='ACCEPT'
+firewall.allow_wan_wg.dest_port='51820'
+[R0-FW-07 STATUS: SUCCESS]
+================================================================================
+[R0-FW-08] Dropbear Sockets & UCI Settings
+================================================================================
+tcp        0      0 0.0.0.0:56789           0.0.0.0:*               LISTEN       0 0 1393/dropbear
+tcp        0      0 :::56789                :::*                    LISTEN       0 0 1393/dropbear
+dropbear.@dropbear[0]=dropbear
+dropbear.@dropbear[0].PasswordAuth='on'
+dropbear.@dropbear[0].RootPasswordAuth='on'
+dropbear.@dropbear[0].Port='56789'
+[R0-FW-08 STATUS: SUCCESS]
+================================================================================
+[R0-FW-09] Kernel TCP Sockets (/proc/net/tcp & tcp6)
+================================================================================
+--- /proc/net/tcp ---
+  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode                                                     
+   0: 011FA8C0:4C61 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 8756 1 8843d280 100 0 0 10 0                              
+   1: 00000000:1FA2 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 4976 1 8843a100 100 0 0 10 0                              
+   2: 00000000:1F90 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 4977 1 8843a680 100 0 0 10 0                              
+   3: 00000000:0050 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 4975 1 88439b80 100 0 0 10 0                              
+   4: 00000000:0310 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 4028 1 8e7f0000 100 0 0 10 0                              
+   5: 0100007F:0035 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 6934411 1 8e7f0580 100 0 0 10 5                           
+   6: [REDACTED_HEX_IPV4]:0035 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 6934409 1 8e7f1080 100 0 0 10 5                           
+   7: [REDACTED_HEX_IPV4]:0035 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 6934407 1 8e7f1b80 100 0 0 10 5                           
+   8: 011FA8C0:0035 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 6934405 1 8e7f5280 100 0 0 10 5                           
+   9: [REDACTED_HEX_IPV4]:0035 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 6934403 1 8e7f4780 100 0 0 10 5                           
+  10: 00000000:DDD5 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 4836 1 88439080 100 0 0 10 5                              
+  11: 0100007F:22D8 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 6545 1 88438b00 100 0 0 10 0                              
+  12: 00000000:22B8 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 4691 1 88438580 100 0 0 10 0                              
+  13: 00000000:22B9 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 4978 1 8843ac00 100 0 0 10 0                              
+  14: 00000000:01BB 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 4974 1 88439600 100 0 0 10 0                              
+  15: 00000000:03DC 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 6934445 1 8e7f5800 100 0 0 10 0                           
+  16: [REDACTED_HEX_IPV4]:A1E0 [REDACTED_HEX_IPV4]:0035 06 00000000:00000000 03:00000A5D 00000000     0        0 0 3 83149900                                              
+  17: [REDACTED_HEX_IPV4]:BA7A [REDACTED_HEX_IPV4]:01BB 06 00000000:00000000 03:00000A6F 00000000     0        0 0 3 83149300                                              
+  18: [REDACTED_HEX_IPV4]:A666 [REDACTED_HEX_IPV4]:0035 06 00000000:00000000 03:0000116B 00000000     0        0 0 3 83149840                                              
+  19: 0100007F:B8D0 0100007F:0310 01 00000000:00000000 02:000001A6 00000000     0        0 6730 2 8843b700 21 4 0 10 -1                              
+  [REDACTED_IPV6_GUA] 011FA8C0:DDD5 [REDACTED_HEX_IPV4]:D884 01 00000440:00000000 01:00000015 00000000     0        0 6940782 2 84e20000 21 4 1 10 -1                           
+  [REDACTED_IPV6_GUA] [REDACTED_HEX_IPV4]:A664 [REDACTED_HEX_IPV4]:0035 06 00000000:00000000 03:0000116A 00000000     0        0 0 3 83149c00                                              
+  [REDACTED_IPV6_GUA] [REDACTED_HEX_IPV4]:A668 [REDACTED_HEX_IPV4]:0035 06 00000000:00000000 03:00001288 00000000     0        0 0 3 831490c0                                              
+  [REDACTED_IPV6_GUA] 0100007F:0310 0100007F:B8D2 01 00000000:00000000 02:0000021E 00000000     0        0 7820 2 8e7f2680 21 4 1 10 -1                              
+--- /proc/net/tcp6 ---
+  sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
+   0: [REDACTED_HEX_IPV6]:0035 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 6934423 1 8851b600 100 0 0 10 5
+   1: [REDACTED_HEX_IPV6]:0035 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 6934421 1 8851b000 100 0 0 10 5
+   2: [REDACTED_HEX_IPV6]:0035 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 6934419 1 8851f200 100 0 0 10 5
+   3: [REDACTED_HEX_IPV6]:0035 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 6934417 1 8851a400 100 0 0 10 5
+   4: [REDACTED_HEX_IPV6]:0035 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 6934415 1 88519e00 100 0 0 10 5
+   5: [REDACTED_HEX_IPV6]:0035 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 6934413 1 88519800 100 0 0 10 5
+   6: 00000000000000000000000000000000:DDD5 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 4835 1 88440600 100 0 0 10 5
+   7: 00000000000000000000000000000000:22B8 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 4690 1 88440000 100 0 0 10 0
+[R0-FW-09 STATUS: SUCCESS]
+================================================================================
+[OVERALL INVESTIGATION STATUS: COMPLETE (0/9 failures)]

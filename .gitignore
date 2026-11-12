@@ -51,6 +51,7 @@ target/
 *raw_host_audit*.json
 *raw_audit*
 *BASELINE_RAW*.txt
+local_raw_audit/
 *.auth
 *.credentials
 

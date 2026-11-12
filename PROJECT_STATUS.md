@@ -2,9 +2,9 @@
 
 - Version: `0.2.0-dev`
 - Date: 2026-11-12
-- Phase: P10/M11.1.0.5 Transactional Safety & Generalized Sanitization (Track A Primary)
-- Current Branch: `fix/m11-1-0-5-transactional-safety`
-- Overall status: `M11_1_0_5_TRANSACTIONAL_SAFETY_VERIFIED_AWAITING_REVIEW`
+- Phase: P10/M11.1 Step 1.5 Class R0 Firewall Audit & Safety Closure (Track A Primary)
+- Current Branch: `fix/m11-1-step1-5-r0-audit-and-safety-closure`
+- Overall status: `M11_1_STEP1_5_R0_AUDIT_COMPLETED_AWAITING_REVIEW`
 - GitHub remote: `https://github.com/KiritoMainBro88/CR8808-CUSTOM-FIRMWARE`
 - Flash authorization: `STRICT NO-GO FLASH (Live read-only device audit, static partition verification & optimization analysis only)`
 - Initial Firmware Baseline: `CLEAN_DSA_UPSTREAM_DERIVED_YT921X` (Single-conduit Port 8 SGMII 1000M, Linux 6.12.112 LTS verified)

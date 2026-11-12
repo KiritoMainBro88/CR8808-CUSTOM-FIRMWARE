@@ -222,10 +222,12 @@ else
 fi
 
 # --- [TEST 5] Audit Execution: PARTIAL (2/9 Failures) ---
-echo "--- [TEST 5] Audit Execution: PARTIAL (2/9 Failures) ---"
+echo "--- [TEST 5] Audit Execution: PARTIAL (Failures Return Non-Zero & Preserve Report) ---"
+echo "VALID_PREVIOUS_REPORT_BEFORE_PARTIAL" > "$MOCK_REPORT"
 export MOCK_FAIL_IP6TABLES=1
 export MOCK_FAIL_UCI=1
 
+set +e
 AUTHORIZE_R0_FIREWALL_EXECUTION=1 \
 SSHPASS="dummy" \
 OUTPUT_FILE="$MOCK_REPORT" \
@@ -233,17 +235,35 @@ SSH_EXEC_CMD="$MOCK_SSH" \
 MOCK_SSH_MODE="success" \
 MOCK_TOOLS_DIR="$MOCK_TOOLS_DIR" \
 bash "${SCRIPT_DIR}/scripts/m11_1_firewall_investigation.sh" > "${TEST_DIR}/audit_partial_out.txt" 2>&1
+PARTIAL_RC=$?
+set -e
 
-if grep -q "OVERALL INVESTIGATION STATUS: PARTIAL (4/9 failures)" "$MOCK_REPORT"; then
-    echo "PASS: Audit correctly reported PARTIAL (4/9 failures)."
+if [ "$PARTIAL_RC" -eq 2 ]; then
+    echo "PASS: Partial audit returned non-zero exit code 2."
 else
-    echo "FAIL: Expected PARTIAL (4/9 failures) status not found in report!"
-    cat "$MOCK_REPORT"
+    echo "FAIL: Expected partial audit exit code 2, got $PARTIAL_RC!"
+    cat "${TEST_DIR}/audit_partial_out.txt"
+    exit 1
+fi
+
+if grep -q "Audit incomplete or failed (Status: PARTIAL" "${TEST_DIR}/audit_partial_out.txt"; then
+    echo "PASS: Partial audit logged PIPELINE ERROR with status PARTIAL."
+else
+    echo "FAIL: Partial audit did not log expected status message!"
+    cat "${TEST_DIR}/audit_partial_out.txt"
+    exit 1
+fi
+
+if grep -q "VALID_PREVIOUS_REPORT_BEFORE_PARTIAL" "$MOCK_REPORT"; then
+    echo "PASS: Previous valid report was strictly preserved during partial audit."
+else
+    echo "FAIL: Previous valid report was overwritten or corrupted during partial audit!"
     exit 1
 fi
 
 # --- [TEST 6] Audit Execution: FAILED (9/9 Failures) ---
-echo "--- [TEST 6] Audit Execution: FAILED (9/9 Failures) ---"
+echo "--- [TEST 6] Audit Execution: FAILED (Total Failure Returns Code 3 & Preserves Report) ---"
+echo "VALID_PREVIOUS_REPORT_BEFORE_TOTAL_FAIL" > "$MOCK_REPORT"
 export MOCK_FAIL_IP=1
 export MOCK_FAIL_IPTABLES=1
 export MOCK_FAIL_IP6TABLES=1
@@ -251,6 +271,7 @@ export MOCK_FAIL_UCI=1
 export MOCK_FAIL_NETSTAT=1
 export MOCK_FAIL_HEAD=1
 
+set +e
 AUTHORIZE_R0_FIREWALL_EXECUTION=1 \
 SSHPASS="dummy" \
 OUTPUT_FILE="$MOCK_REPORT" \
@@ -258,12 +279,29 @@ SSH_EXEC_CMD="$MOCK_SSH" \
 MOCK_SSH_MODE="success" \
 MOCK_TOOLS_DIR="$MOCK_TOOLS_DIR" \
 bash "${SCRIPT_DIR}/scripts/m11_1_firewall_investigation.sh" > "${TEST_DIR}/audit_failed_out.txt" 2>&1
+FAILED_RC=$?
+set -e
 
-if grep -q "OVERALL INVESTIGATION STATUS: FAILED (9/9 failures)" "$MOCK_REPORT"; then
-    echo "PASS: Audit correctly reported FAILED (9/9 failures)."
+if [ "$FAILED_RC" -eq 3 ]; then
+    echo "PASS: Failed audit returned non-zero exit code 3."
 else
-    echo "FAIL: Expected FAILED (9/9 failures) status not found in report!"
-    cat "$MOCK_REPORT"
+    echo "FAIL: Expected failed audit exit code 3, got $FAILED_RC!"
+    cat "${TEST_DIR}/audit_failed_out.txt"
+    exit 1
+fi
+
+if grep -q "Audit incomplete or failed (Status: FAILED" "${TEST_DIR}/audit_failed_out.txt"; then
+    echo "PASS: Failed audit logged PIPELINE ERROR with status FAILED."
+else
+    echo "FAIL: Failed audit did not log expected status message!"
+    cat "${TEST_DIR}/audit_failed_out.txt"
+    exit 1
+fi
+
+if grep -q "VALID_PREVIOUS_REPORT_BEFORE_TOTAL_FAIL" "$MOCK_REPORT"; then
+    echo "PASS: Previous valid report was strictly preserved during failed audit."
+else
+    echo "FAIL: Previous valid report was overwritten or corrupted during failed audit!"
     exit 1
 fi
 

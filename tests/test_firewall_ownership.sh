@@ -310,4 +310,68 @@ else
     echo "PASS: Rollback correctly reported error when iptables command failed."
 fi
 
-echo "=== ALL 9 FIREWALL OWNERSHIP & TRANSACTIONAL TESTS PASSED ==="
+# -----------------------------------------------------------------------------
+# TEST 10: Independent Rollback – Missing IPv6 Chain Does NOT Block IPv4 Rollback
+# -----------------------------------------------------------------------------
+echo "--- [TEST 10] Independent Rollback (Missing IPv6 Does NOT Block IPv4) ---"
+# Insert trial rule directly into IPv4
+sudo iptables -I "$CHAIN_V4" 1 -p tcp --dport "$PORT" -m comment --comment "$TAG" -j DROP
+
+# Attempt rollback with invalid IPv6 chain
+set +e
+IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+sh "$HELPER" rollback "$CHAIN_V4" "NON_EXISTENT_V6_CHAIN_$$" "$PORT" "$TAG" >/dev/null 2>&1
+INDEP_RC=$?
+set -e
+
+if [ "$INDEP_RC" -eq 2 ]; then
+    echo "PASS: Rollback correctly reported partial failure code 2 for missing IPv6 chain."
+else
+    echo "FAIL: Expected partial failure code 2, got $INDEP_RC!"
+    exit 1
+fi
+
+# CRUCIAL: Verify IPv4 trial rule WAS STILL CLEANLY REMOVED despite IPv6 chain failure!
+if sudo iptables -C "$CHAIN_V4" -p tcp --dport "$PORT" -m comment --comment "$TAG" -j DROP 2>/dev/null; then
+    echo "FAIL: Missing IPv6 chain blocked IPv4 rollback! IPv4 trial rule was left behind!"
+    exit 1
+else
+    echo "PASS: IPv4 trial rule was successfully rolled back independently despite IPv6 chain error."
+fi
+
+# -----------------------------------------------------------------------------
+# TEST 11: Exact Comment Ownership (Rejection of Substring / Superset Matches)
+# -----------------------------------------------------------------------------
+echo "--- [TEST 11] Exact Comment Ownership Matching ---"
+SUPERSET_TAG="${TAG}_SUPERSET_RULE"
+sudo iptables -I "$CHAIN_V4" 1 -p tcp --dport "$PORT" -m comment --comment "$SUPERSET_TAG" -j DROP
+
+# rule_exists for $TAG must return 1 (not exists), NOT 0
+set +e
+IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+sh "$HELPER" verify "$CHAIN_V4" "$CHAIN_V6" "$PORT" "$TAG" >/dev/null 2>&1
+VERIFY_SUBSTRING_RC=$?
+set -e
+
+if [ "$VERIFY_SUBSTRING_RC" -ne 0 ]; then
+    echo "PASS: Helper correctly rejected superset comment tag '$SUPERSET_TAG' for query '$TAG'."
+else
+    echo "FAIL: Helper suffered from substring confusion and accepted superset tag!"
+    exit 1
+fi
+
+# Rollback of $TAG must NOT delete $SUPERSET_TAG
+IPTABLES_CMD="sudo iptables" IP6TABLES_CMD="sudo ip6tables" \
+sh "$HELPER" rollback "$CHAIN_V4" "$CHAIN_V6" "$PORT" "$TAG" >/dev/null 2>&1 || true
+
+if sudo iptables -C "$CHAIN_V4" -p tcp --dport "$PORT" -m comment --comment "$SUPERSET_TAG" -j DROP 2>/dev/null; then
+    echo "PASS: Rollback for tag '$TAG' preserved rule with superset tag '$SUPERSET_TAG'."
+else
+    echo "FAIL: Rollback inadvertently deleted superset rule!"
+    exit 1
+fi
+
+# Cleanup superset rule
+sudo iptables -D "$CHAIN_V4" -p tcp --dport "$PORT" -m comment --comment "$SUPERSET_TAG" -j DROP 2>/dev/null || true
+
+echo "=== ALL 11 FIREWALL OWNERSHIP & TRANSACTIONAL TESTS PASSED ==="

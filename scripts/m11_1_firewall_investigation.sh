@@ -13,7 +13,7 @@ ROUTER_PORT="${ROUTER_PORT:-56789}"
 ROUTER_USER="${ROUTER_USER:-root}"
 OUTPUT_FILE="${OUTPUT_FILE:-reports/M11_1_FIREWALL_AUDIT_RAW.txt}"
 PINNED_KEY_FILE="${PINNED_KEY_FILE:-config/cr8818_host_key.pub}"
-EXPECTED_FINGERPRINT="SHA256:feZ+NfroyCIlYrC74Z1ZazUSby+WqxRxZM63Q6Q9HmM"
+EXPECTED_FINGERPRINT="${EXPECTED_FINGERPRINT:-SHA256:BwYCFt/UPVQ+Sj6/ZcbKf7yfTK5FqPFYB9uN7isGL64}"
 SANITIZER="${SANITIZER:-scripts/sanitize_telemetry.sh}"
 
 # Pre-flight Gate: Require explicit environment variable authorization
@@ -59,9 +59,9 @@ chmod 600 "$KNOWN_HOSTS_FILE"
 echo "Host key verified ($EXPECTED_FINGERPRINT). Connecting to CR8808 Ver.B..."
 
 # Step 3: Execute SSH and capture raw output into temporary file first
-# Using Bash set -e to ensure SSH failure aborts before touching destination report
 SSH_EXEC_CMD="${SSH_EXEC_CMD:-sshpass -e ssh}"
-if ! $SSH_EXEC_CMD -p "$ROUTER_PORT" \
+set +e
+$SSH_EXEC_CMD -p "$ROUTER_PORT" \
   -o StrictHostKeyChecking=yes \
   -o UserKnownHostsFile="$KNOWN_HOSTS_FILE" \
   -o GlobalKnownHostsFile=/dev/null \
@@ -69,7 +69,7 @@ if ! $SSH_EXEC_CMD -p "$ROUTER_PORT" \
   -o HostKeyAlgorithms=+ssh-rsa \
   -o PubkeyAcceptedKeyTypes=+ssh-rsa \
   -o ConnectTimeout=5 \
-  "${ROUTER_USER}@${ROUTER_IP}" "sh -s" << 'EOF' > "$TEMP_RAW_OUTPUT"
+  "${ROUTER_USER}@${ROUTER_IP}" "sh -s" << 'EOF' > "$TEMP_RAW_OUTPUT" 2>&1
 TOTAL_SECTIONS=9
 SECTION_FAILURES=0
 
@@ -118,26 +118,55 @@ run_cmd "FW-09" "Kernel TCP Sockets (/proc/net/tcp & tcp6)" sh -c "head -n 25 /p
 echo "================================================================================"
 if [ "$SECTION_FAILURES" -eq 0 ]; then
     echo "[OVERALL INVESTIGATION STATUS: COMPLETE (0/$TOTAL_SECTIONS failures)]"
+    exit 0
 elif [ "$SECTION_FAILURES" -lt "$TOTAL_SECTIONS" ]; then
     echo "[OVERALL INVESTIGATION STATUS: PARTIAL ($SECTION_FAILURES/$TOTAL_SECTIONS failures)]"
+    exit 2
 else
     echo "[OVERALL INVESTIGATION STATUS: FAILED ($SECTION_FAILURES/$TOTAL_SECTIONS failures)]"
+    exit 3
 fi
 echo "================================================================================"
 EOF
-then
-    echo "[PIPELINE ERROR] SSH command failed or timed out! Aborting without modifying existing report." >&2
+SSH_RC=$?
+set -e
+
+# Step 4: Validate remote execution outcome before touching destination report
+if [ "$SSH_RC" -ne 0 ] && [ ! -s "$TEMP_RAW_OUTPUT" ]; then
+    echo "[PIPELINE ERROR] SSH command failed to connect or execute! Aborting without modifying existing report." >&2
     exit 1
 fi
 
-# Step 4: Stream sanitized output to temporary destination and verify exit status
+AUDIT_STATUS="UNKNOWN"
+if grep -q "\[OVERALL INVESTIGATION STATUS: COMPLETE (0/" "$TEMP_RAW_OUTPUT"; then
+    AUDIT_STATUS="COMPLETE"
+elif grep -q "\[OVERALL INVESTIGATION STATUS: PARTIAL (" "$TEMP_RAW_OUTPUT"; then
+    AUDIT_STATUS="PARTIAL"
+elif grep -q "\[OVERALL INVESTIGATION STATUS: FAILED (" "$TEMP_RAW_OUTPUT"; then
+    AUDIT_STATUS="FAILED"
+fi
+
+if [ "$AUDIT_STATUS" != "COMPLETE" ]; then
+    echo "[PIPELINE ERROR] Audit incomplete or failed (Status: $AUDIT_STATUS, SSH exit: $SSH_RC)! Existing report strictly preserved." >&2
+    if [ -n "$SANITIZER" ] && [ -x "$SANITIZER" -o -f "$SANITIZER" ]; then
+        bash "$SANITIZER" < "$TEMP_RAW_OUTPUT" > "${OUTPUT_FILE}.${AUDIT_STATUS,,}" 2>/dev/null || true
+    fi
+    if [ "$AUDIT_STATUS" = "PARTIAL" ]; then
+        exit 2
+    else
+        exit 3
+    fi
+fi
+
+# Step 5: Stream sanitized output to temporary destination and verify exit status
 if ! bash "$SANITIZER" < "$TEMP_RAW_OUTPUT" > "$TEMP_SANITIZED"; then
     echo "[PIPELINE ERROR] Sanitization failed! Existing report preserved." >&2
     exit 1
 fi
 
-# Step 5: Atomic move to destination report (never leaves partial/corrupt files)
+# Step 6: Atomic move to destination report (never leaves partial/corrupt files)
 mkdir -p "$(dirname "$OUTPUT_FILE")"
 mv -f "$TEMP_SANITIZED" "$OUTPUT_FILE"
 
-echo "Class R0 Firewall Investigation complete. Sanitized report atomically saved to: $OUTPUT_FILE"
+echo "Class R0 Firewall Investigation complete (Status: COMPLETE). Sanitized report atomically saved to: $OUTPUT_FILE"
+exit 0

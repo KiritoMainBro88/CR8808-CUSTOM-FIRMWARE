@@ -254,12 +254,12 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# TEST 8: SIGTERM Received While Sentinel Still Exists (Clean Cancellation)
+# TEST 8: SIGTERM Received While Sentinel Exists (Triggers Emergency Rollback)
 # -----------------------------------------------------------------------------
-echo "--- [TEST 8] SIGTERM Handling While Sentinel Still Exists ---"
+echo "--- [TEST 8] Unexpected SIGTERM Handling (Emergency Rollback Trigger) ---"
 rm -f "$SENTINEL" "$MOCK_LOG"
 
-sh "$WATCHDOG_SCRIPT" 5 "$SENTINEL" "$MOCK_HELPER" "$MOCK_LOG" </dev/null >/dev/null 2>&1 &
+sh "$WATCHDOG_SCRIPT" 10 "$SENTINEL" "$MOCK_HELPER" "$MOCK_LOG" </dev/null >/dev/null 2>&1 &
 TERM_PID=$!
 sleep 0.3
 
@@ -268,14 +268,23 @@ if [ ! -f "$SENTINEL" ]; then
     exit 1
 fi
 
+# Send SIGTERM to watchdog while ARMED (without disarm)
 kill -TERM "$TERM_PID" 2>/dev/null || true
 wait "$TERM_PID" 2>/dev/null || true
 
+# Assert emergency rollback was EXECUTED
 if [ -f "$MOCK_LOG" ] && grep -q "MOCK_ROLLBACK_EXECUTED" "$MOCK_LOG"; then
-    echo "FAIL: Rollback was triggered despite SIGTERM cancellation!"
-    exit 1
+    echo "PASS: Watchdog caught unexpected SIGTERM while ARMED and executed emergency rollback."
 else
-    echo "PASS: Watchdog caught SIGTERM with active sentinel and exited cleanly without rollback."
+    echo "FAIL: Watchdog died upon SIGTERM without executing emergency rollback!"
+    exit 1
+fi
+
+if [ -f "${SENTINEL}.state" ] && grep -q "SIGNAL_ROLLBACK_COMPLETED" "${SENTINEL}.state"; then
+    echo "PASS: State recorded SIGNAL_ROLLBACK_COMPLETED."
+else
+    echo "FAIL: State file did not record SIGNAL_ROLLBACK_COMPLETED!"
+    exit 1
 fi
 
 # -----------------------------------------------------------------------------
@@ -389,4 +398,28 @@ else
     echo "PASS: ROLLBACK_COMPLETED was NOT recorded."
 fi
 
-echo "=== ALL 11 WATCHDOG HARDENING TESTS PASSED ==="
+# -----------------------------------------------------------------------------
+# TEST 12: Lock Contention on Timeout Expiration (Forces Emergency Rollback)
+# -----------------------------------------------------------------------------
+echo "--- [TEST 12] Lock Contention on Timeout Expiration ---"
+rm -f "$SENTINEL" "${SENTINEL}.state" "${SENTINEL}.error.log" "$MOCK_LOG"
+
+sh "$WATCHDOG_SCRIPT" 1 "$SENTINEL" "$MOCK_HELPER" "$MOCK_LOG" </dev/null >/dev/null 2>&1 &
+CONTENTION_PID=$!
+sleep 0.2
+
+# Intentionally create and hold the transition lock to simulate lock contention
+mkdir "${SENTINEL}.trans.lock" 2>/dev/null || true
+
+# Wait for watchdog sleep (1s) + retry window (~0.3s) to expire
+wait "$CONTENTION_PID" 2>/dev/null || true
+
+# Verify emergency rollback was triggered despite lock contention
+if [ -f "$MOCK_LOG" ] && grep -q "MOCK_ROLLBACK_EXECUTED" "$MOCK_LOG"; then
+    echo "PASS: Watchdog detected lock contention upon timeout and forced emergency rollback."
+else
+    echo "FAIL: Lock contention caused watchdog to silently skip rollback!"
+    exit 1
+fi
+
+echo "=== ALL 12 WATCHDOG HARDENING TESTS PASSED ==="
