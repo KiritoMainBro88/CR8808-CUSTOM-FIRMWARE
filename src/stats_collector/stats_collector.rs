@@ -43,6 +43,16 @@ fn json_escape(s: &str) -> String {
     out
 }
 
+fn fmt_bytes(b: u64) -> String {
+    if b >= 1_073_741_824 {
+        format!("{:.1} GB", (b as f64) / 1_073_741_824.0)
+    } else if b >= 1_048_576 {
+        format!("{:.1} MB", (b as f64) / 1_048_576.0)
+    } else {
+        format!("{} KB", b / 1024)
+    }
+}
+
 fn parse_cpu_fields(parts: &[&str]) -> (u64, u64) {
     let user: u64 = parts[1].parse().unwrap_or(0);
     let nice: u64 = parts[2].parse().unwrap_or(0);
@@ -557,7 +567,7 @@ fn collect_json(prev: &mut CpuStat) -> String {
             ));
         } else {
             clients.push(format!(
-                r#"{{"mac":"{}","ip":"{}","name":"{}","model":"Wired Ethernet Client","hw_cap":"Gigabit Ethernet","link_proto":"1000Mbps Ethernet","type":"wifi","band":"Wired","tx":"1000M","rx":"1000M","rssi":"0 dBm","snr":"LAN","quality":100,"phy_mode":"1000BASE-T","state":"Active"}}"#,
+                r#"{{"mac":"{}","ip":"{}","name":"{}","model":"Wired Ethernet Client","hw_cap":"Gigabit Ethernet","link_proto":"1000BASE-T (1Gbps)","type":"laptop","band":"Gigabit LAN","tx":"1000M","rx":"1000M","rssi":"Wired","snr":"LAN","quality":100,"phy_mode":"1000BASE-T","state":"Wired"}}"#,
                 json_escape(&mac),
                 json_escape(ip),
                 json_escape(&name)
@@ -566,6 +576,9 @@ fn collect_json(prev: &mut CpuStat) -> String {
     }
 
     // Active WireGuard wg0 peers (when endpoint or transfer > 0)
+    let mut wg_active_peers: usize = 0;
+    let mut wg_rx_total: u64 = 0;
+    let mut wg_tx_total: u64 = 0;
     for line in wg_dump.lines().skip(1) {
         let p: Vec<&str> = line.split_whitespace().collect();
         if p.len() >= 7 {
@@ -573,18 +586,23 @@ fn collect_json(prev: &mut CpuStat) -> String {
             let allowed = p[3];
             let rx_b: u64 = p[5].parse().unwrap_or(0);
             let tx_b: u64 = p[6].parse().unwrap_or(0);
+            wg_rx_total = wg_rx_total.saturating_add(rx_b);
+            wg_tx_total = wg_tx_total.saturating_add(tx_b);
             if endpoint != "(none)" || rx_b > 0 || tx_b > 0 {
+                wg_active_peers += 1;
                 let short_key = if p[0].len() > 10 { &p[0][..10] } else { p[0] };
                 clients.push(format!(
-                    r#"{{"mac":"wg0-{}","ip":"{}","name":"WireGuard Peer","model":"Rust BoringTun Tunnel","hw_cap":"Noise_IKpsk2","link_proto":"WireGuard UDP 51820","type":"wifi","band":"VPN","tx":"{} KB","rx":"{} KB","rssi":"0 dBm","snr":"VPN","quality":100,"phy_mode":"ChaCha20-Poly1305","state":"Active"}}"#,
+                    r#"{{"mac":"wg0-{}","ip":"{}","name":"WireGuard Peer","model":"Rust BoringTun Tunnel","hw_cap":"Noise_IKpsk2","link_proto":"WireGuard (HE160)","type":"vpn","band":"WireGuard VPN","tx":"{}","rx":"{}","rssi":"VPN","snr":"VPN","quality":100,"phy_mode":"ChaCha20-Poly1305","state":"Active"}}"#,
                     json_escape(short_key),
                     json_escape(allowed),
-                    tx_b / 1024,
-                    rx_b / 1024
+                    fmt_bytes(tx_b),
+                    fmt_bytes(rx_b)
                 ));
             }
         }
     }
+    let wg_rx_str = fmt_bytes(wg_rx_total);
+    let wg_tx_str = fmt_bytes(wg_tx_total);
 
     let clients_json = clients.join(",");
 
@@ -627,7 +645,7 @@ fn collect_json(prev: &mut CpuStat) -> String {
     "zapret": {{ "running": {}, "mode": "Selective IPSet (NSS Accel)", "unblock_count": {}, "active_ips": {} }},
     "adblock": {{ "running": {}, "blocked_count": {}, "rule": "hostsVN + Tencent Safe" }},
     "doh": {{ "running": {}, "provider": "Dnsmasq Game Cache (4096)", "port": 53 }},
-    "wireguard": {{ "running": {}, "engine": "Rust boringtun-cli", "port": 51820, "peers": {} }},
+    "wireguard": {{ "running": {}, "engine": "Rust boringtun-cli", "port": 51820, "peers": {}, "active_peers": {}, "rx_bytes": {}, "tx_bytes": {}, "rx_str": "{}", "tx_str": "{}" }},
     "wifi_5g": {{ "ssid": "{}", "channel": {}, "bw": "160MHz", "rate": "2402 Mbps", "region": "SG" }},
     "wifi_24g": {{ "ssid": "{}", "channel": {}, "bw": "20/40MHz", "hidden": {}, "rate": "574 Mbps" }}
   }},
@@ -661,6 +679,11 @@ fn collect_json(prev: &mut CpuStat) -> String {
         dnsmasq_cached,
         wg_run,
         wg_peers_total,
+        wg_active_peers,
+        wg_rx_total,
+        wg_tx_total,
+        json_escape(&wg_rx_str),
+        json_escape(&wg_tx_str),
         json_escape(&ssid_5g),
         chan_5g,
         json_escape(&ssid_24g),
