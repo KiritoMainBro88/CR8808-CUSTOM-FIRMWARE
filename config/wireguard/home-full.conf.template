@@ -1,0 +1,20 @@
+# config/wireguard/home-full.conf.template
+# Hardened Windows Full-Tunnel Client Profile for CR8808 Ver.B (RA82) wg0 (UDP 51820)
+#
+# Fixes applied vs desktop home-full.conf:
+#   1. Removes "::/0" from AllowedIPs (router wg0 is IPv4 10.99.0.1/24 only; ::/0 blackholes v6).
+#   2. Uses router dnsmasq over tunnel (DNS = 10.99.0.1) instead of blocked/deadlock 1.1.1.1.
+#   3. Sets MTU = 1360 to prevent fragmentation blackholes over upstream PPPoE (1492) + NAT.
+#   4. Requires pausing/disconnecting competing VPNs (e.g. NordLynx 0.0.0.0/0 Metric 6).
+
+[Interface]
+PrivateKey = <CLIENT_PRIVATE_KEY_REPLACE_ME>
+Address = 10.99.0.2/24
+DNS = 10.99.0.1
+MTU = 1360
+
+[Peer]
+PublicKey = <ROUTER_WG0_SERVER_PUBLIC_KEY_REPLACE_ME>
+Endpoint = <DUCKDNS_SUBDOMAIN>.duckdns.org:51820
+AllowedIPs = 0.0.0.0/0
+PersistentKeepalive = 25

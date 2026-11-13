@@ -1,0 +1,23 @@
+# config/wireguard/home-split-admin.conf.template
+# Hardened Windows Split-Tunnel Client Profile for CR8808 Ver.B (RA82) Remote Admin
+# Target Router: 192.168.31.1 (Dropbear SSH on 56789) / Tunnel GW: 10.99.0.1
+#
+# Fixes applied vs ad-hoc desktop configs:
+#   1. Split AllowedIPs limited to tunnel (10.99.0.0/24) + router LAN (192.168.31.0/24).
+#      Add ", 192.168.100.0/24" ONLY if administering upstream FPT ONT (192.168.100.1).
+#   2. Omits "::/0" because CR8808 wg0 runs IPv4-only and IPv6 WAN is disabled.
+#   3. Omits overriding system DNS with 1.1.1.1 (campus networks / VPN wrappers often drop UDP/53).
+#   4. Sets MTU = 1280 for reliable PMTU traversal across campus Wi-Fi, NAT, and PPPoE (1492).
+#   5. Disconnect competing VPNs (e.g. NordLynx Metric 6 default route) before activating;
+#      even split AllowedIPs still send outer WireGuard UDP packets to Endpoint via default route.
+
+[Interface]
+PrivateKey = <CLIENT_PRIVATE_KEY_REPLACE_ME>
+Address = 10.99.0.2/24
+MTU = 1280
+
+[Peer]
+PublicKey = <ROUTER_WG0_SERVER_PUBLIC_KEY_REPLACE_ME>
+Endpoint = <DUCKDNS_SUBDOMAIN>.duckdns.org:51820
+AllowedIPs = 10.99.0.0/24, 192.168.31.0/24
+PersistentKeepalive = 25
