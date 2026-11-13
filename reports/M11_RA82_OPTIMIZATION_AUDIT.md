@@ -8,7 +8,7 @@
 **Date:** November 11, 2026  
 **Safety Protocol:** `STRICT NO-GO FLASH` (Zero router writes, 0 flashing, 0 NAND/NVRAM modifications, 0 reboots)  
 **Git Branch:** `feature/m11-ra82-optimization-audit`  
-**Empirical Evidence:** Live router read-only interrogation log [`reports/M11_RA82_LIVE_AUDIT_RAW.txt`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M11_RA82_LIVE_AUDIT_RAW.txt)
+**Empirical Evidence:** Sanitized baseline log [`reports/M12_BASELINE_SANITIZED.txt`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M12_BASELINE_SANITIZED.txt) (historical raw `M11_RA82_LIVE_AUDIT_RAW.txt` removed from Git HEAD under P0-1)
 
 ---
 
@@ -148,7 +148,7 @@ From live `/proc/softirqs`:
 - **Mode:** `IEEE80211_MODE_11AXA_HE160` (802.11ax 160 MHz channel width).
 - **Operating Channel:** Channel 40 (5.2 GHz UNII-1).
 - **Active Station Link Rate:**
-  - Client MAC: `90:b7:90:77:85:1d`
+  - Client MAC: `[REDACTED_STA_MAC]`
   - **Link PHY Rate:** **`TX 2401M / RX 2401M (2.4019 Gbps)`**
   - **RSSI:** `-36 dBm`, **SNR:** `58 dB`
   - **MIMO Mode:** 2x2 HE160
@@ -158,7 +158,7 @@ From live `/proc/softirqs`:
 ### 5.2 2.4 GHz Radio Configuration
 - **Interface:** `wl1` / Device `wifi0` (IPQ5018 on-die radio).
 - **Mode:** `11axg`, `HT40`, Channel 1 (2.412 GHz), Bit Rate: 286.8 Mbps.
-- **Guest / IoT Interface:** `wl13` (`25c829b1922d3123_miwifi`) active for smart home devices.
+- **Guest / IoT Interface:** `wl13` (`[REDACTED_IOT_SSID]`) active for smart home devices.
 
 ### 5.3 Demystifying the Speedtest > 1,000 Mbps Paradox:
 - The Wi-Fi PHY rate between the PC and CR8808 Ver.B is **2,401.9 Mbps**.
@@ -182,7 +182,7 @@ From live `/proc/softirqs`:
   - `nf_conntrack_count`: `552` (Current table load: 3.3%)
   - `nf_conntrack_tcp_timeout_established`: `1800` seconds (30 minutes).
 - **MTU Configuration:**
-  - WAN `eth0`: MTU `1500` (Direct DHCP upstream `192.168.100.1`).
+  - WAN `eth0`: MTU `1500` (Direct DHCP upstream `[REDACTED_WAN_GW]`).
   - LAN `br-lan`: MTU `1500`.
   - VPN `wg0`: MTU `1420`.
   - IPTables TCPMSS clamp to PMTU is active on WAN forward chain.
@@ -251,5 +251,5 @@ Several Xiaomi cloud daemons run continuously in background, consuming RAM and C
 +--------------------------+-----------------------+-------------------------------------------------+
 ```
 
-All empirical findings are fully archived in `reports/M11_RA82_LIVE_AUDIT_RAW.txt`.  
+Historical raw log `M11_RA82_LIVE_AUDIT_RAW.txt` was purged from Git `HEAD` under M12.6 P0-1; sanitized baseline artifacts remain in [`reports/M12_BASELINE_SANITIZED.txt`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M12_BASELINE_SANITIZED.txt).  
 The detailed itemized roadmap for non-intrusive optimization is provided in [`docs/M11_RA82_OPTIMIZATION_ROADMAP.md`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/docs/M11_RA82_OPTIMIZATION_ROADMAP.md).

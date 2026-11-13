@@ -7,7 +7,7 @@
 **Receiving Authority:** ChatGPT – Chief Architect / Architecture Lead  
 **Date:** November 11, 2026  
 **Safety Protocol:** `STRICT NO-GO FLASH` (Zero router writes, 0 flashing, 0 NAND/NVRAM modifications, 0 reboots)  
-**Evidence Grounding:** Empirical live interrogation log [`reports/M11_RA82_LIVE_AUDIT_RAW.txt`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M11_RA82_LIVE_AUDIT_RAW.txt)
+**Evidence Grounding:** Sanitized baseline logs [`reports/M12_BASELINE_SANITIZED.txt`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M12_BASELINE_SANITIZED.txt) and [`reports/M12_6_LIVE_SANITIZED.txt`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M12_6_LIVE_SANITIZED.txt) (original raw `M11_RA82_LIVE_AUDIT_RAW.txt` purged from Git HEAD under P0-1)
 
 ---
 

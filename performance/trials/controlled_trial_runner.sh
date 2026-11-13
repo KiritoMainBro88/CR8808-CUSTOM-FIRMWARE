@@ -50,17 +50,22 @@ if [ -n "$MOCK_ROOT" ]; then
     esac
 fi
 
-TARGET_REL_PATH="/sys/class/net/eth0/queues/rx-0/rps_cpus"
-BASELINE_VALUE="0"
-TRIAL_VALUE="2"
-WATCHDOG_TIMEOUT="180"
+TARGET_REL_PATH="${TARGET_REL_PATH:-/sys/class/net/eth0/queues/rx-0/rps_cpus}"
+BASELINE_VALUE="${BASELINE_VALUE:-0}"
+TRIAL_VALUE="${TRIAL_VALUE:-2}"
+WATCHDOG_TIMEOUT="${WATCHDOG_TIMEOUT:-180}"
 MEASURE_SECONDS="${MEASURE_SECONDS:-30}"
 MIN_FREE_RAM_KB="${MIN_FREE_RAM_KB:-6144}" # 6 MB minimum headroom
 
 TRIAL_STATE_FILE="${TRIAL_STATE_DIR}/rps_trial.state"
+OP_LOCK_DIR="${TRIAL_STATE_DIR}/op.lock.d"
+REQUIRE_ENDPOINT_PROBE="${REQUIRE_ENDPOINT_PROBE:-0}"
+REQUIRE_SOFTIRQ_TELEMETRY="${REQUIRE_SOFTIRQ_TELEMETRY:-0}"
+CLIENT_REACHABILITY_VERIFIED="${CLIENT_REACHABILITY_VERIFIED:-0}"
 WATCHDOG_PID=""
 TRIAL_IN_PROGRESS=0
 LOCK_ACQUIRED=0
+OP_LOCK_ACQUIRED=0
 
 # Logging helpers
 log_info() {
@@ -89,16 +94,17 @@ target_sysfs_path() {
 
 read_target_val() {
     _path=$(target_sysfs_path)
-    if [ -f "$_path" ]; then
-        _val=$(cat "$_path" 2>/dev/null | tr -d ' \t\r\n' | sed 's/^0*//')
-        if [ -z "$_val" ]; then
-            echo "0"
-        else
-            echo "$_val"
-        fi
-        return 0
+    [ -f "$_path" ] && [ -r "$_path" ] || return 1
+    _raw=$(cat "$_path" 2>/dev/null) || return 1
+    _trimmed=$(printf '%s' "$_raw" | tr -d ' \t\r\n')
+    [ -n "$_trimmed" ] || return 1
+    _val=$(printf '%s' "$_trimmed" | sed 's/^0*//')
+    if [ -z "$_val" ]; then
+        echo "0"
+    else
+        echo "$_val"
     fi
-    return 1
+    return 0
 }
 
 write_target_val() {
@@ -133,31 +139,32 @@ get_mem_available_kb() {
     return 1
 }
 
-# Read NET_RX softirqs for CPU0 and CPU1
+# Read NET_RX softirqs for CPU0 and CPU1 (never fabricates 0 0 on read failure)
 get_net_rx_softirqs() {
     _softirqs="${MOCK_ROOT}/proc/softirqs"
-    if [ -f "$_softirqs" ]; then
-        grep "NET_RX:" "$_softirqs" 2>/dev/null | awk '{print $2, $3}' || echo "0 0"
-    else
-        echo "0 0"
-    fi
+    [ -f "$_softirqs" ] && [ -r "$_softirqs" ] || return 1
+    _line=$(grep -m1 "NET_RX:" "$_softirqs" 2>/dev/null) || return 1
+    _vals=$(printf '%s\n' "$_line" | awk '{if (NF >= 3 && $2 ~ /^[0-9]+$/ && $3 ~ /^[0-9]+$/) print $2, $3}')
+    [ -n "$_vals" ] || return 1
+    printf '%s\n' "$_vals"
+    return 0
 }
 
-# Management connection reachability check
+# Management connection reachability check (explicitly separates router-local checks from remote SSH probes)
 check_management_connection() {
-    log_info "Verifying management connection reachability..."
+    log_info "Verifying management connection health..."
 
-    # Custom command override (e.g. for test harnesses or custom health scripts)
+    # 1. Custom endpoint check override (e.g. host-driven probe or test harness hook)
     if [ -n "${MANAGEMENT_CHECK_CMD:-}" ]; then
         if ! eval "$MANAGEMENT_CHECK_CMD" >/dev/null 2>&1; then
             log_err "Precondition Failed: Custom management check failed (${MANAGEMENT_CHECK_CMD})."
             return 1
         fi
-        log_success "Management connection verified via custom check."
+        log_success "Management reachability verified via MANAGEMENT_CHECK_CMD."
         return 0
     fi
 
-    # In MOCK_ROOT environment, simulate management reachability
+    # 2. MOCK_ROOT environment checks (simulated fail flags and br-lan operstate)
     if [ -n "$MOCK_ROOT" ]; then
         _mock_mgmt_fail="${MOCK_ROOT}/tmp/mock_mgmt_fail"
         if [ -f "$_mock_mgmt_fail" ]; then
@@ -168,39 +175,53 @@ check_management_connection() {
         if [ -d "$_mock_br_lan" ] && [ -f "$_mock_br_lan/operstate" ]; then
             _state=$(cat "$_mock_br_lan/operstate" 2>/dev/null | tr -d ' \t\r\n')
             if [ "$_state" = "down" ]; then
-                log_err "Precondition Failed: Local management interface br-lan is DOWN."
+                log_err "Precondition Failed: Router-local interface br-lan is DOWN."
                 return 1
             fi
         fi
-        log_success "Management connection verified (mock environment healthy)."
+        if [ "$REQUIRE_ENDPOINT_PROBE" -eq 1 ] && [ "$CLIENT_REACHABILITY_VERIFIED" -ne 1 ] && [ -z "${MANAGEMENT_IP:-}" ]; then
+            log_err "Precondition Failed: REQUIRE_ENDPOINT_PROBE=1 but no MANAGEMENT_CHECK_CMD, MANAGEMENT_IP, or CLIENT_REACHABILITY_VERIFIED=1 supplied."
+            return 1
+        fi
+        log_info "Management check passed in MOCK_ROOT (router-local state verified)."
         return 0
     fi
 
-    # Live hardware verification
-    # 1. Check if br-lan interface exists and is up
+    # 3. Live hardware router-local checks (necessary, NOT sufficient to prove remote client SSH)
     if [ -d "/sys/class/net/br-lan" ]; then
         _oper=$(cat /sys/class/net/br-lan/operstate 2>/dev/null || echo "unknown")
         if [ "$_oper" = "down" ]; then
-            log_err "Precondition Failed: Management interface br-lan is DOWN."
+            log_err "Precondition Failed: Router-local management interface br-lan is DOWN."
             return 1
         fi
     fi
 
-    # 2. Check if Dropbear SSH daemon is active and listening
     if ! pidof dropbear >/dev/null 2>&1 && ! pgrep dropbear >/dev/null 2>&1; then
-        log_err "Precondition Failed: Management daemon (dropbear) is not running."
+        log_err "Precondition Failed: Router-local SSH daemon (dropbear) is not running."
         return 1
     fi
 
-    # 3. If MANAGEMENT_IP is provided, verify ICMP reachability
+    # 4. Optional active peer/client reachability verification
     if [ -n "${MANAGEMENT_IP:-}" ]; then
         if ! ping -c 1 -W 2 "$MANAGEMENT_IP" >/dev/null 2>&1; then
-            log_err "Precondition Failed: Management IP ${MANAGEMENT_IP} is unreachable."
+            log_err "Precondition Failed: Peer management IP ${MANAGEMENT_IP} is unreachable via ICMP."
             return 1
         fi
+        log_success "Router-local mgmt (br-lan + dropbear) AND ICMP peer ${MANAGEMENT_IP} verified."
+        return 0
     fi
 
-    log_success "Management connection verified."
+    if [ "$CLIENT_REACHABILITY_VERIFIED" -eq 1 ]; then
+        log_success "Router-local mgmt (br-lan + dropbear) healthy; client-side SSH+ICMP probe verified by orchestrator."
+        return 0
+    fi
+
+    if [ "$REQUIRE_ENDPOINT_PROBE" -eq 1 ]; then
+        log_err "Precondition Failed: REQUIRE_ENDPOINT_PROBE=1 requires host-side SSH probe (CLIENT_REACHABILITY_VERIFIED=1), MANAGEMENT_IP, or MANAGEMENT_CHECK_CMD."
+        return 1
+    fi
+
+    log_info "Router-local mgmt healthy (br-lan + dropbear); NOTE: remote client SSH reachability is NOT proven from inside router (run host orchestrator for E2E SSH/ICMP probe)."
     return 0
 }
 
@@ -208,6 +229,7 @@ check_management_connection() {
 # LOCK MANAGEMENT & CONCURRENCY PROTECTION
 # ------------------------------------------------------------------------------
 acquire_trial_lock() {
+    mkdir -p "$(dirname "$TRIAL_LOCK_DIR")" 2>/dev/null || true
     _retries=3
     while [ "$_retries" -gt 0 ]; do
         if mkdir "$TRIAL_LOCK_DIR" 2>/dev/null; then
@@ -238,31 +260,102 @@ release_trial_lock() {
     fi
 }
 
+# Short-lived atomic critical-section lock around sysfs & state-file mutations
+# Prevents concurrency races between main runner, signal handler, and watchdog.
+acquire_op_lock() {
+    _owner_tag="${1:-runner:$$}"
+    mkdir -p "$TRIAL_STATE_DIR" 2>/dev/null || true
+    _retries=10
+    while [ "$_retries" -gt 0 ]; do
+        if mkdir "$OP_LOCK_DIR" 2>/dev/null; then
+            printf '%s\n' "$_owner_tag" > "${OP_LOCK_DIR}/owner" 2>/dev/null || true
+            OP_LOCK_ACQUIRED=1
+            return 0
+        fi
+        if [ -f "${OP_LOCK_DIR}/owner" ]; then
+            _cur_owner=$(cat "${OP_LOCK_DIR}/owner" 2>/dev/null || echo "")
+            case "$_cur_owner" in
+                runner:*)
+                    _opid="${_cur_owner#runner:}"
+                    if [ -n "$_opid" ] && ! kill -0 "$_opid" 2>/dev/null; then
+                        log_warn "Purging stale op lock from dead runner PID ${_opid}."
+                        rm -rf "$OP_LOCK_DIR" 2>/dev/null || true
+                        continue
+                    fi
+                    ;;
+            esac
+        fi
+        sleep 1
+        _retries=$((_retries - 1))
+    done
+    log_err "Timed out waiting for atomic operation lock (${OP_LOCK_DIR})."
+    return 1
+}
+
+release_op_lock() {
+    if [ "$OP_LOCK_ACQUIRED" -eq 1 ]; then
+        rm -rf "$OP_LOCK_DIR" 2>/dev/null || true
+        OP_LOCK_ACQUIRED=0
+    fi
+}
+
+write_emergency_alert() {
+    _reason="$1"
+    _actual="$2"
+    mkdir -p "$TRIAL_STATE_DIR" 2>/dev/null || true
+    _alert_file="${TRIAL_STATE_DIR}/EMERGENCY_UNRESOLVED"
+    cat << ALERT_EOF > "$_alert_file"
+ALERT=${_reason}
+TIMESTAMP=$(date +%s)
+TARGET=${TARGET_REL_PATH}
+BASELINE_VALUE=${BASELINE_VALUE}
+ACTUAL_VALUE=${_actual}
+STATE_FILE=${TRIAL_STATE_FILE}
+ALERT_EOF
+}
+
 # ------------------------------------------------------------------------------
 # DEFECT (a) EMERGENCY ABORT HANDLER
 # ------------------------------------------------------------------------------
 emergency_abort() {
+    trap '' INT TERM HUP
     log_err "Emergency abort signal caught! Executing fail-safe rollback."
-    if [ "$TRIAL_IN_PROGRESS" -eq 1 ]; then
+    _abort_needs_rollback=0
+    if [ "$TRIAL_IN_PROGRESS" -eq 1 ] || [ -f "$TRIAL_STATE_FILE" ]; then
+        _abort_needs_rollback=1
+    fi
+
+    _abort_restored=1
+    if [ "$_abort_needs_rollback" -eq 1 ]; then
+        _abort_restored=0
+        acquire_op_lock "runner:$$" || log_warn "Proceeding with emergency abort without op lock."
         if write_target_val "$BASELINE_VALUE"; then
-            _rb_check=$(read_target_val || echo "")
-            if [ "$_rb_check" = "$BASELINE_VALUE" ] || [ -z "$_rb_check" -a "$BASELINE_VALUE" = "0" ]; then
+            if _rb_check=$(read_target_val) && [ "$_rb_check" = "$BASELINE_VALUE" ]; then
                 log_success "Emergency abort: parameter restored to verified baseline ($BASELINE_VALUE)."
                 rm -f "$TRIAL_STATE_FILE" 2>/dev/null || true
                 TRIAL_IN_PROGRESS=0
+                _abort_restored=1
             else
-                log_err "CRITICAL: Emergency readback verification failed! State file preserved at $TRIAL_STATE_FILE."
+                log_err "CRITICAL: Emergency readback verification failed (read: '${_rb_check:-READ_ERROR}')! State file preserved at $TRIAL_STATE_FILE."
             fi
         else
             log_err "CRITICAL: Emergency write failed! NEVER deleting state file. Manual inspection required."
         fi
+        if [ "$_abort_restored" -ne 1 ]; then
+            write_emergency_alert "EMERGENCY_ABORT_ROLLBACK_FAILED" "${_rb_check:-READ_ERROR}"
+        fi
+        release_op_lock
     fi
 
-    if [ -n "$WATCHDOG_PID" ]; then
-        kill "$WATCHDOG_PID" 2>/dev/null || true
+    if [ "$_abort_restored" -eq 1 ]; then
+        disarm_watchdog
+        release_trial_lock
+        exit 2
     fi
+
+    log_err "CRITICAL: Restoration unverified; keeping watchdog ARMED (PID: ${WATCHDOG_PID:-none}) and preserving $TRIAL_STATE_FILE."
     release_trial_lock
-    exit 2
+    exit 3
 }
 
 trap emergency_abort INT TERM HUP
@@ -276,11 +369,18 @@ run_preflight_checks() {
     # Stale state check: If state file exists from previous uncompleted run
     if [ -f "$TRIAL_STATE_FILE" ]; then
         log_warn "Previous trial state file found at $TRIAL_STATE_FILE. Checking system state."
-        _cur_val=$(read_target_val || echo "")
-        if [ "$_cur_val" = "$BASELINE_VALUE" ] || [ -z "$_cur_val" -a "$BASELINE_VALUE" = "0" ]; then
+        acquire_op_lock "runner:$$" || return 1
+        if ! _cur_val=$(read_target_val); then
+            release_op_lock
+            log_err "Precondition Failed: Unable to read current sysfs parameter while stale state file exists ($TRIAL_STATE_FILE)."
+            return 1
+        fi
+        if [ "$_cur_val" = "$BASELINE_VALUE" ]; then
             log_info "System is already at verified baseline ($BASELINE_VALUE). Cleaning orphaned state file."
             rm -f "$TRIAL_STATE_FILE" 2>/dev/null || true
+            release_op_lock
         else
+            release_op_lock
             log_err "Precondition Failed: Stale trial state detected and parameter is currently '$_cur_val' (not baseline $BASELINE_VALUE)."
             log_err "Execute: $0 rollback to resolve previous state before starting a new trial."
             return 1
@@ -304,9 +404,11 @@ run_preflight_checks() {
         return 1
     fi
 
-    # Check 2: Verify Baseline Parameter Value
-    _current_val=$(read_target_val || echo "")
-    if [ -z "$_current_val" ]; then _current_val="0"; fi
+    # Check 2: Verify Baseline Parameter Value (never fabricates 0 on read failure)
+    if ! _current_val=$(read_target_val); then
+        log_err "Precondition Failed: Unable to read target sysfs parameter: $(target_sysfs_path)"
+        return 1
+    fi
     log_info "Current Parameter Value: '${_current_val}' (Expected baseline: '${BASELINE_VALUE}')"
     if [ "$_current_val" != "$BASELINE_VALUE" ]; then
         log_err "Precondition Failed: Target does not match expected baseline (${BASELINE_VALUE}). Current: '$_current_val'."
@@ -318,6 +420,10 @@ run_preflight_checks() {
     _path=$(target_sysfs_path)
     if [ -n "$MOCK_ROOT" ]; then
         mkdir -p "$(dirname "$_path")" 2>/dev/null || true
+        if [ -e "$_path" ] && [ ! -w "$_path" ]; then
+            log_err "Precondition Failed: Mock target sysfs interface is not writable: $_path"
+            return 1
+        fi
     elif [ ! -w "$_path" ]; then
         log_err "Precondition Failed: Target sysfs interface is not writable: $_path"
         return 1
@@ -368,36 +474,73 @@ EOF
 # PHASE 3: 180-second Independent Watchdog Auto-Rollback
 # ------------------------------------------------------------------------------
 arm_watchdog() {
-    log_info "--- Phase 3: Arming 180s Independent Watchdog Auto-Rollback ---"
+    log_info "--- Phase 3: Arming ${WATCHDOG_TIMEOUT}s Independent Watchdog Auto-Rollback ---"
     _target_rel="$TARGET_REL_PATH"
     _base_val="$BASELINE_VALUE"
     _state_file="$TRIAL_STATE_FILE"
     _mock_root="$MOCK_ROOT"
     _state_dir="$TRIAL_STATE_DIR"
+    _lock_dir="$TRIAL_LOCK_DIR"
+    _op_lock_dir="$OP_LOCK_DIR"
+    _owner_pid="$$"
 
     # Background watchdog subshell
     (
-        sleep "$WATCHDOG_TIMEOUT"
+        _wd_sleep_pid=""
+        trap 'if [ -n "$_wd_sleep_pid" ]; then kill "$_wd_sleep_pid" 2>/dev/null || true; fi; exit 0' TERM INT
+        sleep "$WATCHDOG_TIMEOUT" </dev/null &
+        _wd_sleep_pid=$!
+        wait "$_wd_sleep_pid" 2>/dev/null || exit 0
+        trap '' TERM INT
+        # Coordinate via atomic op lock to avoid sysfs/state race with runner
+        _wd_locked=0
+        _wd_tries=15
+        while [ "$_wd_tries" -gt 0 ]; do
+            if mkdir "$_op_lock_dir" 2>/dev/null; then
+                printf '%s\n' "watchdog:${_owner_pid}" > "${_op_lock_dir}/owner" 2>/dev/null || true
+                _wd_locked=1
+                break
+            fi
+            if [ -f "${_op_lock_dir}/owner" ]; then
+                _cur_owner=$(cat "${_op_lock_dir}/owner" 2>/dev/null || echo "")
+                case "$_cur_owner" in
+                    runner:*)
+                        _opid="${_cur_owner#runner:}"
+                        if [ -n "$_opid" ] && ! kill -0 "$_opid" 2>/dev/null; then
+                            rm -rf "$_op_lock_dir" 2>/dev/null || true
+                            continue
+                        fi
+                        ;;
+                esac
+            fi
+            sleep 1
+            _wd_tries=$((_wd_tries - 1))
+        done
+
         if [ -f "$_state_file" ]; then
-            echo "[WATCHDOG] 180s timeout expired! Forcing emergency rollback of ${_target_rel} to ${_base_val}" >&2
-            _p="${_mock_root}${_target_rel}"
+            echo "[WATCHDOG] Timeout (${WATCHDOG_TIMEOUT}s) expired! Forcing emergency rollback of ${_target_rel} to ${_base_val}" >&2
             _write_ok=0
-            if printf '%s\n' "$_base_val" > "$_p" 2>/dev/null; then
+            if write_target_val "$_base_val"; then
                 _write_ok=1
             fi
 
             _rb_val=""
-            if [ -f "$_p" ]; then
-                _raw=$(cat "$_p" 2>/dev/null | tr -d ' \t\r\n' | sed 's/^0*//')
-                if [ -z "$_raw" ]; then _rb_val="0"; else _rb_val="$_raw"; fi
+            if ! _rb_val=$(read_target_val); then
+                _rb_val="READ_ERROR"
             fi
 
             if [ "$_write_ok" -eq 1 ] && [ "$_rb_val" = "$_base_val" ]; then
                 echo "[WATCHDOG] Verified rollback succeeded: ${_target_rel} restored to ${_base_val}" >&2
                 rm -f "$_state_file" 2>/dev/null || true
+                if ! kill -0 "$_owner_pid" 2>/dev/null && [ -f "${_lock_dir}/pid" ]; then
+                    _lpid=$(cat "${_lock_dir}/pid" 2>/dev/null || echo "")
+                    if [ "$_lpid" = "$_owner_pid" ]; then
+                        rm -rf "$_lock_dir" 2>/dev/null || true
+                    fi
+                fi
                 logger -t CONTROLLED_TRIAL "WATCHDOG FIRED: Verified emergency rollback executed" 2>/dev/null || true
             else
-                echo "[WATCHDOG] CRITICAL FAILURE: Rollback write or readback verification failed!" >&2
+                echo "[WATCHDOG] CRITICAL FAILURE: Rollback write or readback verification failed! (read: ${_rb_val})" >&2
                 echo "[WATCHDOG] State file preserved at ${_state_file}. Generating EMERGENCY_UNRESOLVED alert." >&2
                 mkdir -p "$_state_dir" 2>/dev/null || true
                 _alert_file="${_state_dir}/EMERGENCY_UNRESOLVED"
@@ -412,7 +555,11 @@ ALERT_EOF
                 logger -s -t CONTROLLED_TRIAL "CRITICAL: Watchdog rollback verification failed! State preserved in ${_state_file}" 2>/dev/null || true
             fi
         fi
-    ) &
+
+        if [ "$_wd_locked" -eq 1 ]; then
+            rm -rf "$_op_lock_dir" 2>/dev/null || true
+        fi
+    ) </dev/null &
     WATCHDOG_PID=$!
     log_success "Watchdog armed (PID: $WATCHDOG_PID, Timeout: ${WATCHDOG_TIMEOUT}s)."
 }
@@ -430,18 +577,26 @@ disarm_watchdog() {
 # ------------------------------------------------------------------------------
 apply_trial_param() {
     log_info "--- Phase 4: Single-Variable Runtime Apply (${BASELINE_VALUE} -> ${TRIAL_VALUE}) ---"
+    acquire_op_lock "runner:$$" || return 1
     if ! write_target_val "$TRIAL_VALUE"; then
+        release_op_lock
         log_err "Failed to write trial parameter value (${TRIAL_VALUE})."
         return 1
     fi
 
-    _applied_val=$(read_target_val || echo "")
+    if ! _applied_val=$(read_target_val); then
+        release_op_lock
+        log_err "Verification failed: Unable to read back trial parameter after write."
+        return 1
+    fi
     if [ "$_applied_val" != "$TRIAL_VALUE" ]; then
+        release_op_lock
         log_err "Verification failed: Parameter readback ('$_applied_val') does not match trial target (${TRIAL_VALUE})."
         return 1
     fi
 
     TRIAL_IN_PROGRESS=1
+    release_op_lock
     log_success "Trial parameter applied: ${TARGET_REL_PATH} = ${TRIAL_VALUE}"
     return 0
 }
@@ -451,10 +606,25 @@ apply_trial_param() {
 # ------------------------------------------------------------------------------
 run_measurement_window() {
     log_info "--- Phase 5: Measurement Window (${MEASURE_SECONDS}s) ---"
-    _start_rx=$(get_net_rx_softirqs)
-    _rx0_start=$(echo "$_start_rx" | awk '{print $1}')
-    _rx1_start=$(echo "$_start_rx" | awk '{print $2}')
-    _start_mem=$(get_mem_available_kb || echo "0")
+    _softirqs_ok=1
+    _rx0_start="UNAVAILABLE"
+    _rx1_start="UNAVAILABLE"
+    if _start_rx=$(get_net_rx_softirqs); then
+        _rx0_start=$(echo "$_start_rx" | awk '{print $1}')
+        _rx1_start=$(echo "$_start_rx" | awk '{print $2}')
+    else
+        _softirqs_ok=0
+        if [ "$REQUIRE_SOFTIRQ_TELEMETRY" -eq 1 ]; then
+            log_err "Stability Anomaly: /proc/softirqs NET_RX unreadable and REQUIRE_SOFTIRQ_TELEMETRY=1."
+            return 1
+        fi
+        log_warn "NET_RX softirq telemetry UNAVAILABLE (/proc/softirqs missing or unparseable)."
+    fi
+
+    if ! _start_mem=$(get_mem_available_kb); then
+        log_err "Stability Anomaly: /proc/meminfo unreadable at measurement start."
+        return 1
+    fi
 
     log_info "Initial Telemetry: NET_RX [CPU0: $_rx0_start, CPU1: $_rx1_start] | MemAvailable: ${_start_mem} kB"
 
@@ -467,10 +637,29 @@ run_measurement_window() {
     while [ "$_elapsed" -lt "$MEASURE_SECONDS" ]; do
         sleep "$_step"
         _elapsed=$((_elapsed + _step))
-        _cur_rx=$(get_net_rx_softirqs)
-        _rx0_cur=$(echo "$_cur_rx" | awk '{print $1}')
-        _rx1_cur=$(echo "$_cur_rx" | awk '{print $2}')
-        _cur_mem=$(get_mem_available_kb || echo "0")
+        if [ ! -f "$TRIAL_STATE_FILE" ]; then
+            log_err "Stability Anomaly: Trial state file disappeared mid-trial (possible watchdog fire)."
+            return 1
+        fi
+        if ! check_management_connection >/dev/null 2>&1; then
+            log_err "Stability Anomaly: Management reachability lost during active trial!"
+            return 1
+        fi
+        if _cur_rx=$(get_net_rx_softirqs); then
+            _rx0_cur=$(echo "$_cur_rx" | awk '{print $1}')
+            _rx1_cur=$(echo "$_cur_rx" | awk '{print $2}')
+        else
+            if [ "$REQUIRE_SOFTIRQ_TELEMETRY" -eq 1 ]; then
+                log_err "Stability Anomaly: /proc/softirqs read failed during trial!"
+                return 1
+            fi
+            _rx0_cur="UNAVAILABLE"
+            _rx1_cur="UNAVAILABLE"
+        fi
+        if ! _cur_mem=$(get_mem_available_kb); then
+            log_err "Stability Anomaly: Unable to read /proc/meminfo during trial!"
+            return 1
+        fi
         log_info "  [T+${_elapsed}s] NET_RX: [CPU0: $_rx0_cur, CPU1: $_rx1_cur] | Available RAM: ${_cur_mem} kB"
 
         # Check for catastrophic RAM drop
@@ -480,16 +669,24 @@ run_measurement_window() {
         fi
     done
 
-    _end_rx=$(get_net_rx_softirqs)
-    _rx0_end=$(echo "$_end_rx" | awk '{print $1}')
-    _rx1_end=$(echo "$_end_rx" | awk '{print $2}')
-    _end_mem=$(get_mem_available_kb || echo "0")
+    if [ "$_softirqs_ok" -eq 1 ] && _end_rx=$(get_net_rx_softirqs); then
+        _rx0_end=$(echo "$_end_rx" | awk '{print $1}')
+        _rx1_end=$(echo "$_end_rx" | awk '{print $2}')
+        _d0=$((_rx0_end - _rx0_start)) 2>/dev/null || _d0="UNAVAILABLE"
+        _d1=$((_rx1_end - _rx1_start)) 2>/dev/null || _d1="UNAVAILABLE"
+        _d0_str="+${_d0}"
+        _d1_str="+${_d1}"
+    else
+        _d0_str="UNAVAILABLE"
+        _d1_str="UNAVAILABLE"
+    fi
 
-    _d0=$((_rx0_end - _rx0_start)) 2>/dev/null || _d0="N/A"
-    _d1=$((_rx1_end - _rx1_start)) 2>/dev/null || _d1="N/A"
+    if ! _end_mem=$(get_mem_available_kb); then
+        _end_mem="UNAVAILABLE"
+    fi
 
     log_success "Measurement Window Completed (${MEASURE_SECONDS}s)."
-    log_info "Summary Deltas: NET_RX CPU0 Delta: +$_d0 | NET_RX CPU1 Delta: +$_d1 | RAM Delta: ${_start_mem} -> ${_end_mem} kB"
+    log_info "Summary Deltas: NET_RX CPU0 Delta: $_d0_str | NET_RX CPU1 Delta: $_d1_str | RAM Delta: ${_start_mem} -> ${_end_mem} kB"
     return 0
 }
 
@@ -498,16 +695,24 @@ run_measurement_window() {
 # ------------------------------------------------------------------------------
 rollback_baseline() {
     log_info "--- Phase 6: Verified Rollback to Baseline ---"
+    acquire_op_lock "runner:$$" || return 1
+
     if ! write_target_val "$BASELINE_VALUE"; then
-        log_err "Failed to write baseline value (${BASELINE_VALUE})! Leaving state file intact."
+        release_op_lock
+        log_err "Failed to write baseline value (${BASELINE_VALUE})! Leaving state file intact and watchdog armed."
         return 1
     fi
 
     # Read back actual value BEFORE disarming watchdog or deleting state file
-    _rb_val=$(read_target_val || echo "")
-    if [ -z "$_rb_val" ]; then _rb_val="0"; fi
+    if ! _rb_val=$(read_target_val); then
+        release_op_lock
+        log_err "CRITICAL: Rollback readback verification failed (target sysfs unreadable)!"
+        log_err "Watchdog remains ARMED and state file is PRESERVED for forensic recovery."
+        return 1
+    fi
 
     if [ "$_rb_val" != "$BASELINE_VALUE" ]; then
+        release_op_lock
         log_err "CRITICAL: Rollback readback verification failed! Read: '$_rb_val' (Expected: '$BASELINE_VALUE')."
         log_err "Watchdog remains ARMED and state file is PRESERVED for forensic recovery."
         return 1
@@ -517,14 +722,17 @@ rollback_baseline() {
     TRIAL_IN_PROGRESS=0
     disarm_watchdog
     rm -f "$TRIAL_STATE_FILE" 2>/dev/null || true
+    release_op_lock
     log_success "Parameter restored to verified baseline: ${TARGET_REL_PATH} = ${BASELINE_VALUE}"
     return 0
 }
 
 verify_post_rollback() {
     log_info "--- Phase 7: Post-Rollback Integrity Verification ---"
-    _final_val=$(read_target_val || echo "")
-    if [ -z "$_final_val" ]; then _final_val="0"; fi
+    if ! _final_val=$(read_target_val); then
+        log_err "Verification FAILED: Unable to read back parameter value after rollback."
+        return 1
+    fi
 
     if [ "$_final_val" != "$BASELINE_VALUE" ]; then
         log_err "Verification FAILED: Parameter value is '$_final_val' (Expected: '${BASELINE_VALUE}')."

@@ -31,7 +31,7 @@ In accordance with Chief Architect directives, all security containments have be
 ## 2. P0 Security Incident Containment Summary
 
 ### 2.1 Actions Executed
-1. **Working Tree Redaction:** All cleartext secrets in [`reports/M11_RA82_LIVE_AUDIT_RAW.txt`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M11_RA82_LIVE_AUDIT_RAW.txt) were sanitized and replaced with deterministic redaction tags (`[REDACTED_WG_PRIVATE_KEY]`, `[REDACTED_WIFI_KEY]`).
+1. **Working Tree Redaction:** All cleartext secrets originally detected in `M11_RA82_LIVE_AUDIT_RAW.txt` were scrubbed (`[REDACTED_WG_PRIVATE_KEY]`, `[REDACTED_WIFI_KEY]`), and under M12.6 P0-1 remediation all raw unredacted telemetry artifacts (`M11_RA82_LIVE_AUDIT_RAW.txt`, `M12_6_LIVE_RAW.txt`) were removed from Git HEAD (`git rm`) in favor of sanitized telemetry ([`reports/M12_6_LIVE_SANITIZED.txt`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M12_6_LIVE_SANITIZED.txt)).
 2. **Git Ingestion Protection:** Updated [`.gitignore`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/.gitignore) with strict patterns (`*LIVE_AUDIT_RAW*.txt`, `*live_device_audit*.txt`, `*.key`, `*.secret`) preventing future tracking of raw device state.
 3. **Audit Script Hardening:** Re-engineered [`scripts/m11_ra82_optimization_audit.sh`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/scripts/m11_ra82_optimization_audit.sh) with dual-layer `sed` pattern redaction, host key verification via `ssh-keyscan`, and `SSHPASS` environment variable integration to prevent process-table password leaks.
 4. **Mandatory User Advisory:** Formal security advisory issued to device owner to immediately change Wi-Fi passwords on the router and regenerate all WireGuard key pairs.

@@ -17,7 +17,7 @@ Under Chief Architect Directive M12.6 (Priority A), a fresh, empirical telemetry
 
 ### Key Empirical Findings:
 1. **Device Health & Thermal Equilibrium:** The SoC is operating stably at **3 hours, 42 minutes of uptime** following the 19:15 reboot. System 1-minute load is **1.50** (quiet background state). All four on-die thermal sensors report temperatures between **61°C and 63°C**.
-2. **Sub-Millisecond Physical Link Latency:** End-to-end ICMP ping between the router's WAN port (`eth0`) and the upstream FPT GPON Optical Network Terminal (`192.168.100.1`) averaged **0.883 ms** (min: 0.754 ms, max: 1.115 ms) with 0.00% packet loss.
+2. **Sub-Millisecond Physical Link Latency:** End-to-end ICMP ping between the router's WAN port (`eth0`) and the upstream FPT GPON Optical Network Terminal (`[REDACTED_WAN_GW]`) averaged **0.883 ms** (min: 0.754 ms, max: 1.115 ms) with 0.00% packet loss.
 3. **RAM Dynamics (Post-Reboot vs Multi-Day Drift):** At T=3h 42m, `MemAvailable` is **28.5 MB (15.3%)**, compared to only **10.1 MB (5.5%)** observed at Day 3.7 during the initial M12 audit. This confirms that memory fragmentation and buffer accumulation steadily drain ~18.4 MB of RAM over prolonged runtimes. Unreclaimable kernel slab (`SUnreclaim`) stands at **57.9 MB (95.1% of all Slab)**.
 4. **NSS ECM Hardware Acceleration State:** The Qualcomm NSS Enhanced Connection Manager is actively accelerating **208 IPv4 flows** (107 TCP, 101 UDP) with **341,771 successful stats syncs** and 0 failures. However, **IPv6 acceleration is 0 flows**, proving that IPv6 traffic bypasses the NSS hardware fast-path and falls back 100% to the host CPU stack.
 5. **Persistent SoftIRQ Imbalance:** In a 3-second live window, Core 0 processed **3,665 `NET_RX` softirqs** while Core 1 processed only **32** (**99.1% imbalance**). Tasklets showed **850 events on Core 0** vs **0 on Core 1** (**100% imbalance**).
@@ -171,17 +171,17 @@ The Qualcomm Enhanced Connection Manager (ECM) manages the hardware offload tabl
 
 To measure the physical link quality between the router's WAN port (`eth0`) and the upstream infrastructure, live ICMP probes were executed directly from the router:
 
-### 6.1 Ping to Upstream FPT Optical ONT (`192.168.100.1`)
+### 6.1 Ping to Upstream FPT Optical ONT (`[REDACTED_WAN_GW]`)
 
 ```text
-PING 192.168.100.1 (192.168.100.1): 56 data bytes
-64 bytes from 192.168.100.1: seq=0 ttl=64 time=1.115 ms
-64 bytes from 192.168.100.1: seq=1 ttl=64 time=0.913 ms
-64 bytes from 192.168.100.1: seq=2 ttl=64 time=0.844 ms
-64 bytes from 192.168.100.1: seq=3 ttl=64 time=0.754 ms
-64 bytes from 192.168.100.1: seq=4 ttl=64 time=0.789 ms
+PING [REDACTED_WAN_GW] ([REDACTED_WAN_GW]): 56 data bytes
+64 bytes from [REDACTED_WAN_GW]: seq=0 ttl=64 time=1.115 ms
+64 bytes from [REDACTED_WAN_GW]: seq=1 ttl=64 time=0.913 ms
+64 bytes from [REDACTED_WAN_GW]: seq=2 ttl=64 time=0.844 ms
+64 bytes from [REDACTED_WAN_GW]: seq=3 ttl=64 time=0.754 ms
+64 bytes from [REDACTED_WAN_GW]: seq=4 ttl=64 time=0.789 ms
 
---- 192.168.100.1 ping statistics ---
+--- [REDACTED_WAN_GW] ping statistics ---
 5 packets transmitted, 5 packets received, 0% packet loss
 round-trip min/avg/max = 0.754 / 0.883 / 1.115 ms
 ```
@@ -190,7 +190,7 @@ round-trip min/avg/max = 0.754 / 0.883 / 1.115 ms
 
 ### 6.2 Upstream ISP DNS Filter Note
 
-- Ping from router to `210.245.24.20`: 100% ICMP drop.
+- Ping from router to `[REDACTED_ISP_DNS]`: 100% ICMP drop.
 - *Explanation:* FPT Telecom filters inbound ICMP echo requests to their primary DNS resolvers at their regional BGP border routers, while allowing standard UDP port 53 traffic. DNS resolution itself is 100% operational.
 
 ---
@@ -198,5 +198,5 @@ round-trip min/avg/max = 0.754 / 0.883 / 1.115 ms
 ## 7. Deliverable Verification & Next Steps
 
 This baseline provides the genuine, real-time empirical foundation for Milestone M12.6:
-- All figures are cross-verified against the raw telemetry dump [`reports/M12_6_LIVE_RAW.txt`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M12_6_LIVE_RAW.txt).
+- All figures are cross-verified against the sanitized telemetry dump [`reports/M12_6_LIVE_SANITIZED.txt`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M12_6_LIVE_SANITIZED.txt) (raw capture removed from Git HEAD under P0-1).
 - Safety standard maintained: **Zero router configuration modifications, zero remote files created**.

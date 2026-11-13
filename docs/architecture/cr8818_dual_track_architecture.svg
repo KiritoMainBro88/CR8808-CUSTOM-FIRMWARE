@@ -209,7 +209,7 @@
   <!-- Bottom Global Footer -->
   <g transform="translate(50, 745)">
     <rect width="1100" height="50" rx="6" fill="#0f172a" stroke="#334155"/>
-    <text x="550" y="24" text-anchor="middle" font-size="11.5" font-weight="600" fill="#94a3b8">SAFETY COMMITMENT: ZERO SSH/WRITES TO ROUTER (192.168.100.224) | LAB INTEGRITY AUDITED (2 transient prompt dumps removed, 0 original lab files modified)</text>
+    <text x="550" y="24" text-anchor="middle" font-size="11.5" font-weight="600" fill="#94a3b8">SAFETY COMMITMENT: ZERO SSH/WRITES TO ROUTER ([REDACTED_WAN_IP]) | LAB INTEGRITY AUDITED (2 transient prompt dumps removed, 0 original lab files modified)</text>
     <text x="550" y="40" text-anchor="middle" font-size="11" fill="#64748b">CR8808-CUSTOM-FIRMWARE Project | Milestone M6 Baseline: OpenWrt 25.12.6 + Linux Kernel 6.12.112 LTS</text>
   </g>
 </svg>

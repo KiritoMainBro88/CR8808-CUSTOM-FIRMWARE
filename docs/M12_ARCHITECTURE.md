@@ -281,7 +281,7 @@ All modernization in Track A occurs strictly in the persistent read-write `/data
   - Pinned Ed25519 host key (`config/cr8818_host_key.pub`, SHA256: `BwYCFt/UPVQ+Sj6/ZcbKf7yfTK5FqPFYB9uN7isGL64`).
   - Elimination of obsolete SSH algorithms: disable 3DES, Blowfish, MD5, and SHA-1.
 - **Perimeter Firewall Lockdown:**
-  - Audit revealed WAN Dropbear listener exposed on port `56789` across upstream ONT subnet (`192.168.100.75`).
+  - Audit revealed WAN Dropbear listener exposed on port `56789` across upstream ONT subnet (`[REDACTED_WAN_IP]`).
   - Production helper [`scripts/firewall_manager.sh`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/scripts/firewall_manager.sh) implements:
     * IPv4: `iptables -I zone_wan_input 1 -p tcp --dport 56789 -j DROP -m comment --comment "M11_1_TRIAL_SSH_BLOCK"`
     * IPv6: `ip6tables -I INPUT 1 -i eth0 -p tcp --dport 56789 -j DROP -m comment --comment "M11_1_TRIAL_SSH_BLOCK"`

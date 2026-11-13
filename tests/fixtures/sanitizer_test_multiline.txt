@@ -68,13 +68,22 @@ wireless.@wifi-iface[0].ssid='Xiaomi_8808_5G_Home'
 wireless.@wifi-iface[0].key='SuperSecretWifiPass123!'
 wireless.@wifi-iface[0].sae_password='WPA3SecretPassWord999'
 
+# UCI space-delimited config (/etc/config/wireless), iw dev & iwconfig Encryption key
+	option ssid 'SyntheticSpaceSsid5G'
+	option key 'SpacePassSecret123!'
+	option sae_password 'SpaceSaeSecret999!'
+		ssid SyntheticIwDevSsid
+          Encryption key:AB12-CD34-EF56-7890-1234-5678-90AB-CDEF   Security mode:restricted
+          Encryption key:off
+net.ipv4.tcp_fastopen_key = 1a2b3c4d-5e6f7080-91a2b3c4-d5e6f708
+
 # WireGuard Process Telemetry
 1420 root      1420 S    /data/wg_server -srvkey YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY= -clientkey MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI= -port 51820
 wg set wg0 private-key YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY= peer abc= preshared-key MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=
 
 # /proc/net/if_inet6 Telemetry (EUI-64, GUA, ULA, Randomized Identifiers & Loopback)
 00000000000000000000000000000001 01 80 10 80 lo
-fe80000000000000ced843fffe50f91e 0a 40 20 80 br-lan
-2402080063a54432ced843fffe50f91e 0a 40 00 80 br-lan
+fe80000000000000e639dffffe112233 0a 40 20 80 br-lan
+2402080063a54432e639dffffe112233 0a 40 00 80 br-lan
 fe80000000000000a1b2c3d4e5f67890 02 40 20 80 eth0
 fd000000deadbeef123456789abcdef0 0a 40 00 80 br-lan

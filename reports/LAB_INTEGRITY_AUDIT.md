@@ -223,7 +223,7 @@ The complete JSON manifest listing all 3,492 files with relative path, exact siz
 
 An exhaustive query of all command logs during Milestones M4, M5, and M6 confirms the following safety boundary compliance:
 
-1. **Zero SSH to Physical Router:** Not a single SSH connection was opened to `192.168.100.224` or `192.168.31.1`.
+1. **Zero SSH to Physical Router:** Not a single SSH connection was opened to `[REDACTED_WAN_IP]` or `192.168.31.1`.
 2. **Zero Network Packets to Live Router:** All networking tests (soak tests, namespace isolation, rekey cycles) were executed strictly within Linux network namespaces inside WSL2.
 3. **Zero NAND / NVRAM / Flashing:** No router memory or flash was read, written, or erased.
 4. **Zero Reboot Commands:** Router hardware was never power-cycled or rebooted via command.
@@ -244,3 +244,19 @@ The investigation conclusively establishes:
 ### 6.2 Gate Recommendation to Architecture Lead
 - **Lab Integrity Status:** **AUDITED & CLEARED** under conditional acceptance (2 transient prompt dumps removed, 0 original lab files modified).
 - Development should proceed strictly under current rules: host PC and WSL2 only, zero physical router contact.
+
+
+---
+
+## P1-6 Cryptographic Integrity Re-Verification (`2026-11-13`)
+
+Verified against the pre-session SHA-256, size, and mtime baseline manifest (`test_wifi_manifest.json`) using `verify_lab_integrity.py` (with hidden dot-entries included):
+
+| Metric | Result | Notes |
+| --- | --- | --- |
+| Baseline regular files | `3,492` | Matches current file count `3,492` |
+| Directories (incl. hidden) | `713` | `3,492 + 713 = 4,205` total filesystem objects |
+| Hidden dot-entries diff (`-Force` vs non-`-Force`) | `252` | Reconciles PowerShell `Get-ChildItem` (`3,953`) vs `Get-ChildItem -Force` (`4,205`) |
+| Added / removed files | `0` / `0` | Exact path set match |
+| SHA-256 / byte-size / mtime mismatches | `0` / `0` / `0` | Bit-for-bit identical across all 3,492 files |
+| Latest modification timestamp | `2026-11-09 17:05:02` | (`11/9/2026 5:05:02 PM`) Zero touches during M12.6 & Blocker Closure |

@@ -37,7 +37,7 @@
       "mask_host": "255.255.255.255",
       "mask_subnet": "255.255.255.128",
       "mask_class_c": "255.255.255.0",
-      "if_inet6_eui64": "fe80000000000000ced843fffe50f91e 0a 40 20 80 br-lan",
+      "if_inet6_eui64": "fe80000000000000e639dffffe112233 0a 40 20 80 br-lan",
       "if_inet6_random": "fe80000000000000a1b2c3d4e5f67890 02 40 20 80 eth0",
       "if_inet6_loopback": "00000000000000000000000000000001 01 80 10 80 lo"
     }

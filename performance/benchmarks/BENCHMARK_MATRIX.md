@@ -64,8 +64,8 @@ flowchart TD
 
 - **Objective:** Measure maximum wired forwarding line rate, verify NSS PPE hardware acceleration, and quantify host CPU utilization across cores.
 - **Topology:**
-  - Client A (LAN Port 1, `192.168.31.2`) $\longrightarrow$ Router (`192.168.31.1`, NAT) $\longrightarrow$ Client B (WAN Port, `100.95.0.2` mock gateway).
-- **Tooling:** `iperf3 -c 100.95.0.2 -t 10 -P 1` + `/proc/stat` sampler.
+  - Client A (LAN Port 1, `192.168.31.2`) $\longrightarrow$ Router (`192.168.31.1`, NAT) $\longrightarrow$ Client B (WAN Port, `198.51.100.2` mock gateway).
+- **Tooling:** `iperf3 -c 198.51.100.2 -t 10 -P 1` + `/proc/stat` sampler.
 - **Stepped Traffic Schedule:**
   1. Step 1: 100 Mbps (`-b 100M`, duration 10s) $\rightarrow$ 5s cooldown.
   2. Step 2: 300 Mbps (`-b 300M`, duration 10s) $\rightarrow$ 5s cooldown.

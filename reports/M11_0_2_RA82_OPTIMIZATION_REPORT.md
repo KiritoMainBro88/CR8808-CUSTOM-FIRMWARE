@@ -26,13 +26,13 @@ In strict accordance with the **Architecture Directive M11.0.2**, this milestone
 ## 2. TASK A: Security Remediation & Incident Containment
 
 ### 2.1 Audit of Exposed Credentials Incident (Commit `3b5349e`)
-- **Root Cause Analysis:** During the automated M11 audit script execution, unfiltered command outputs from `ps w` and `uci show wireless` were piped directly into `reports/M11_RA82_LIVE_AUDIT_RAW.txt` and committed under SHA `3b5349e`.
+- **Root Cause Analysis:** During the automated M11 audit script execution, unfiltered command outputs from `ps w` and `uci show wireless` were piped directly into `reports/M11_RA82_LIVE_AUDIT_RAW.txt` and committed under SHA `3b5349e` (later removed completely from Git `HEAD` under M12.6 P0-1).
 - **Exposed Secret Inventory:**
-  1. *Wi-Fi Pre-Shared Key:* Cleartext WPA2/WPA3 passphrase for SSIDs `KMB` and `KMB_5G` at lines 759, 791, and 800.
+  1. *Wi-Fi Pre-Shared Key:* Cleartext WPA2/WPA3 passphrase for 2.4 GHz and 5 GHz `[REDACTED_SSID]` at lines 759, 791, and 800.
   2. *WireGuard Private Key Material:* Cleartext base64 server private key (`-srvkey`) and client public key (`-clientkey`) passed as command-line arguments to `/data/wg_server` at lines 329 and 1096.
 
 ### 2.2 Working Tree Verification (PASS)
-- All occurrences in `reports/M11_RA82_LIVE_AUDIT_RAW.txt` were scrubbed and replaced with standard deterministic redaction placeholders:
+- All credential occurrences originally identified in `M11_RA82_LIVE_AUDIT_RAW.txt` were scrubbed and replaced with deterministic placeholders, and under M12.6 P0-1 the entire raw audit artifact was purged from Git `HEAD` (`git rm`) to eliminate residual MAC/WAN IP telemetry:
   - `-srvkey [REDACTED_WG_PRIVATE_KEY]`
   - `-clientkey [REDACTED_WG_CLIENT_KEY]`
   - `wireless.@wifi-iface[0].key='[REDACTED_WIFI_KEY]'`
@@ -78,13 +78,13 @@ When approved by the Product Owner, the clean history can be pushed to remote mi
 
 ### 2.5 Reassessment of WAN SSH Exposure & Double-NAT Topology
 - **Topology Configuration:**
-  - WAN interface (`eth0`) IP: `192.168.100.75 / 255.255.255.0`.
-  - Gateway: `192.168.100.1` (ISP GPON ONT / Modem).
+  - WAN interface (`eth0`) IP: `[REDACTED_WAN_IP] / 255.255.255.0`.
+  - Gateway: `[REDACTED_WAN_GW]` (ISP GPON ONT / Modem).
   - LAN interface (`br-lan`) IP: `192.168.31.1 / 255.255.255.0`.
 - **Double-NAT Fallacy Analysis:**
   Some operators assume double-NAT provides perimeter protection. On CR8808 Ver.B, this assumption is **dangerously flawed**:
-  1. *Upstream Subnet Exposure:* Any device on the ONT network (`192.168.100.0/24`) — including ISP TR-069 management agents, ISP technician laptops, or infected devices on the ISP modem Wi-Fi — can directly probe and access port `56789`.
-  2. *DMZ / Port Forwarding Risk:* If the ISP ONT has DMZ enabled targeting `192.168.100.75` (common for gaming or hosting), port `56789` is directly reachable from the public Internet.
+  1. *Upstream Subnet Exposure:* Any device on the ONT network (`[REDACTED_WAN_SUBNET]`) — including ISP TR-069 management agents, ISP technician laptops, or infected devices on the ISP modem Wi-Fi — can directly probe and access port `56789`.
+  2. *DMZ / Port Forwarding Risk:* If the ISP ONT has DMZ enabled targeting `[REDACTED_WAN_IP]` (common for gaming or hosting), port `56789` is directly reachable from the public Internet.
   3. *Vulnerability Profile:* Dropbear has `PasswordAuth 'on'` and `RootPasswordAuth 'on'`. A brute-force dictionary attack can run continuously without rate limiting.
 - **Firewall Trial Execution & Automatic Watchdog Rollback:**
   To close this exposure without any risk of user lockout from LAN:
@@ -254,7 +254,7 @@ To gain approval for production cutover, BoringTun on `wg1` must meet all criter
 ### 5.2 Wi-Fi 6 HE160 Link Reality vs Speedtest Bottleneck
 - **Empirical Readback:**
   - Radio `wl0` (QCN6102 5 GHz): Operating at Channel 40 (5200 MHz), 160 MHz channel width.
-  - Connected Station (`90:b7:90:77:85:1d`): PHY Link Rate = **2,401.9 Mbps** (HE160, MCS 11, 2x2 MIMO, RSSI -36 dBm, SNR 58 dB).
+  - Connected Station (`[REDACTED_STA_MAC]`): PHY Link Rate = **2,401.9 Mbps** (HE160, MCS 11, 2x2 MIMO, RSSI -36 dBm, SNR 58 dB).
 - **The Speedtest Paradox Resolved:**
   Users often ask why Internet speedtests max out at ~940 Mbps despite a 2.4 Gbps Wi-Fi link.
   *Explanation:* The physical WAN port (`eth0`) is connected via 1,000 Mbps (1 GbE) SGMII to the ISP ONT. Physical wire-speed on Gigabit Ethernet caps throughput at 940–950 Mbps after TCP/IP overhead. The 2.4 Gbps Wi-Fi PHY is fully utilized for local LAN intranet transfers.

@@ -10,50 +10,70 @@
 
 set -u
 
-OUTPUT_JSON="/tmp/wg_comparison_benchmark.json"
+OUTPUT_JSON="${OUTPUT_JSON:-/tmp/wg_comparison_benchmark.json}"
+PROC_ROOT="${PROC_ROOT:-/proc}"
+WG1_PID_FILE="${WG1_PID_FILE:-/tmp/wg1.pid}"
 
 log() {
     echo "[benchmark-wg] $*"
 }
 
-# 1. Inspect Go Daemon (wg0)
+# 1. Inspect Go Daemon (wg0) -- never fabricates baseline numbers if /proc unreadable
 GO_PID=$(pidof wg_server 2>/dev/null || pgrep -f "/data/wg_server" 2>/dev/null || echo "")
-if [ -n "$GO_PID" ] && [ -f "/proc/$GO_PID/status" ]; then
-    GO_RSS=$(grep -i VmRSS "/proc/$GO_PID/status" | awk '{print $2}')
-    GO_HWM=$(grep -i VmHWM "/proc/$GO_PID/status" | awk '{print $2}')
-    GO_ANON=$(grep -i RssAnon "/proc/$GO_PID/status" | awk '{print $2}' || echo "0")
-    GO_SIZE=$(grep -i VmSize "/proc/$GO_PID/status" | awk '{print $2}')
+GO_STATUS="UNAVAILABLE"
+GO_RSS="null"
+GO_HWM="null"
+GO_ANON="null"
+GO_SIZE="null"
+if [ -n "$GO_PID" ] && [ -f "${PROC_ROOT}/${GO_PID}/status" ]; then
+    _rss=$(grep -i VmRSS "${PROC_ROOT}/${GO_PID}/status" | awk '{print $2}' || echo "")
+    _hwm=$(grep -i VmHWM "${PROC_ROOT}/${GO_PID}/status" | awk '{print $2}' || echo "")
+    _anon=$(grep -i RssAnon "${PROC_ROOT}/${GO_PID}/status" | awk '{print $2}' || echo "")
+    _size=$(grep -i VmSize "${PROC_ROOT}/${GO_PID}/status" | awk '{print $2}' || echo "")
+    if [ -n "$_rss" ] && [ -n "$_hwm" ] && [ -n "$_size" ]; then
+        GO_STATUS="LIVE"
+        GO_RSS="$_rss"
+        GO_HWM="$_hwm"
+        GO_ANON="${_anon:-null}"
+        GO_SIZE="$_size"
+    else
+        GO_PID="UNAVAILABLE"
+    fi
 else
-    # Fallback to known live baseline from M11/M12 audit if run in mock
-    GO_PID="1420 (baseline)"
-    GO_RSS=20384
-    GO_HWM=20384
-    GO_ANON=20128
-    GO_SIZE=523264
+    GO_PID="UNAVAILABLE"
 fi
 
 # 2. Inspect Rust Daemon (wg1)
-RUST_PID=$(cat /tmp/wg1.pid 2>/dev/null || pidof boringtun-cli-armv7 2>/dev/null || echo "")
-if [ -n "$RUST_PID" ] && [ -f "/proc/$RUST_PID/status" ]; then
-    RUST_RSS=$(grep -i VmRSS "/proc/$RUST_PID/status" | awk '{print $2}')
-    RUST_HWM=$(grep -i VmHWM "/proc/$RUST_PID/status" | awk '{print $2}')
-    RUST_ANON=$(grep -i RssAnon "/proc/$RUST_PID/status" | awk '{print $2}' || echo "0")
-    RUST_SIZE=$(grep -i VmSize "/proc/$RUST_PID/status" | awk '{print $2}')
+RUST_PID=$(cat "$WG1_PID_FILE" 2>/dev/null || pidof boringtun-cli-armv7 2>/dev/null || echo "")
+RUST_STATUS="UNAVAILABLE"
+RUST_RSS="null"
+RUST_HWM="null"
+RUST_ANON="null"
+RUST_SIZE="null"
+if [ -n "$RUST_PID" ] && [ -f "${PROC_ROOT}/${RUST_PID}/status" ]; then
+    _rrss=$(grep -i VmRSS "${PROC_ROOT}/${RUST_PID}/status" | awk '{print $2}' || echo "")
+    _rhwm=$(grep -i VmHWM "${PROC_ROOT}/${RUST_PID}/status" | awk '{print $2}' || echo "")
+    _ranon=$(grep -i RssAnon "${PROC_ROOT}/${RUST_PID}/status" | awk '{print $2}' || echo "")
+    _rsize=$(grep -i VmSize "${PROC_ROOT}/${RUST_PID}/status" | awk '{print $2}' || echo "")
+    if [ -n "$_rrss" ] && [ -n "$_rhwm" ] && [ -n "$_rsize" ]; then
+        RUST_STATUS="LIVE"
+        RUST_RSS="$_rrss"
+        RUST_HWM="$_rhwm"
+        RUST_ANON="${_ranon:-null}"
+        RUST_SIZE="$_rsize"
+    else
+        RUST_PID="UNAVAILABLE"
+    fi
 else
-    RUST_PID="N/A (not active)"
-    RUST_RSS=0
-    RUST_HWM=0
-    RUST_ANON=0
-    RUST_SIZE=0
+    RUST_PID="UNAVAILABLE"
 fi
 
-# 3. Calculate Memory Delta
-if [ "$RUST_RSS" -gt 0 ]; then
+# 3. Calculate Memory Delta only when BOTH live /proc readings succeeded
+RAM_SAVED_KB="null"
+RAM_SAVED_PCT="null"
+if [ "$GO_STATUS" = "LIVE" ] && [ "$RUST_STATUS" = "LIVE" ] && [ "$GO_RSS" -gt 0 ] 2>/dev/null; then
     RAM_SAVED_KB=$(( GO_RSS - RUST_RSS ))
     RAM_SAVED_PCT=$(( (RAM_SAVED_KB * 100) / GO_RSS ))
-else
-    RAM_SAVED_KB=0
-    RAM_SAVED_PCT=0
 fi
 
 # 4. Latency / RTT Measurement (if interfaces are UP)

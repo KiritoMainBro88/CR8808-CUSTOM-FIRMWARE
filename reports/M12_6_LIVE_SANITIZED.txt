@@ -1,0 +1,398 @@
+=== [A-01] SYSTEM UPTIME & LOAD ===
+ 02:57:42 up  3:42,  load average: 1.50, 1.27, 1.29
+1.51 1.27 1.29 1/136 1346
+Linux version 4.4.60 (jenkins@2fb299296942) (gcc version 5.5.0 (OpenWrt GCC 5.5.0 unknown) ) #0 SMP PREEMPT Tue Jul 25 13:[REDACTED_IPV6_GUA] 2023
+=== [A-02] THERMAL SENSORS & CPU FREQ ===
+/sys/class/thermal/thermal_zone0 (tsens_tz_sensor1): 62
+/sys/class/thermal/thermal_zone1 (tsens_tz_sensor2): 62
+/sys/class/thermal/thermal_zone2 (tsens_tz_sensor3): 61
+/sys/class/thermal/thermal_zone3 (tsens_tz_sensor4): 63
+=== [A-03] LIVE MEMORY & SLAB BREAKDOWN ===
+MemTotal:         186920 kB
+MemFree:           31716 kB
+MemAvailable:      28556 kB
+Buffers:            6372 kB
+Cached:            36564 kB
+SwapCached:            0 kB
+Active:            41416 kB
+Inactive:           9812 kB
+Active(anon):      17728 kB
+Inactive(anon):     1812 kB
+Active(file):      23688 kB
+Inactive(file):     8000 kB
+Unevictable:        1964 kB
+Mlocked:               0 kB
+SwapTotal:             0 kB
+SwapFree:              0 kB
+Dirty:                 0 kB
+Writeback:             0 kB
+AnonPages:         10292 kB
+Mapped:            11492 kB
+Shmem:              9284 kB
+Slab:              60852 kB
+SReclaimable:       2952 kB
+SUnreclaim:        57900 kB
+KernelStack:        1176 kB
+PageTables:          708 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:       93460 kB
+Committed_AS:      56304 kB
+VmallocTotal:    1818624 kB
+VmallocUsed:           0 kB
+VmallocChunk:          0 kB
+--- SLAB TOP 15 ---
+=== [A-04] NSS & ECM ACCELERATION STATE ===
+drwxr-xr-x    9 root     root             0 Nov 12 14:36 .
+drwx------   27 root     root             0 Jan  1  1970 ..
+drwxr-xr-x    2 root     root             0 Nov 12 14:36 ecm_classifier_default
+drwxr-xr-x    2 root     root             0 Nov 12 14:36 ecm_classifier_dscp
+drwxr-xr-x    2 root     root             0 Nov 12 14:36 ecm_conntrack_notifier
+drwxr-xr-x    2 root     root             0 Nov 12 14:36 ecm_db
+drwxr-xr-x    2 root     root             0 Nov 12 14:36 ecm_nss_ipv4
+drwxr-xr-x    2 root     root             0 Nov 12 14:36 ecm_nss_ipv6
+drwxr-xr-x    2 root     root             0 Nov 12 14:36 ecm_state
+-rw-r--r--    1 root     root             0 Nov 12 14:36 front_end_ipv4_stop
+-rw-r--r--    1 root     root             0 Nov 12 14:36 front_end_ipv6_stop
+drwxr-xr-x    2 root     root             0 Nov 12 14:36 .
+drwxr-xr-x    9 root     root             0 Nov 12 14:36 ..
+-r--r--r--    1 root     root             0 Nov 12 14:36 accel_cmd_avg_millis
+-rw-r--r--    1 root     root             0 Nov 12 14:36 accel_limit_mode
+-r--r--r--    1 root     root             0 Nov 12 14:36 accelerated_count
+-r--r--r--    1 root     root             0 Nov 12 14:36 decel_cmd_avg_millis
+-rw-r--r--    1 root     root             0 Nov 12 14:36 driver_fail_limit_default
+-rw-r--r--    1 root     root             0 Nov 12 14:36 ecm_nss_multicast_ipv4_stop
+-r--r--r--    1 root     root             0 Nov 12 14:36 multicast_accelerated_count
+-rw-r--r--    1 root     root             0 Nov 12 14:36 nack_limit_default
+-rw-r--r--    1 root     root             0 Nov 12 14:36 no_action_limit_default
+-r--r--r--    1 root     root             0 Nov 12 14:36 non_ported_accelerated_count
+-r--r--r--    1 root     root             0 Nov 12 14:36 pending_accel_count
+-r--r--r--    1 root     root             0 Nov 12 14:36 pending_decel_count
+-r--r--r--    1 root     root             0 Nov 12 14:36 stats_request_counter
+-r--r--r--    1 root     root             0 Nov 12 14:36 tcp_accelerated_count
+-r--r--r--    1 root     root             0 Nov 12 14:36 udp_accelerated_count
+-rw-r--r--    1 root     root             0 Nov 12 14:36 vlan_passthrough_set
+ipv4: accel_cmd_avg_millis = avg=0	samples=0	set_size=1
+ipv4: accel_limit_mode = 0
+ipv4: accelerated_count = 208
+ipv4: decel_cmd_avg_millis = avg=0	samples=0	set_size=1
+ipv4: driver_fail_limit_default = 250
+ipv4: ecm_nss_multicast_ipv4_stop = 0
+ipv4: multicast_accelerated_count = 0
+ipv4: nack_limit_default = 250
+ipv4: no_action_limit_default = 250
+ipv4: non_ported_accelerated_count = 0
+ipv4: pending_accel_count = 0
+ipv4: pending_decel_count = 0
+ipv4: stats_request_counter = success=341771	fail=0	nack=0	
+ipv4: tcp_accelerated_count = 107
+ipv4: udp_accelerated_count = 101
+ipv4: vlan_passthrough_set = 0
+ipv6: accel_cmd_avg_millis = avg=0	samples=0	set_size=1
+ipv6: accel_limit_mode = 0
+ipv6: accelerated_count = 0
+ipv6: decel_cmd_avg_millis = avg=0	samples=0	set_size=1
+ipv6: driver_fail_limit_default = 250
+ipv6: ecm_nss_multicast_ipv6_stop = 0
+ipv6: multicast_accelerated_count = 0
+ipv6: nack_limit_default = 250
+ipv6: no_action_limit_default = 250
+ipv6: non_ported_accelerated_count = 0
+ipv6: pending_accel_count = 0
+ipv6: pending_decel_count = 0
+ipv6: stats_request_counter = success=53	fail=0	nack=0	
+ipv6: tcp_accelerated_count = 0
+ipv6: udp_accelerated_count = 0
+ipv6: vlan_passthrough_set = 0
+--- ECM DB SUMMARY ---
+=== [A-05] SOFTIRQ DELTA (3-SECOND SAMPLE) ===
+--- SNAPSHOT 1 ---
+                    CPU0       CPU1       
+          HI:          0          0
+       TIMER:    1333080    1333067
+      NET_TX:       2655       2655
+      NET_RX:   15940780     102060
+       BLOCK:          0          0
+BLOCK_IOPOLL:          0          0
+     TASKLET:    3088837          0
+       SCHED:    1316412    1314187
+     HRTIMER:          0          0
+         RCU:    1223181    1169704
+ 18:    1333080    1333067       GIC  20 Edge      arch_timer
+ [REDACTED_IPV6_GUA]     209678          0       GIC 434 Edge      nss_empty_buf_sos
+ [REDACTED_IPV6_GUA]     187133          0       GIC 433 Edge      nss_empty_buf_queue
+ [REDACTED_IPV6_GUA]          0          0       GIC 432 Edge      nss-tx-unblock
+ [REDACTED_IPV6_GUA]   14074268          0       GIC 431 Edge      nss_queue0
+ [REDACTED_IPV6_GUA]          0      86073       GIC 430 Edge      nss_queue1
+ [REDACTED_IPV6_GUA]          0          0       GIC 429 Edge      nss_coredump_complete
+ [REDACTED_IPV6_GUA]          0          0       GIC 428 Edge      nss_paged_empty_buf_sos
+ [REDACTED_IPV6_GUA]          0          0       GIC 427 Edge      nss_profile_dma
+ [REDACTED_IPV6_GUA]          3          0       GIC 324 Edge      ce0
+ 40:     271660          0       GIC 325 Edge      ce1
+ 41:     441710          0       GIC 326 Edge      ce2
+ 42:      27162          0       GIC 327 Edge      ce3
+ 44:          2          0       GIC 329 Edge      ce5
+ 90:         24          0       GIC 448 Edge      pci0_wlan_ce_0, pci0_wlan_ce_5
+ 91:    1987376          0       GIC 449 Edge      pci0_wlan_ce_1
+ 92:     246987          0       GIC 450 Edge      pci0_wlan_ce_2
+ 93:      15927          0       GIC 451 Edge      pci0_wlan_ce_3
+ 98:     331896          0       GIC 456 Edge      pci0_wlan_grp_dp_3
+--- SNAPSHOT 2 (AFTER 3S) ---
+                    CPU0       CPU1       
+          HI:          0          0
+       TIMER:    1333382    1333369
+      NET_TX:       2655       2655
+      NET_RX:   15944445     102092
+       BLOCK:          0          0
+BLOCK_IOPOLL:          0          0
+     TASKLET:    3089687          0
+       SCHED:    1316713    1314489
+     HRTIMER:          0          0
+         RCU:    1223466    1169899
+ 18:    1333382    1333369       GIC  20 Edge      arch_timer
+ [REDACTED_IPV6_GUA]     209731          0       GIC 434 Edge      nss_empty_buf_sos
+ [REDACTED_IPV6_GUA]     187254          0       GIC 433 Edge      nss_empty_buf_queue
+ [REDACTED_IPV6_GUA]          0          0       GIC 432 Edge      nss-tx-unblock
+ [REDACTED_IPV6_GUA]   14077528          0       GIC 431 Edge      nss_queue0
+ [REDACTED_IPV6_GUA]          0      86104       GIC 430 Edge      nss_queue1
+ [REDACTED_IPV6_GUA]          0          0       GIC 429 Edge      nss_coredump_complete
+ [REDACTED_IPV6_GUA]          0          0       GIC 428 Edge      nss_paged_empty_buf_sos
+ [REDACTED_IPV6_GUA]          0          0       GIC 427 Edge      nss_profile_dma
+ [REDACTED_IPV6_GUA]          3          0       GIC 324 Edge      ce0
+ 40:     271720          0       GIC 325 Edge      ce1
+ 41:     441794          0       GIC 326 Edge      ce2
+ 42:      27165          0       GIC 327 Edge      ce3
+ 44:          2          0       GIC 329 Edge      ce5
+ 90:         24          0       GIC 448 Edge      pci0_wlan_ce_0, pci0_wlan_ce_5
+ 91:    1988059          0       GIC 449 Edge      pci0_wlan_ce_1
+ 92:     247008          0       GIC 450 Edge      pci0_wlan_ce_2
+ 93:      15931          0       GIC 451 Edge      pci0_wlan_ce_3
+ 98:     331964          0       GIC 456 Edge      pci0_wlan_grp_dp_3
+=== [A-06] ICMP LATENCY TO UPSTREAM GATEWAY & DNS ===
+Default Gateway: [REDACTED_WAN_IP]
+PING [REDACTED_WAN_IP] ([REDACTED_WAN_IP]): 56 data bytes
+64 bytes from [REDACTED_WAN_IP]: seq=0 ttl=64 time=1.115 ms
+64 bytes from [REDACTED_WAN_IP]: seq=1 ttl=64 time=0.913 ms
+64 bytes from [REDACTED_WAN_IP]: seq=2 ttl=64 time=0.844 ms
+64 bytes from [REDACTED_WAN_IP]: seq=3 ttl=64 time=0.754 ms
+64 bytes from [REDACTED_WAN_IP]: seq=4 ttl=64 time=0.789 ms
+
+--- [REDACTED_WAN_IP] ping statistics ---
+5 packets transmitted, 5 packets received, 0% packet loss
+round-trip min/avg/max = 0.754/0.883/1.115 ms
+PING [REDACTED_PUBLIC_IP] ([REDACTED_PUBLIC_IP]): 56 data bytes
+
+--- [REDACTED_PUBLIC_IP] ping statistics ---
+5 packets transmitted, 0 packets received, 100% packet loss
+=== [C-01] WI-FI 6 INTERFACES & HE160 CAPABILITIES ===
+phy#1
+	Interface wl0
+		ifindex 18
+		wdev 0x100000002
+		addr [REDACTED_MAC]
+		ssid [REDACTED_SSID]
+		type AP
+		channel 40 (5200 MHz), width: 160 MHz, center1: 5250 MHz
+		txpower 24.00 dBm
+	Interface wifi1
+		ifindex 13
+		wdev 0x100000001
+		addr [REDACTED_MAC]
+		type AP
+		channel 40 (5200 MHz), width: 160 MHz, center1: 5250 MHz
+phy#0
+	Interface wl13
+		ifindex 16
+		wdev 0x3
+		addr [REDACTED_MAC]
+		ssid [REDACTED_SSID]
+		type AP
+		channel 1 (2412 MHz), width: 20 MHz, center1: 2412 MHz
+		txpower 23.00 dBm
+	Interface wl1
+		ifindex 15
+		wdev 0x2
+		addr [REDACTED_MAC]
+		ssid [REDACTED_SSID]
+		type AP
+		channel 1 (2412 MHz), width: 20 MHz, center1: 2412 MHz
+		txpower 23.00 dBm
+	Interface wifi0
+		ifindex 11
+		wdev 0x1
+		addr [REDACTED_MAC]
+		type AP
+		channel 1 (2412 MHz), width: 20 MHz, center1: 2412 MHz
+Interface wl0
+	ifindex 18
+	wdev 0x100000002
+	addr [REDACTED_MAC]
+	ssid [REDACTED_SSID]
+	type AP
+	wiphy 1
+	channel 40 (5200 MHz), width: 160 MHz, center1: 5250 MHz
+	txpower 24.00 dBm
+Interface wl1
+	ifindex 15
+	wdev 0x2
+	addr [REDACTED_MAC]
+	ssid [REDACTED_SSID]
+	type AP
+	wiphy 0
+	channel 1 (2412 MHz), width: 20 MHz, center1: 2412 MHz
+	txpower 23.00 dBm
+--- WL0 STATION DUMP ---
+--- WL1 STATION DUMP ---
+=== [C-02] WIRELESS CONFIGURATION & HOSTAPD ===
+
+config wifi-device 'wifi0'
+	option type 'qcawificfg80211'
+	option macaddr '[REDACTED_MAC]'
+	option hwmode '11axg'
+	option htmode 'HT40'
+	option disabled '0'
+	option txbf '3'
+	option ax '1'
+	option txpwr 'max'
+	option channel '0'
+	option autoch '2'
+	option bw '0'
+	option region '1'
+	option aregion '6'
+	option country 'SG'
+
+config wifi-iface
+	option device 'wifi0'
+	option ifname 'wl1'
+	option network 'lan'
+	option mode 'ap'
+	option wpsdevicename 'XiaoMiRouter'
+	option he_ul_ofdma '0'
+	option amsdu '2'
+	option macfilter 'disabled'
+	option disabled '0'
+	option ssid '[REDACTED_SSID]'
+	option encryption 'psk2'
+	option key '[REDACTED_WIFI_KEY]'
+	option wscconfigstatus '2'
+	option bsd '0'
+	option rrm '0'
+	option wnm '0'
+	option hidden '1'
+
+config wifi-device 'wifi1'
+	option type 'qcawificfg80211'
+	option macaddr '[REDACTED_MAC]'
+	option hwmode '11axa'
+	option htmode 'HT80'
+	option disabled '0'
+	option txbf '3'
+	option ax '1'
+	option txpwr 'max'
+	option region '1'
+	option aregion '6'
+	option bw '160'
+	option channel '0'
+	option autoch '2'
+	option country 'SG'
+
+config wifi-iface
+	option device 'wifi1'
+	option ifname 'wl0'
+	option network 'lan'
+	option mode 'ap'
+	option wpsdevicename 'XiaoMiRouter'
+	option he_ul_ofdma '0'
+	option channel_block_list '52,56,60,64,100,104,108,112,116,120,124,128,132,136,140'
+	option macfilter 'disabled'
+	option miwifi_mesh '0'
+	option disabled '0'
+	option key '[REDACTED_WIFI_KEY]'
+	option wscconfigstatus '2'
+	option hidden '0'
+	option bsd '0'
+	option rrm '0'
+	option wnm '0'
+	option ssid '[REDACTED_SSID]'
+	option encryption 'psk2+ccmp'
+	option sae '1'
+	option sae_password '[REDACTED_WIFI_KEY]'
+	option ieee80211w '1'
+
+config wifi-iface 'miot_2G'
+	option ifname 'wl13'
+	option network 'miot'
+	option encryption 'none'
+	option device 'wifi0'
+	option mode 'ap'
+	option hidden '1'
+	option maxsta '20'
+	option ssid '[REDACTED_SSID]'
+	option bsd '0'
+	option disabled '0'
+	option ap_isolate '1'
+	option userswitch '1'
+	option bindstatus '1'
+
+=== [C-03] IWPRIV QCN6102 PARAMETERS ===
+wl0       Available private ioctls :
+          setoptie         (8BE8) : set 512 byte  & get   0      
+          getoptie         (8BE9) : set   0       & get 512 byte 
+          setkey           (8BE2) : set 112 byte  & get   0      
+          delkey           (8BE4) : set   7 byte  & get   0      
+          setmlme          (8BE6) : set 658 byte  & get   0      
+          addmac           (8BEA) : set   1 addr  & get   0      
+          delmac           (8BEC) : set   1 addr  & get   0      
+          getmac           (8BFD) : set   0       & get 256 addr 
+          kickmac          (8BEF) : set   1 addr  & get   0      
+          setchanlist      (8BEE) : set 128 byte  & get   0      
+          getchanlist      (8BED) : set   0       & get 128 byte 
+          getchaninfo      (8BE7) : set   0       & get 1000 int  
+          mode             (8BF2) : set  16 char  & get   0      
+          get_mode         (8BF1) : set   0       & get  16 char 
+          setwmmparams     (8BE3) : set   4 int   & get   0      
+          getwmmparams     (8BE5) : set   3 int   & get   1 int  
+          cwmin            (0001) : set   3 int   & get   0      
+          get_cwmin        (0001) : set   2 int   & get   1 int  
+          cwmax            (0002) : set   3 int   & get   0      
+          get_cwmax        (0002) : set   2 int   & get   1 int  
+          aifs             (0003) : set   3 int   & get   0      
+          get_aifs         (0003) : set   2 int   & get   1 int  
+          txoplimit        (0004) : set   3 int   & get   0      
+          get_txoplimit    (0004) : set   2 int   & get   1 int  
+          acm              (0005) : set   3 int   & get   0      
+          get_acm          (0005) : set   2 int   & get   1 int  
+          noackpolicy      (0006) : set   3 int   & get   0      
+          get_noackpolicy  (0006) : set   2 int   & get   1 int  
+          vow_dbg_cfg      (0007) : set   3 int   & get   0      
+          setparam         (8BE0) : set   2 int   & get   0      
+          getparam         (8BE1) : set   1 int   & get   1 int  
+          authmode         (0003) : set   1 int   & get   0      
+          get_authmode     (0003) : set   0       & get   1 int  
+          protmode         (0004) : set   1 int   & get   0      
+          get_protmode     (0004) : set   0       & get   1 int  
+          mcastcipher      (0005) : set   1 int   & get   0      
+          get_mcastcipher  (0005) : set   0       & get   1 int  
+          mcastkeylen      (0006) : set   1 int   & get   0      
+          get_mcastkeylen  (0006) : set   0       & get   1 int  
+iwpriv wl0 get_channel: Invalid command : get_channel
+iwpriv wl0 get_chwidth: wl0       get_chwidth:3  
+iwpriv wl0 get_country: Invalid command : get_country
+iwpriv wl0 get_ampdu: wl0       get_ampdu:64  
+iwpriv wl0 get_amsdu: wl0       get_amsdu:3  
+iwpriv wl0 get_txpower: Invalid command : get_txpower
+iwpriv wl0 get_rate: Invalid command : get_rate
+iwpriv wl0 get_11n_rate: Invalid command : get_11n_rate
+iwpriv wl0 get_he_rate: Invalid command : get_he_rate
+=== [C-04] DFS & CHANNEL SPECTRUM STATUS ===
+[12941.109330] wlan: [[REDACTED_IPV6_GUA]I:ANY]  ieee80211_ioctl_kickmac[8335] 
+[12977.096252] wlan: [[REDACTED_IPV6_GUA]I:ANY]  ieee80211_ioctl_kickmac[8335] 
+[13043.201529] wlan: [[REDACTED_IPV6_GUA]I:ANY]  ieee80211_ioctl_kickmac[8335] 
+[13078.179272] wlan: [[REDACTED_IPV6_GUA]I:ANY]  ieee80211_ioctl_kickmac[8335] 
+[13152.758092] wlan: [[REDACTED_IPV6_GUA]I:ANY]  ieee80211_ioctl_kickmac[8335] 
+[13188.165550] wlan: [424:I:ANY]  ieee80211_ioctl_kickmac[8335] 
+[13254.248384] wlan: [830:I:ANY]  ieee80211_ioctl_kickmac[8335] 
+[13290.303484] wlan: [1124:I:ANY]  ieee80211_ioctl_kickmac[8335] 
+[13320.105419] wlan: [0:E:ANY] ol_peer_sta_ps_state_change_handler: Unable to find peer object
+=== [END OF PROBE] ===

@@ -27,7 +27,7 @@ Under **Milestone M12 Workstream C (Rust-First WireGuard Modernization)**, the R
 ## 2. Task 1: Target Architecture & ABI Identification
 
 ### 2.1 Silicon & Kernel Forensic Profile
-From the live system baseline captured in `reports/M12_BASELINE_SANITIZED.txt` and `reports/M11_RA82_LIVE_AUDIT_RAW.txt`:
+From the live system baseline captured in `reports/M12_BASELINE_SANITIZED.txt` (raw `M11_RA82_LIVE_AUDIT_RAW.txt` purged from Git HEAD under P0-1):
 
 ```text
 Host / Kernel     : Linux XiaoQiang 4.4.60 #0 SMP PREEMPT Tue Jul 25 13:31:40 2023 armv7l GNU/Linux

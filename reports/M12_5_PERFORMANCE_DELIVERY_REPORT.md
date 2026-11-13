@@ -102,7 +102,7 @@ Tài liệu: [`performance/benchmarks/BENCHMARK_MATRIX.md`](file:///D:/vibecode/
 
 ### 4.1 Six Structured Benchmark Scenarios
 1. **Scenario 1 (Wired LAN <-> WAN Line-Rate):**
-   - *Topology:* PC Client (LAN Port 1) <-> RA82 Router (192.168.31.1) <-> Upstream ONT (WAN Port, 192.168.100.1).
+   - *Topology:* PC Client (LAN Port 1) <-> RA82 Router (192.168.31.1) <-> Upstream ONT (WAN Port, `[REDACTED_WAN_GW]`).
    - *Metrics:* Throughput (Mbps), packet drop count (`/proc/net/dev`), CPU utilization (CPU0/CPU1 SoftIRQ delta).
    - *Disambiguation:* Separates FPT residential WAN broadband cap (~150-300 Mbps) from internal hardware NAT forwarding (up to 940 Mbps wired line-rate).
 2. **Scenario 2 (Wired LAN <-> Wi-Fi 5 GHz HE160):**

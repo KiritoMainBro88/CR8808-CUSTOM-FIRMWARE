@@ -560,6 +560,303 @@ else
 fi
 
 # ------------------------------------------------------------------------------
+# TEST 15: P0-3 Read Failures Must Never Fabricate "0" or "0 0"
+# ------------------------------------------------------------------------------
+echo "--- TEST 15: P0-3 Read Failure Non-Fabrication (sysfs & /proc/softirqs) ---"
+_rps_file="$MOCK_DIR/sys/class/net/eth0/queues/rx-0/rps_cpus"
+_softirqs_file="$MOCK_DIR/proc/softirqs"
+
+# 15A: Empty 0-byte rps_cpus must fail preflight, NOT read as "0"
+: > "$_rps_file"
+if sh "$TRIAL_RUNNER" preflight >/dev/null 2>&1; then
+    echo "  [FAIL] Preflight accepted empty 0-byte rps_cpus as baseline 0"
+    FAILED=$((FAILED + 1))
+    exit 1
+else
+    echo "  [PASS] Preflight rejected empty 0-byte rps_cpus instead of fabricating 0"
+    PASSED=$((PASSED + 1))
+fi
+printf '0\n' > "$_rps_file"
+
+# 15B: Missing /proc/softirqs must fail REQUIRE_SOFTIRQ_TELEMETRY=1 and never emit "0 0"
+_softirqs_bak=""
+if [ -f "$_softirqs_file" ]; then
+    _softirqs_bak=$(cat "$_softirqs_file")
+    rm -f "$_softirqs_file"
+fi
+if REQUIRE_SOFTIRQ_TELEMETRY=1 MEASURE_SECONDS=1 sh "$TRIAL_RUNNER" run >/dev/null 2>&1; then
+    echo "  [FAIL] Runner succeeded with REQUIRE_SOFTIRQ_TELEMETRY=1 despite missing /proc/softirqs"
+    FAILED=$((FAILED + 1))
+    exit 1
+else
+    echo "  [PASS] Strict softirq telemetry mode rejected missing /proc/softirqs"
+    PASSED=$((PASSED + 1))
+fi
+
+# 15C: Unparseable /proc/softirqs without strict flag must report UNAVAILABLE, never "+0"
+printf '           CPU0       CPU1\nNET_RX:    bad        data\n' > "$_softirqs_file"
+_out_15c=$(MEASURE_SECONDS=1 sh "$TRIAL_RUNNER" run 2>&1 || true)
+if echo "$_out_15c" | grep -q "NET_RX CPU0 Delta: UNAVAILABLE" && ! echo "$_out_15c" | grep -q "NET_RX CPU0 Delta: +0"; then
+    echo "  [PASS] Unparseable /proc/softirqs reported UNAVAILABLE instead of fabricating 0 delta"
+    PASSED=$((PASSED + 1))
+else
+    echo "  [FAIL] Unexpected softirq output on unparseable /proc/softirqs: $_out_15c"
+    FAILED=$((FAILED + 1))
+    exit 1
+fi
+if [ -n "$_softirqs_bak" ]; then
+    printf '%s\n' "$_softirqs_bak" > "$_softirqs_file"
+else
+    printf '           CPU0       CPU1\nNET_RX:     100         20\n' > "$_softirqs_file"
+fi
+
+# ------------------------------------------------------------------------------
+# TEST 16: P0-3 Emergency Abort Failure Keeps Watchdog Armed
+# ------------------------------------------------------------------------------
+echo "--- TEST 16: P0-3 Emergency Abort Keeps Watchdog Armed On Rollback Failure ---"
+rm -rf "$MOCK_DIR$TRIAL_STATE_DIR" "$MOCK_DIR$TRIAL_LOCK_DIR"
+printf '0\n' > "$_rps_file"
+
+WATCHDOG_TIMEOUT=6 MEASURE_SECONDS=12 sh "$TRIAL_RUNNER" run >"$MOCK_DIR/t16.log" 2>&1 &
+_t16_pid=$!
+
+_wait_i=0
+while [ "$_wait_i" -lt 40 ]; do
+    if [ -f "$_rps_file" ] && [ "$(tr -d ' \t\r\n' < "$_rps_file")" = "2" ]; then
+        break
+    fi
+    sleep 0.2
+    _wait_i=$((_wait_i + 1))
+done
+assert_eq "TEST 16 reached active state 2" "2" "$(tr -d ' \t\r\n' < "$_rps_file")"
+
+# Inject transient rollback failure during SIGTERM by replacing rps_cpus with directory
+rm -f "$_rps_file"
+mkdir -p "$_rps_file"
+kill -TERM "$_t16_pid" 2>/dev/null || true
+wait "$_t16_pid" 2>/dev/null || true
+
+assert_eq "Emergency abort preserved state file on rollback failure" "1" "$([ -f "$MOCK_DIR$TRIAL_STATE_DIR/rps_trial.state" ] && echo 1 || echo 0)"
+assert_eq "Emergency abort created EMERGENCY_UNRESOLVED alert" "1" "$([ -f "$MOCK_DIR$TRIAL_STATE_DIR/EMERGENCY_UNRESOLVED" ] && echo 1 || echo 0)"
+
+# Now restore mock sysfs file writability BEFORE 6s watchdog expires; if emergency_abort
+# left watchdog armed (did NOT kill it), watchdog will fire and revert 2 -> 0!
+rmdir "$_rps_file"
+printf '2\n' > "$_rps_file"
+sleep 6
+
+assert_eq "Armed watchdog survived failed emergency abort and restored 0" "0" "$(tr -d ' \t\r\n' < "$_rps_file")"
+assert_eq "Armed watchdog cleaned state file after verified restoration" "0" "$([ ! -f "$MOCK_DIR$TRIAL_STATE_DIR/rps_trial.state" ] && echo 0 || echo 1)"
+rm -f "$MOCK_DIR$TRIAL_STATE_DIR/EMERGENCY_UNRESOLVED"
+
+# ------------------------------------------------------------------------------
+# TEST 17: P0-3 SIGKILL Orphan Recovery via Watchdog + Atomic Op Lock
+# ------------------------------------------------------------------------------
+echo "--- TEST 17: P0-3 SIGKILL Recovery & Watchdog Op Lock Coordination ---"
+rm -rf "$MOCK_DIR$TRIAL_STATE_DIR" "$MOCK_DIR$TRIAL_LOCK_DIR"
+printf '0\n' > "$_rps_file"
+
+WATCHDOG_TIMEOUT=2 MEASURE_SECONDS=10 sh "$TRIAL_RUNNER" run >/dev/null 2>&1 &
+_t17_pid=$!
+
+_wait_j=0
+while [ "$_wait_j" -lt 20 ]; do
+    if [ -f "$_rps_file" ] && [ "$(tr -d ' \t\r\n' < "$_rps_file")" = "2" ]; then
+        break
+    fi
+    sleep 1
+    _wait_j=$((_wait_j + 1))
+done
+assert_eq "TEST 17 applied value 2 before SIGKILL" "2" "$(tr -d ' \t\r\n' < "$_rps_file")"
+
+kill -KILL "$_t17_pid" 2>/dev/null || true
+wait "$_t17_pid" 2>/dev/null || true
+sleep 3
+
+assert_eq "Watchdog recovered rps_cpus to 0 after SIGKILL" "0" "$(tr -d ' \t\r\n' < "$_rps_file")"
+assert_eq "Watchdog cleaned state file after SIGKILL" "0" "$([ ! -f "$MOCK_DIR$TRIAL_STATE_DIR/rps_trial.state" ] && echo 0 || echo 1)"
+assert_eq "Watchdog cleaned dead runner lock after SIGKILL" "0" "$([ ! -d "$MOCK_DIR$TRIAL_LOCK_DIR" ] && echo 0 || echo 1)"
+
+if MEASURE_SECONDS=1 sh "$TRIAL_RUNNER" run >/dev/null 2>&1; then
+    echo "  [PASS] Fresh trial runs cleanly immediately after SIGKILL watchdog recovery"
+    PASSED=$((PASSED + 1))
+else
+    echo "  [FAIL] Fresh trial blocked after SIGKILL recovery"
+    FAILED=$((FAILED + 1))
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+# TEST 18: P0-3 Endpoint Probe Gate & Mid-Trial Management Loss Auto-Abort
+# ------------------------------------------------------------------------------
+echo "--- TEST 18: P0-3 Endpoint Probe Gate & Mid-Trial Management Drop ---"
+if REQUIRE_ENDPOINT_PROBE=1 MEASURE_SECONDS=1 sh "$TRIAL_RUNNER" preflight >/dev/null 2>&1; then
+    echo "  [FAIL] Preflight allowed REQUIRE_ENDPOINT_PROBE=1 without client/endpoint verification"
+    FAILED=$((FAILED + 1))
+    exit 1
+else
+    echo "  [PASS] Preflight enforced REQUIRE_ENDPOINT_PROBE=1 client verification gate"
+    PASSED=$((PASSED + 1))
+fi
+
+rm -f "$MOCK_DIR/tmp/mock_mgmt_fail"
+(
+    sleep 1
+    touch "$MOCK_DIR/tmp/mock_mgmt_fail"
+) &
+_t18_trigger=$!
+
+if MEASURE_SECONDS=5 sh "$TRIAL_RUNNER" run >/dev/null 2>&1; then
+    wait "$_t18_trigger" 2>/dev/null || true
+    rm -f "$MOCK_DIR/tmp/mock_mgmt_fail"
+    echo "  [FAIL] Trial did not abort on mid-trial management drop"
+    FAILED=$((FAILED + 1))
+    exit 1
+else
+    wait "$_t18_trigger" 2>/dev/null || true
+    rm -f "$MOCK_DIR/tmp/mock_mgmt_fail"
+    echo "  [PASS] Trial aborted immediately when management dropped mid-window"
+    PASSED=$((PASSED + 1))
+fi
+assert_eq "Mid-trial management drop rolled back rps_cpus to 0" "0" "$(tr -d ' \t\r\n' < "$_rps_file")"
+
+# ------------------------------------------------------------------------------
+# TEST 19: Orchestrator run_rps_eth0_trial.sh Safety Gates & E2E Mock Lifecycle
+# ------------------------------------------------------------------------------
+echo "--- TEST 19: Host Orchestrator run_rps_eth0_trial.sh Gates & E2E Mock Run ---"
+ORCH_SCRIPT="${REPO_ROOT}/performance/trials/run_rps_eth0_trial.sh"
+ORCH_MOCK="${MOCK_DIR}/orch_mock"
+mkdir -p "${ORCH_MOCK}/bin" "${ORCH_MOCK}/out" \
+    "${ORCH_MOCK}/rootfs/sys/class/net/eth0/queues/rx-0" \
+    "${ORCH_MOCK}/rootfs/sys/kernel/debug/qca-nss-drv/stats" \
+    "${ORCH_MOCK}/rootfs/sys/kernel/debug/ecm/ecm_db" \
+    "${ORCH_MOCK}/rootfs/proc/net" \
+    "${ORCH_MOCK}/rootfs/tmp"
+
+printf '0\n' > "${ORCH_MOCK}/rootfs/sys/class/net/eth0/queues/rx-0/rps_cpus"
+printf 'MemAvailable:      28500 kB\nMemFree:           19000 kB\nSlab:              60800 kB\nSUnreclaim:        57900 kB\n' > "${ORCH_MOCK}/rootfs/proc/meminfo"
+printf '           CPU0       CPU1\nNET_RX:    1000         10\n' > "${ORCH_MOCK}/rootfs/proc/softirqs"
+printf 'Inter-|   Receive                                                |  Transmit\n  eth0: 10000 500 0 0 0 0 0 0 9000 400 0 0 0 0 0 0\nbr-lan: 8000 300 0 0 0 0 0 0 7000 250 0 0 0 0 0 0\n' > "${ORCH_MOCK}/rootfs/proc/net/dev"
+printf '00000100 00000000 00000001 00000000 00000000 00000000 00000000 00000000 00000000\n00000020 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000\n' > "${ORCH_MOCK}/rootfs/proc/net/softnet_stat"
+printf 'rx_pkts=5000 tx_pkts=4900\n' > "${ORCH_MOCK}/rootfs/sys/kernel/debug/qca-nss-drv/stats/ipv4"
+printf '208\n' > "${ORCH_MOCK}/rootfs/sys/kernel/debug/ecm/ecm_db/connection_count"
+
+cat << EOF > "${ORCH_MOCK}/bin/ping"
+#!/bin/sh
+if [ -f "${ORCH_MOCK}/fail_ping" ]; then
+    exit 1
+fi
+printf '5 packets transmitted, 5 packets received, 0%% packet loss\nround-trip min/avg/max = 0.410/0.450/0.510 ms\n'
+exit 0
+EOF
+chmod +x "${ORCH_MOCK}/bin/ping"
+
+cat << EOF > "${ORCH_MOCK}/bin/ssh"
+#!/bin/sh
+while [ \$# -gt 0 ]; do
+    case "\$1" in
+        -p|-o) shift 2 ;;
+        *) break ;;
+    esac
+done
+_host="\${1:-}"; shift || true
+_rcmd="\${*:-}"
+export MOCK_ROOT="${ORCH_MOCK}/rootfs"
+if [ -f "${ORCH_MOCK}/fail_ssh" ]; then
+    exit 255
+fi
+if [ "\$(cat "\${MOCK_ROOT}/sys/class/net/eth0/queues/rx-0/rps_cpus" 2>/dev/null | tr -d ' \t\r\n')" = "2" ]; then
+    printf '           CPU0       CPU1\nNET_RX:    1050        350\n' > "\${MOCK_ROOT}/proc/softirqs"
+fi
+sh -c "\$_rcmd"
+EOF
+chmod +x "${ORCH_MOCK}/bin/ssh"
+
+# 19A: Refuses live run without --authorize-live-trial
+if sh "$ORCH_SCRIPT" >/dev/null 2>&1; then
+    echo "  [FAIL] Orchestrator ran without --authorize-live-trial or --dry-run"
+    FAILED=$((FAILED + 1)); exit 1
+else
+    echo "  [PASS] Orchestrator refused un-authorized live run"
+    PASSED=$((PASSED + 1))
+fi
+
+# 19B: --dry-run exits 0 and prints recovery & owner commands
+_dry_out=$(sh "$ORCH_SCRIPT" --dry-run 2>&1)
+assert_eq "Orchestrator --dry-run exits 0" "0" "$?"
+if echo "$_dry_out" | grep -q "Emergency Recovery:" && echo "$_dry_out" | grep -q -- "--authorize-live-trial"; then
+    echo "  [PASS] Orchestrator --dry-run printed recovery & owner command"
+    PASSED=$((PASSED + 1))
+else
+    echo "  [FAIL] Orchestrator --dry-run missing expected hints"; FAILED=$((FAILED + 1)); exit 1
+fi
+
+# 19C: E2E Mock run succeeds, captures Before/During/After, and skips iperf3 cleanly
+_e2e_out=$(MEASURE_SECONDS=3 WATCHDOG_TIMEOUT=20 MONITOR_INTERVAL=1 \
+    sh "$ORCH_SCRIPT" --mock-dir "$ORCH_MOCK" --output-dir "${ORCH_MOCK}/out" 2>&1)
+_e2e_rc=$?
+assert_eq "Orchestrator mock E2E trial exited 0" "0" "$_e2e_rc"
+assert_eq "Orchestrator restored router rps_cpus to 0" "0" "$(tr -d ' \t\r\n' < "${ORCH_MOCK}/rootfs/sys/class/net/eth0/queues/rx-0/rps_cpus")"
+assert_eq "Orchestrator cleaned remote runner from /tmp" "0" "$([ ! -f "${ORCH_MOCK}/rootfs/tmp/rps_eth0_trial.sh" ] && echo 0 || echo 1)"
+
+if echo "$_e2e_out" | grep -q "Throughput Before:        HOOK_SKIPPED_NO_TARGET" \
+   && echo "$_e2e_out" | grep -q "NET_RX Delta (CPU0 / CPU1): +50 / +340" \
+   && echo "$_e2e_out" | grep -q "Shifting NET_RX softirqs onto CPU1 confirms IRQ steering only"; then
+    echo "  [PASS] Orchestrator reported non-fabricated deltas, skipped throughput hook, and anti-conflation caveat"
+    PASSED=$((PASSED + 1))
+else
+    echo "  [FAIL] Orchestrator output missing expected telemetry/caveat:"
+    echo "$_e2e_out"
+    FAILED=$((FAILED + 1)); exit 1
+fi
+
+# ------------------------------------------------------------------------------
+# TEST 20: Orchestrator Fails Precondition on Client Unreachability
+# ------------------------------------------------------------------------------
+echo "--- TEST 20: Orchestrator Aborts on Unreachable Client Precondition ---"
+touch "${ORCH_MOCK}/fail_ping"
+if sh "$ORCH_SCRIPT" --mock-dir "$ORCH_MOCK" --output-dir "${ORCH_MOCK}/out" >/dev/null 2>&1; then
+    rm -f "${ORCH_MOCK}/fail_ping"
+    echo "  [FAIL] Orchestrator proceeded despite failed client ping"
+    FAILED=$((FAILED + 1)); exit 1
+else
+    rm -f "${ORCH_MOCK}/fail_ping"
+    echo "  [PASS] Orchestrator aborted before staging when client ping failed"
+    PASSED=$((PASSED + 1))
+fi
+assert_eq "Aborted orchestrator left rps_cpus at 0" "0" "$(tr -d ' \t\r\n' < "${ORCH_MOCK}/rootfs/sys/class/net/eth0/queues/rx-0/rps_cpus")"
+
+# ------------------------------------------------------------------------------
+# TEST 21: Orchestrator Mid-Trial Reachability Drop Triggers Emergency Restore
+# ------------------------------------------------------------------------------
+echo "--- TEST 21: Orchestrator Mid-Trial Client Reachability Drop Abort ---"
+rm -f "${ORCH_MOCK}/fail_ping"
+(
+    for _w in $(seq 1 40); do
+        if [ "$(cat "${ORCH_MOCK}/rootfs/sys/class/net/eth0/queues/rx-0/rps_cpus" 2>/dev/null | tr -d ' \t\r\n')" = "2" ]; then
+            touch "${ORCH_MOCK}/fail_ping"
+            break
+        fi
+        sleep 0.2
+    done
+) &
+_t21_mon_trigger=$!
+
+if MEASURE_SECONDS=8 WATCHDOG_TIMEOUT=20 MONITOR_INTERVAL=1 \
+    sh "$ORCH_SCRIPT" --mock-dir "$ORCH_MOCK" --output-dir "${ORCH_MOCK}/out" > "${ORCH_MOCK}/t21.log" 2>&1; then
+    wait "$_t21_mon_trigger" 2>/dev/null || true
+    rm -f "${ORCH_MOCK}/fail_ping"
+    echo "  [FAIL] Orchestrator exited 0 despite mid-trial client reachability drop"
+    FAILED=$((FAILED + 1)); exit 1
+else
+    wait "$_t21_mon_trigger" 2>/dev/null || true
+    rm -f "${ORCH_MOCK}/fail_ping"
+    echo "  [PASS] Orchestrator aborted on mid-trial client reachability loss"
+    PASSED=$((PASSED + 1))
+fi
+assert_eq "Out-of-band / emergency restore returned rps_cpus to 0" "0" "$(tr -d ' \t\r\n' < "${ORCH_MOCK}/rootfs/sys/class/net/eth0/queues/rx-0/rps_cpus")"
+
+# ------------------------------------------------------------------------------
 # TEST SUMMARY
 # ------------------------------------------------------------------------------
 echo "================================================================================"

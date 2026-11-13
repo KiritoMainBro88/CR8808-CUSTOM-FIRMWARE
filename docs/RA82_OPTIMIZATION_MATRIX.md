@@ -66,8 +66,8 @@ Each optimization candidate has been evaluated against empirical device readback
 
 ### 2.1 OPT-SEC-01: WAN SSH (Dropbear Port 56789) Restriction
 - **Classification:** **`GO`** (Highest Priority Security Hardening)
-- **Existing Evidence:** `reports/M11_RA82_LIVE_AUDIT_RAW.txt` confirms Dropbear is running with `PasswordAuth 'on'` and `RootPasswordAuth 'on'` on port `56789`. `iptables -L zone_wan_input -v -n` confirms rule jumping to `input_wan_rule` with 7 recorded packets hitting the accept rule.
-- **Topology Context:** Router WAN IP is `192.168.100.75` (RFC1918) behind an ISP ONT (`192.168.100.1`). Although behind double-NAT, exposure persists if ONT has DMZ/port-forwarding enabled, or if rogue devices/technicians on the `192.168.100.0/24` subnet attempt brute-force root logins.
+- **Existing Evidence:** Sanitized baseline evidence (`reports/M12_BASELINE_SANITIZED.txt`; raw capture removed from repository) confirms Dropbear is running with `PasswordAuth 'on'` and `RootPasswordAuth 'on'` on port `56789`. `iptables -L zone_wan_input -v -n` confirms rule jumping to `input_wan_rule` with 7 recorded packets hitting the accept rule.
+- **Topology Context:** Router WAN IP is `[REDACTED_WAN_IP]` (RFC1918) behind an ISP ONT (`[REDACTED_WAN_GW]`). Although behind double-NAT, exposure persists if ONT has DMZ/port-forwarding enabled, or if rogue devices/technicians on the `[REDACTED_WAN_SUBNET]` subnet attempt brute-force root logins.
 - **Expected Benefit:** Complete elimination of remote brute-force attack surface from WAN and upstream ONT subnet.
 - **Resource Cost:** 0 kB RAM, 0% CPU. Single netfilter rule evaluation.
 - **Implementation Method:** Volatile iptables rule in RAM:
@@ -76,7 +76,7 @@ Each optimization candidate has been evaluated against empirical device readback
   ```
 - **Measurement Procedure:**
   1. From LAN (`192.168.31.x`): `ssh -p 56789 -o ConnectTimeout=5 root@192.168.31.1` must succeed (exit code 0).
-  2. From WAN / upstream network (`192.168.100.x`): `nc -z -w 3 192.168.100.75 56789` must timeout / fail.
+  2. From WAN / upstream network (`[REDACTED_WAN_SUBNET]`): `nc -z -w 3 [REDACTED_WAN_IP] 56789` must timeout / fail.
 - **Risk:** Zero risk to LAN connectivity. Packets on `br-lan` traverse `zone_lan_input`, not `zone_wan_input`.
 - **Rollback Strategy (Automatic Watchdog):**
   Arm an automated background rollback timer prior to rule execution:

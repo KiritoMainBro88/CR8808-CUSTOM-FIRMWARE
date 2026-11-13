@@ -805,7 +805,7 @@ wl0       IEEE 802.11axa  ESSID:"[REDACTED_SSID]"
           Mode:Master  Frequency:5.2 GHz  Access Point: [REDACTED_MAC]   
           Bit Rate:2.4019 Gb/s   Tx-Power:24 dBm   
           RTS thr:off   Fragment thr:off
-          Encryption key:EB0E-F5FF-7828-3287-EC17-F336-97CE-DCBF   Security mode:restricted
+          Encryption key:[REDACTED_WIFI_KEY]   Security mode:restricted
           Power Management:off
           Link Quality=0/94  Signal level=-94 dBm  Noise level=-94 dBm
           Rx invalid nwid:24901  Rx invalid crypt:0  Rx invalid frag:0
@@ -815,7 +815,7 @@ wl1       IEEE 802.11axg  ESSID:"[REDACTED_SSID]"
           Mode:Master  Frequency:2.412 GHz  Access Point: [REDACTED_MAC]   
           Bit Rate:286.8 Mb/s   Tx-Power:23 dBm   
           RTS thr:off   Fragment thr:off
-          Encryption key:D86A-0F26-945F-3A5F-E78A-CCF5-559B-5493   Security mode:restricted
+          Encryption key:[REDACTED_WIFI_KEY]   Security mode:restricted
           Power Management:off
           Link Quality=0/94  Signal level=-99 dBm  Noise level=-99 dBm
           Rx invalid nwid:171292  Rx invalid crypt:0  Rx invalid frag:0
@@ -826,7 +826,7 @@ phy#1
 		ifindex 18
 		wdev 0x100000002
 		addr [REDACTED_MAC]
-		ssid KMB_5G
+		ssid [REDACTED_SSID]
 		type AP
 		channel 40 (5200 MHz), width: 160 MHz, center1: 5250 MHz
 		txpower 24.00 dBm
@@ -841,7 +841,7 @@ phy#0
 		ifindex 16
 		wdev 0x3
 		addr [REDACTED_MAC]
-		ssid 25c829b1922d3123_miwifi
+		ssid [REDACTED_SSID]
 		type AP
 		channel 1 (2412 MHz), width: 20 MHz, center1: 2412 MHz
 		txpower 23.00 dBm
@@ -849,7 +849,7 @@ phy#0
 		ifindex 15
 		wdev 0x2
 		addr [REDACTED_MAC]
-		ssid KMB
+		ssid [REDACTED_SSID]
 		type AP
 		channel 1 (2412 MHz), width: 20 MHz, center1: 2412 MHz
 		txpower 23.00 dBm
@@ -4937,7 +4937,7 @@ net.ipv4.tcp_ecn = 0
 net.ipv4.tcp_ecn_fallback = 1
 net.ipv4.tcp_fack = 1
 net.ipv4.tcp_fastopen = 3
-net.ipv4.tcp_fastopen_key = 1b7482c0-71c33ad7-d9f4d233-856bca94
+net.ipv4.tcp_fastopen_key = [REDACTED_TFO_KEY]
 net.ipv4.tcp_fin_timeout = 30
 net.ipv4.tcp_frto = 2
 net.ipv4.tcp_fwmark_accept = 0

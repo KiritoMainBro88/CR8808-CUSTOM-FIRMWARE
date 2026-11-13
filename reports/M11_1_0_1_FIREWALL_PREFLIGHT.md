@@ -55,7 +55,7 @@ In OpenWrt fw3 (`firewall3`), netfilter rules are organized into a delegated zon
 ```
 
 ### 2.2 Analysis of `zone_wan_input` Chain Structure
-From live audit telemetry in `reports/M11_RA82_LIVE_AUDIT_RAW.txt`:
+From historical live audit telemetry (original `M11_RA82_LIVE_AUDIT_RAW.txt` purged from Git HEAD under P0-1; verified against sanitized artifacts):
 ```
 Chain zone_wan_input (1 references)
  pkts bytes target          prot opt in  out  source     destination 

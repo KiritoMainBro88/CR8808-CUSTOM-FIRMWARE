@@ -9,7 +9,7 @@ ROUTER_IP="${ROUTER_IP:-192.168.31.1}"
 ROUTER_PORT="${ROUTER_PORT:-56789}"
 ROUTER_USER="${ROUTER_USER:-root}"
 KNOWN_HOSTS_FILE="${KNOWN_HOSTS_FILE:-/tmp/cr8818_known_hosts}"
-OUTPUT_FILE="${OUTPUT_FILE:-/mnt/d/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M11_RA82_LIVE_AUDIT_RAW.txt}"
+OUTPUT_FILE="${OUTPUT_FILE:-/tmp/cr8818_m11_ra82_live_audit_sanitized.txt}"
 
 if [ -z "${SSHPASS:-}" ]; then
     echo "ERROR: SSHPASS environment variable is required to avoid command-line argument leakage."

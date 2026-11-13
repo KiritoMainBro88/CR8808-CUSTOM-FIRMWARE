@@ -55,9 +55,9 @@ Following the Chief Architect's formal technical audit of Milestone M11, all 8 p
 ## 2. Execution Plan: Proposal 6.1 – WAN SSH Hardening (`GO`)
 
 ### 2.1 Environmental Ground Truth & Context
-- **WAN Interface:** `eth0` with IP address `192.168.100.75/24`.
-- **Topological Reality:** The router is located in a double-NAT topology behind an upstream ISP ONT/gateway (`192.168.100.1`).
-- **Exposure Analysis:** Dropbear port `56789` is open to the `192.168.100.0/24` subnet. It is NOT directly reachable from the public Internet unless the upstream ONT has port forwarding configured. The packet counter (7 packets) confirms minimal traffic, with no evidence of successful unauthorized login.
+- **WAN Interface:** `eth0` with IP address `[REDACTED_WAN_IP]/24`.
+- **Topological Reality:** The router is located in a double-NAT topology behind an upstream ISP ONT/gateway (`[REDACTED_WAN_GW]`).
+- **Exposure Analysis:** Dropbear port `56789` is open to the `[REDACTED_WAN_SUBNET]` subnet. It is NOT directly reachable from the public Internet unless the upstream ONT has port forwarding configured. The packet counter (7 packets) confirms minimal traffic, with no evidence of successful unauthorized login.
 - **Security Mandate:** Even on private subnets, exposing management SSH with password authentication violates zero-trust principles.
 
 ### 2.2 Controlled Hardening Runbook:
@@ -67,9 +67,9 @@ Following the Chief Architect's formal technical audit of Milestone M11, all 8 p
    ```sh
    iptables -D zone_wan_input -p tcp --dport 56789 -j ACCEPT
    ```
-   Or restrict it exclusively to the known management IP (`192.168.100.x`):
+   Or restrict it exclusively to the known management subnet (`[REDACTED_WAN_SUBNET]`):
    ```sh
-   iptables -I zone_wan_input 3 -p tcp -s 192.168.100.0/24 --dport 56789 -j ACCEPT
+   iptables -I zone_wan_input 3 -p tcp -s <MANAGEMENT_WAN_SUBNET> --dport 56789 -j ACCEPT
    ```
 3. **Verification:** Confirm connection is blocked from outside WAN and remains 100% accessible from `192.168.31.1:56789`.
 4. **Instant Rollback:**

@@ -29,12 +29,12 @@ In compliance with Chief Architect Directive **M11.1.1**, all six core tasks hav
 ### 2.1 The Vulnerability: Mathematical EUI-64 MAC Reconstruction
 Linux kernel `/proc/net/if_inet6` exposes IPv6 interface addresses in raw 32-character hexadecimal format:
 ```text
-fe80000000000000ced843fffe50f91e 0a 40 20 80   br-lan
+fe80000000000000e639dffffe112233 0a 40 20 80   br-lan
 ```
-Because SLAAC and Link-Local generation uses the IEEE EUI-64 identifier format, the interface identifier `ced843fffe50f91e` directly embeds the hardware MAC address:
-1. Invert the 7th bit (universal/local bit): `ce` (`1100 1110`) $\rightarrow$ `cc` (`1100 1100`).
+Because SLAAC and Link-Local generation uses the IEEE EUI-64 identifier format, a synthetic interface identifier `e639dffffe112233` directly embeds the hardware MAC address:
+1. Invert the 7th bit (universal/local bit): `e6` (`1110 0110`) $\rightarrow$ `e4` (`1110 0100`).
 2. Strip the standard `fffe` insertion from the middle.
-3. Resulting MAC: `cc:d8:43:50:f9:1e`.
+3. Resulting synthetic example MAC: `e4:39:df:11:22:33`.
 
 Publishing raw `/proc/net/if_inet6` in sanitized telemetry defeated MAC anonymization.
 
@@ -51,7 +51,7 @@ Rule 6a was introduced into `scripts/sanitize_telemetry.sh` with the following p
 4. **Test Fixtures & Harness:**
    - Updated `tests/fixtures/sanitizer_test_multiline.txt`, `tests/fixtures/sanitizer_expected_multiline.txt`.
    - Updated `tests/fixtures/sanitizer_test_json.json`, `tests/fixtures/sanitizer_expected_json.json`.
-   - Added specific assertions in `tests/test_sanitizer.sh` checking for absence of EUI-64 identifiers (`ced843fffe50f91e`), RFC 7217 randomized identifiers, raw GUA/ULA/LL hex strings, and presence of redaction tokens.
+   - Added specific assertions in `tests/test_sanitizer.sh` checking for absence of EUI-64 identifiers (e.g., `e639dffffe112233`), RFC 7217 randomized identifiers, raw GUA/ULA/LL hex strings, and presence of redaction tokens.
    - Result: **110/110 assertions PASSED** with exact fixture `diff -u` byte-match.
 5. **Artifact Regeneration:**
    - Regenerated [`reports/M11_1_R0_MINIMAL_AUDIT_SANITIZED.txt`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M11_1_R0_MINIMAL_AUDIT_SANITIZED.txt).
@@ -168,10 +168,10 @@ Executed in WSL2 Ubuntu-22.04 with real kernel netfilter tables:
 ### 5.1 Telemetry Reconciliation
 From `local_raw_audit/m11_1_r0_minimal_raw.txt`:
 1. **IPv4 Addressing on `eth0`:**
-   - `inet 192.168.100.75/24 brd 192.168.100.255 scope global eth0`
-   - Default route: `default via 192.168.100.1 dev eth0 proto static src 192.168.100.75`
-   - **Finding:** The router's WAN port is attached to a private RFC 1918 subnet (`192.168.100.0/24`) managed by an upstream ISP optical network terminal (ONT) or modem (`192.168.100.1`).
-   - **Exposure Reality:** Ingress from the public Internet via IPv4 is NOT directly reachable unless the upstream gateway explicitly has port forwarding or DMZ configured towards `192.168.100.75`. However, within the local upstream subnet (`192.168.100.0/24`), port 56789 is open to all devices on that segment.
+   - `inet [REDACTED_WAN_IP]/24 brd [REDACTED_WAN_BCAST] scope global eth0`
+   - Default route: `default via [REDACTED_WAN_GW] dev eth0 proto static src [REDACTED_WAN_IP]`
+   - **Finding:** The router's WAN port is attached to a private RFC 1918 subnet (`[REDACTED_WAN_SUBNET]`) managed by an upstream ISP optical network terminal (ONT) or modem (`[REDACTED_WAN_GW]`).
+   - **Exposure Reality:** Ingress from the public Internet via IPv4 is NOT directly reachable unless the upstream gateway explicitly has port forwarding or DMZ configured towards `[REDACTED_WAN_IP]`. However, within the local upstream subnet (`[REDACTED_WAN_SUBNET]`), port 56789 is open to all devices on that segment.
 2. **IPv6 Addressing & Routing on `eth0`:**
    - Link-Local only: `fe80::...` on `eth0`.
    - **Global Unicast Address (GUA):** None assigned to `eth0` (or `br-lan`).
@@ -203,7 +203,7 @@ From `local_raw_audit/m11_1_r0_minimal_raw.txt`:
   - **SHA-256 Fingerprint:** `SHA256:BwYCFt/UPVQ+Sj6/ZcbKf7yfTK5FqPFYB9uN7isGL64`
   - **MD5 Fingerprint:** `MD5:b6:1e:4e:71:04:84:60:f1:1b:d4:81:26:1d:b7:6d:f2`
 - **Provenance History:**
-  - An earlier key (`SHA256:feZ+NfroyCIlYrC74Z1ZazUSby+WqxRxZM63Q6Q9HmM`) was recorded from an external WAN IP address (`118.68.195.158`).
+  - An earlier key (`SHA256:feZ+NfroyCIlYrC74Z1ZazUSby+WqxRxZM63Q6Q9HmM`) was recorded from an external WAN IP address (`[REDACTED_PUBLIC_IP]`).
   - The live LAN Dropbear daemon at `192.168.31.1:56789` presents `SHA256:BwYCFt/UPVQ+Sj6/ZcbKf7yfTK5FqPFYB9uN7isGL64`.
   - Both keys remain formally classified as **`PINNED_HISTORICAL_CACHE`** (session continuity protection against MitM, pending hardware/UART extraction).
 

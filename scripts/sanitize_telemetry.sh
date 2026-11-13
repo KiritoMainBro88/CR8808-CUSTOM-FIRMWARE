@@ -14,13 +14,18 @@ sed -E \
   -e 's/(private-key|preshared-key)[ =]+[A-Za-z0-9+/=]{20,}/\1 [REDACTED_WG_KEY]/g' \
   -e 's/"(srvkey|clientkey|private_key|preshared_key)": "[^"]*"/"\1": "[REDACTED_WG_KEY]"/g' \
   \
-  `# 2. Wi-Fi Keys & Passwords (WPA2 key, WPA3 sae_password in CLI, UCI, and JSON)` \
+  `# 2. Wi-Fi Keys & Passwords (WPA2 key, WPA3 sae_password in CLI, UCI config, iwconfig, and JSON)` \
   -e 's/(key|sae_password|password|passphrase)=['\''"][^'\''"]*['\''"]/\1='\''[REDACTED_WIFI_KEY]'\''/g' \
+  -e 's/option[ \t]+(key|sae_password|password|passphrase)[ \t]+['\''"][^'\''"]*['\''"]/option \1 '\''[REDACTED_WIFI_KEY]'\''/g' \
+  -e 's/Encryption key:[0-9A-Fa-f]{4}(-[0-9A-Fa-f]{4})+/Encryption key:[REDACTED_WIFI_KEY]/g' \
+  -e 's/^(net\.ipv4\.tcp_fastopen_key)[ \t]*=[ \t]*[0-9A-Fa-f-]+/\1 = [REDACTED_TFO_KEY]/g' \
   -e 's/"(key|sae_password|password|passphrase)": "[^"]*"/"\1": "[REDACTED_WIFI_KEY]"/g' \
   \
-  `# 3. Wireless SSIDs & BSSIDs in CLI, iwconfig, UCI, and JSON` \
+  `# 3. Wireless SSIDs & BSSIDs in CLI, iwconfig, iw dev, UCI config, and JSON` \
   -e 's/ESSID:"[^"]*"/ESSID:"[REDACTED_SSID]"/g' \
   -e 's/ssid=['\''"][^'\''"]*['\''"]/ssid='\''[REDACTED_SSID]'\''/g' \
+  -e 's/option[ \t]+ssid[ \t]+['\''"][^'\''"]*['\''"]/option ssid '\''[REDACTED_SSID]'\''/g' \
+  -e 's/^([ \t]+)ssid[ \t]+[^ \t\r\n][^\r\n]*/\1ssid [REDACTED_SSID]/g' \
   -e 's/"(ssid|ESSID)": "[^"]*"/"\1": "[REDACTED_SSID]"/g' \
   \
   `# 4. Serial Numbers in /proc/cpuinfo, U-Boot, and JSON` \

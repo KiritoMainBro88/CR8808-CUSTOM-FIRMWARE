@@ -39,7 +39,7 @@ The physical device's Dropbear SSH daemon identity has been recorded and pinned:
 
 In strict adherence to Chief Architect Directives M11.1.0.3 and M11.1.1, the provenance of this pinned host key is formally disclosed:
 
-1. **Origin of Key Baseline:** The host key and fingerprint `SHA256:BwYCFt/UPVQ+Sj6/ZcbKf7yfTK5FqPFYB9uN7isGL64` were captured from the target router's LAN management interface (`192.168.31.1:56789`) running RA82 v1.4.31 Dropbear SSH daemon. An earlier key (`SHA256:feZ+NfroyCIlYrC74Z1ZazUSby+WqxRxZM63Q6Q9HmM`) had been captured from an upstream WAN endpoint (`118.68.195.158`).
+1. **Origin of Key Baseline:** The host key and fingerprint `SHA256:BwYCFt/UPVQ+Sj6/ZcbKf7yfTK5FqPFYB9uN7isGL64` were captured from the target router's LAN management interface (`192.168.31.1:56789`) running RA82 v1.4.31 Dropbear SSH daemon. An earlier key (`SHA256:feZ+NfroyCIlYrC74Z1ZazUSby+WqxRxZM63Q6Q9HmM`) had been captured from an upstream WAN endpoint (`[REDACTED_PUBLIC_IP]`).
 2. **Classification:** In accordance with the cryptographic trust model, this key is classified strictly as **`PINNED_HISTORICAL_CACHE`**, providing conditional session continuity and anti-MitM protection over the LAN rather than a hardware-rooted cryptographic identity.
 3. **What Key Pinning Guarantees:** 
    - Pinning eliminates dynamic Trust-On-First-Use (`ssh-keyscan`) vulnerability.

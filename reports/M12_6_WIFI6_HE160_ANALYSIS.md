@@ -29,12 +29,12 @@ While the physical radio hardware offers exceptional theoretical bandwidth, its 
 | **Radio Interface**      | `wl0` / `wifi1`       | PCIe Discrete (QCN6102)     | Active / Master   |
 | **Operating Frequency**  | 5.200 GHz (Ch 40)     | 5.170 – 5.835 GHz           | UNII-1 + UNII-2A  |
 | **Channel Bandwidth**    | **160 MHz** (`bw=160`)| 20 / 40 / 80 / 160 MHz      | Full HE160 Active |
-| **Peak PHY Rate**        | **2,401.9 Mbps**      | 2x2 1024-QAM (MCS 11)       | Verified Live     |
-| **TX Power**             | **24.00 dBm** (250mW) | Hardware Max (Singapore)    | Full Coverage     |
-| **Beamforming (TxBF)**   | **Mode 3** (SU + MU)  | Sounding + Steering Matrix  | Fully Enabled     |
-| **Frame Aggregation**    | A-MPDU: 64 / A-MSDU: 3| 65,535B MPDU / 7,935B MSDU  | Max Aggregation   |
-| **Uplink OFDMA**         | `he_ul_ofdma = 0`     | DL + UL OFDMA Supported     | Disabled in Stock |
-| **DFS Behavior**         | Pre-CAC on Ch 40      | Radar Detection Supported   | Zero-Wait Boot    |
+| **Peak PHY Rate**        | **2,401.9 Mbps** (theo) | 2x2 1024-QAM (MCS 11)       | L2 PHY Spec (`UNVERIFIED` TCP) |
+| **TX Power**             | **24.00 dBm** (250mW) | Hardware Max (`country=SG`) | Observed in `iw dev`   |
+| **Beamforming (TxBF)**   | **Mode 3** (SU + MU)  | Sounding + Steering Matrix  | Configured in UCI      |
+| **Frame Aggregation**    | A-MPDU: 64 / A-MSDU: 3| 65,535B MPDU / 7,935B MSDU  | Max Aggregation Spec   |
+| **Uplink OFDMA**         | `he_ul_ofdma = 0`     | DL + UL OFDMA Supported     | Disabled in Stock UCI  |
+| **DFS Behavior**         | Primary Ch 40 (UNII-1) + 52–64 (UNII-2A) in 160MHz | Radar CAC (~62s observed in `dmesg`) | `wl0` Ch 64 not pre-CAC (`UNVERIFIED` `get_preCACEn`) |
 +--------------------------+-----------------------+-----------------------------+-------------------+
 ```
 
@@ -88,23 +88,22 @@ Interface wl0
 - **Center Frequency:** 5,250 MHz (`center1`).
 - **Channel Span:** **5,170 MHz to 5,330 MHz** (spanning channels 36, 40, 44, 48 [UNII-1] and channels 52, 56, 60, 64 [UNII-2A]).
 
-### 3.2 Dynamic Frequency Selection (DFS) Strategy & Block List
-In standard operations, utilizing channels 52–64 mandates Dynamic Frequency Selection (DFS) with a mandatory 60-second Channel Availability Check (CAC) radar listening period before transmission can commence.
+### 3.2 Dynamic Frequency Selection (DFS) Strategy, Control vs 160 MHz Span & `dmesg` Evidence (P1-5 Corrected)
+In 5 GHz 160 MHz (`bw=160`) operation centered at `5250 MHz` (`vht_seg0 50`), utilizing the contiguous block `5180–5320 MHz` spans both **UNII-1 (Ch 36–48, non-DFS)** and **UNII-2A (Ch 52–64, DFS)**. When any sub-channel in `52–64` is used without cleared pre-CAC status, standard regulatory rules mandate Dynamic Frequency Selection (DFS) with a ~60s Channel Availability Check (CAC) before full 160 MHz transmission.
 
-Inspection of `/etc/config/wireless` on the live device reveals Xiaomi's engineering workaround:
+Inspection of `/etc/config/wireless` and sanitized boot `dmesg` on the live RA82 router (`country 'SG'`) shows:
 ```text
 config wifi-iface
     option device 'wifi1'
     option ifname 'wl0'
     option channel_block_list '52,56,60,64,100,104,108,112,116,120,124,128,132,136,140'
 ```
-1. **Primary Beacon Placement in UNII-1:** By anchoring the primary beacon and control frames on Channel 40 (5,200 MHz, UNII-1), the router is legally permitted to transmit immediately upon boot without a 60-second silence period.
-2. **Pre-CAC Radar Bypass:** During bootup, kernel dmesg logs show:
-   ```text
-   all dfs channel is pre cac, skip dfs cac
-   ```
-   The driver verifies that pre-CAC parameters are satisfied, allowing the secondary 80 MHz extension (channels 52–64) to bond immediately.
-3. **Regulatory Compliance (`country 'SG'`):** Configured for Singapore regulatory domain, authorizing up to 250 mW (24.00 dBm) EIRP for indoor UNII-1/UNII-2A operations.
+1. **Primary Control Channel (`Ch 40`, UNII-1) vs Full 160 MHz Span (`Ch 36–64`):** Anchoring primary Channel 40 (`5,200 MHz`, non-DFS UNII-1) in UCI (`country 'SG'`) means primary channel selection avoids picking a DFS primary channel (`channel_block_list` excludes DFS primary channels 52–64 and 100–140 from ACS), **NOT** that the 160 MHz secondary extension avoids UNII-2A. As `iw dev wl0 info` confirms (`width: 160 MHz, center1: 5250 MHz`), the active 160 MHz channel span physically occupies `5180–5320 MHz` (`Ch 36..64`).
+2. **Correction of `dmesg` Pre-CAC Observation (P1-5 Audit Fix):** Earlier M12.6 prose misattributed `"all dfs channel is pre cac, skip dfs cac"` to 5 GHz `wl0`. Cross-checking [`reports/M12_BASELINE_SANITIZED.txt`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M12_BASELINE_SANITIZED.txt) reveals:
+   - `"all dfs channel is pre cac, skip dfs cac"` was emitted by **`Pdev 0` (2.4 GHz radio `wl1`/`wl13`)**, not 5 GHz `wl0`.
+   - For **5 GHz `wl0` (`wifi1`)**, `dmesg` explicitly logged `dfs channel(64) is not pre cac channel, break` (at timestamp `275611.040510`) followed by a ~62-second DFS CAC sequence (`CAC_START` at `275611.04` -> `CAC_COMPLETED` at `275673.12`) across `5180..5320` MHz.
+3. **`cfg80211` vs QSDK Private Pre-CAC (`get_preCACEn` = `UNVERIFIED`):** Although QSDK proprietary drivers (`umac.ko` / `qca_ol.ko`) expose vendor-private ioctls/commands (`get_preCACEn` / zero-wait background CAC via `iwpriv`/`cfg80211tool`) distinct from standard upstream Linux `cfg80211`, **runtime `get_preCACEn` state on `wl0` is `UNVERIFIED`** until queried directly over LAN; live `dmesg` confirms non-skipped ~62s CAC on `wl0` when `ch 64` lacked cleared pre-CAC status.
+4. **Regulatory Domain (`country 'SG'`):** Configured for Singapore regulatory domain, authorizing `24.00 dBm` max EIRP in `iw dev wl0 info` under `country 'SG'`.
 
 ---
 
@@ -164,13 +163,13 @@ iwpriv wl0 get_amsdu   # Returns: wl0 get_amsdu:3
 +--------------------------+-----------------------+-----------------------------+-------------------+
 ```
 
-### 5.2 Efficiency Analysis:
-- Without aggregation, transmitting 1,500-byte packets across 802.11ax caps maximum real-world throughput at $<450 \text{ Mbps}$ due to per-frame channel contention and interframe spacing.
-- Aggregating 64 subframes into a single 64 KB A-MPDU burst allows the QCN6102 to deliver **1.6 to 1.8 Gbps of actual TCP payload throughput** across a 2.4 Gbps PHY link.
+### 5.2 Efficiency Analysis (`UNVERIFIED` Runtime Throughput):
+- Without aggregation, transmitting 1,500-byte packets across 802.11ax caps maximum analytical throughput below ~450 Mbps due to per-frame channel contention and interframe spacing.
+- **Theoretical Ceiling Only (`UNVERIFIED` Live Measurement):** While aggregating 64 subframes into an A-MPDU at 2,401.9 Mbps PHY rate yields an analytical upper bound in the ~1.6–1.8 Gbps range under clean RF lab assumptions, **actual over-the-air TCP/UDP payload throughput on CR8808 RA82 hardware is `UNVERIFIED`** (no live Wi-Fi `iperf3` test has been executed to date).
 
-### 5.3 The Bufferbloat Side Effect:
-- When a 64 KB A-MPDU frame experiences partial transmission failure (e.g. client moves or experiences transient interference), the Block-ACK requests selective retransmissions.
-- Because `br-lan` operates with `qdisc noqueue`, retransmitted subframes accumulate in the driver's internal DMA queues, causing transient latency spikes up to 40–80 ms during heavy concurrent downloads.
+### 5.3 Theoretical Bufferbloat Risk (`UNVERIFIED` Runtime Latency):
+- When a 64 KB A-MPDU frame experiences partial transmission failure (e.g., client moves or experiences transient interference), Block-ACK requests selective retransmissions.
+- Because `br-lan` operates with `qdisc noqueue`, retransmitted subframes can queue in driver DMA rings under load; **actual 40–80 ms tail latency spikes under active traffic are `UNVERIFIED` (analytical hypothesis pending live LAN latency-under-load benchmarks).**
 
 ---
 
@@ -228,10 +227,10 @@ Based on empirical driver inspection, four high-value, safe optimization candida
 
 ## 8. Verification & Sign-off
 
-- **Audited By:** Performance & Systems Auditor (`@auditor`)
-- **Authority:** Chief Architect Directive M12.6 (Priority C)
-- **Status:** Complete, Empirically Verified & Cross-Referenced
+- **Audited By:** Performance & Systems Auditor (`@auditor`; P1-5 evidence reconciliation applied 2026-11-13)
+- **Authority:** Chief Architect Directive M12.6 (Priority C) & Release Blocker Closure P1-5
+- **Status:** Static & Live Boot/Config Inspected (`dmesg`/`iw`/`uci`); Runtime Pre-CAC (`get_preCACEn`) & Over-the-Air Wi-Fi Throughput `UNVERIFIED`
 - **Cross-Referenced Artifacts:**
-  - Raw Live Telemetry: [`reports/M12_6_LIVE_RAW.txt`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M12_6_LIVE_RAW.txt)
+  - Sanitized Live Telemetry: [`reports/M12_6_LIVE_SANITIZED.txt`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M12_6_LIVE_SANITIZED.txt) (raw capture removed from Git HEAD under P0-1)
   - Live Baseline Report: [`reports/M12_6_LIVE_BASELINE.md`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/reports/M12_6_LIVE_BASELINE.md)
   - Benchmark Matrix: [`performance/benchmarks/BENCHMARK_MATRIX.md`](file:///D:/vibecode/CR8808-CUSTOM-FIRMWARE/performance/benchmarks/BENCHMARK_MATRIX.md)

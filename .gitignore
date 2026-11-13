@@ -47,10 +47,14 @@ target/
 # Raw audit logs containing live router state
 *LIVE_AUDIT_RAW*.txt
 *LIVE_BASELINE_RAW*.txt
+*LIVE_RAW*
+*_RAW.txt
+*RAW_AUDIT*
 *live_device_audit*.txt
 *raw_host_audit*.json
 *raw_audit*
 *BASELINE_RAW*.txt
+reports/*_RAW*
 local_raw_audit/
 *.auth
 *.credentials

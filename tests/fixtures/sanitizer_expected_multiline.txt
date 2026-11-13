@@ -68,6 +68,15 @@ wireless.@wifi-iface[0].ssid='[REDACTED_SSID]'
 wireless.@wifi-iface[0].key='[REDACTED_WIFI_KEY]'
 wireless.@wifi-iface[0].sae_password='[REDACTED_WIFI_KEY]'
 
+# UCI space-delimited config (/etc/config/wireless), iw dev & iwconfig Encryption key
+	option ssid '[REDACTED_SSID]'
+	option key '[REDACTED_WIFI_KEY]'
+	option sae_password '[REDACTED_WIFI_KEY]'
+		ssid [REDACTED_SSID]
+          Encryption key:[REDACTED_WIFI_KEY]   Security mode:restricted
+          Encryption key:off
+net.ipv4.tcp_fastopen_key = [REDACTED_TFO_KEY]
+
 # WireGuard Process Telemetry
 1420 root      1420 S    /data/wg_server -srvkey [REDACTED_WG_KEY] -srvkey [REDACTED_WG_KEY] -port 51820
 wg set wg0 private-key [REDACTED_WG_KEY] peer abc= preshared-key [REDACTED_WG_KEY]

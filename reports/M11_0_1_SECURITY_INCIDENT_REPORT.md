@@ -31,7 +31,7 @@ During post-commit architectural audit, Chief Architect (ChatGPT) identified tha
 | Credential Exposed | Scope of Impact             | Exposure Vector      | Risk Level & Threat      |
 +--------------------+-----------------------------+----------------------+--------------------------+
 | Wi-Fi WPA2/WPA3    | Local Wireless LAN          | Public GitHub Commit | **HIGH (Local Proximity)**|
-| Passwords          | (SSIDs: KMB, KMB_5G)        |                      | Unauthorized Wi-Fi access|
+| Passwords          | (2.4G / 5G [REDACTED_SSID]) |                      | Unauthorized Wi-Fi access|
 |                    |                             |                      | if attacker in RF range. |
 +--------------------+-----------------------------+----------------------+--------------------------+
 | WireGuard Server   | Remote VPN Tunnel           | Public GitHub Commit | **CRITICAL (Cryptographic)**|
@@ -83,7 +83,7 @@ The audit script has been completely re-architected with defensive controls:
 > Because commit `3b5349e` was pushed to GitHub, the exposed credentials must be considered **FULLY COMPROMISED**. The device owner must execute the following remediation steps immediately:
 > 
 > 1. **Rotate Wi-Fi Passwords:**  
->    Log in to the router web management interface (`http://192.168.31.1`) or via SSH and change the Wi-Fi passwords for both 2.4 GHz (`KMB`) and 5 GHz (`KMB_5G`) networks immediately.
+>    Log in to the router web management interface (`http://192.168.31.1`) or via SSH and change the Wi-Fi passwords for both 2.4 GHz and 5 GHz networks immediately.
 > 
 > 2. **Rotate WireGuard Key Material:**  
 >    - Generate a brand-new WireGuard private key and preshared key pair:
@@ -129,5 +129,5 @@ When branch `feature/m11-ra82-optimization-audit` is eventually merged into `dev
 ## 6. Incident Status & Next Actions
 
 - **Containment Status:** **CONTAINED IN WORKING TREE & SCRIPT PIPELINE.**
-- **Artifacts:** `reports/M11_RA82_LIVE_AUDIT_RAW.txt` is 100% sanitized.
+- **Artifacts:** Raw log `reports/M11_RA82_LIVE_AUDIT_RAW.txt` has been removed from Git `HEAD` (`git rm`) under M12.6 P0-1 remediation; sanitized baseline telemetry is maintained in `reports/M12_BASELINE_SANITIZED.txt` and `reports/M12_6_LIVE_SANITIZED.txt`.
 - **Git History Rewrite:** **PENDING REPOSITORY OWNER WRITTEN AUTHORIZATION.**

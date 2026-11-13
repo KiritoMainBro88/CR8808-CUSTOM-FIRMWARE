@@ -47,7 +47,7 @@ A comprehensive forensic investigation was conducted under Board Directives #40 
 4. **Physical Hardware Reboot Confirmed (CONFIRMED):**
    Router uptime measured at 19:33:16 was `1064.08 seconds` (~17m 44s), establishing an exact boot time of **19:15:30 (+07:00)**. NVRAM parameter `flag_boot_type=2` indicates a standard reboot cycle.
 5. **Post-Reboot Client Re-Association (CONFIRMED):**
-   The ~4-minute client disruption was the standard operational convergence time for the IPQ5018 QSDK platform (U-Boot, kernel initialization, Wi-Fi ACS channel scan, DFS CAC pre-check, and WAN DHCP binding). Client iPhone (`90:b7:90:77:85:1d`) completed WPA2 handshake and acquired IP `192.168.31.101` at 19:19:37.
+   The ~4-minute client disruption was the standard operational convergence time for the IPQ5018 QSDK platform (U-Boot, kernel initialization, Wi-Fi ACS channel scan, DFS CAC, and WAN DHCP binding). Client iPhone (`[REDACTED_STA_MAC]`) completed WPA2 handshake and acquired IP `192.168.31.101` at 19:19:37.
 
 ---
 
@@ -113,12 +113,12 @@ sequenceDiagram
 | **19:05:22** | Host PC | Git CLI client | `fatal: unable to access 'https://github.com/...': Could not resolve host: github.com`. |
 | **19:07:22** | Host PC | Windows System Event Log | **Event ID 4266 (`Tcpip`)**: Global UDP ephemeral port space exhausted. |
 | **19:08:07** | Host PC | DNS Client | Ephemeral UDP ports reap; DNS queries partially recover. |
-| **19:15:15** | Host PC | Intel Wi-Fi Driver (`Netwtw14`) | **Event ID 7021**: Connection lost to BSSID `64:90:c1:9c:72:c8`. |
+| **19:15:15** | Host PC | Intel Wi-Fi Driver (`Netwtw14`) | **Event ID 7021**: Connection lost to BSSID `[REDACTED_AP_MAC]`. |
 | **19:15:22** | Host PC | Intel Wi-Fi Driver (`Netwtw14`) | **Event ID 6062**: L2 disconnect sequence complete. |
 | **19:15:30** | Router | Linux Kernel 4.4.60 | **System Reboot Epoch** (Uptime reset; `flag_boot_type=2`). |
 | **19:16:10** | Router | `hostapd` / Driver | Wi-Fi radios initialized; ACS channel scan completed. |
 | **19:16:33** | Router | `sysntpd` / `netifd` | WAN interface acquires IP via DHCP; NTP clock synchronized. |
-| **19:19:37** | Router | `hostapd` & `dnsmasq` | iPhone (`90:b7:90:77:85:1d`) associates: `pairwise key handshake completed`, `DHCPACK 192.168.31.101`. |
+| **19:19:37** | Router | `hostapd` & `dnsmasq` | iPhone (`[REDACTED_STA_MAC]`) associates: `pairwise key handshake completed`, `DHCPACK 192.168.31.101`. |
 | **19:22:49** | Swarm | Board Message #40 | Coordinator issues P0 Investigation Assignment to `@auditor`. |
 | **19:33:14** | Router | SSH Probe via `@auditor` | Uptime measured at `1064.08 seconds` (17m 44s); forensic data gathered. |
 | **20:17:13** | Host PC | Windows System Event Log | **Event ID 4231 (`Tcpip`)**: Global TCP ephemeral port space exhausted. |
@@ -213,7 +213,7 @@ To systematically evaluate how the router rebooted at 19:15:30, five mutually di
 - **Raw Evidence:**
   Host PC Intel Wi-Fi adapter (`Netwtw14`) recorded an abrupt radio disconnect sequence at **19:15:15** without receiving a preceding 802.11 Deauthentication or Disassociation frame from the AP:
   ```text
-  Event ID 7021: Connection lost to BSSID 64:90:c1:9c:72:c8
+  Event ID 7021: Connection lost to BSSID [REDACTED_AP_MAC]
   Event ID 6062: L2 disconnect complete
   ```
   The router restarted at **19:15:30** (15 seconds later), which matches the physical power-off / power-on interval of the PMIC capacitors discharging.
@@ -301,13 +301,13 @@ Following the 19:15:30 reboot, all network subsystems on the router were inspect
 nameserver 127.0.0.1
 
 /tmp/resolv.conf.auto:
-nameserver 210.245.24.20
-nameserver 210.245.24.22
+nameserver [REDACTED_ISP_DNS_1]
+nameserver [REDACTED_ISP_DNS_2]
 ```
-- Upstream FPT DNS servers (`210.245.24.20`, `210.245.24.22`) were properly assigned via WAN DHCP.
+- Upstream FPT DNS servers (`[REDACTED_ISP_DNS_1]`, `[REDACTED_ISP_DNS_2]`) were properly assigned via WAN DHCP.
 - `dnsmasq` process was active:
   ```text
-  1498 nobody 1088 S /usr/sbin/dnsmasq -C /var/etc/dnsmasq.conf --server=210.245.24.20 --server=210.245.24.22
+  1498 nobody 1088 S /usr/sbin/dnsmasq -C /var/etc/dnsmasq.conf --server=[REDACTED_ISP_DNS_1] --server=[REDACTED_ISP_DNS_2]
   ```
 - Local DNS cache and forwarding were fully functional.
 
@@ -315,7 +315,7 @@ nameserver 210.245.24.22
 
 ```text
 ip route:
-default via 100.95.0.1 dev pppoe-wan  (or eth0 WAN DHCP gateway)
+default via [REDACTED_WAN_GW] dev pppoe-wan  (or eth0 WAN DHCP gateway)
 192.168.31.0/24 dev br-lan proto kernel scope link src 192.168.31.1
 ```
 - Default gateway is properly bound.
@@ -352,10 +352,10 @@ System logs `/tmp/messages` demonstrate the sequence of wireless driver events p
 
 At 19:19:37 (+07:00), the client iPhone initiated 802.11 association to `wl0` (2.4 GHz):
 ```text
-hostapd: wl0: STA 90:b7:90:77:85:1d IEEE 802.11: associated
-hostapd: wl0: STA 90:b7:90:77:85:1d WPA: pairwise key handshake completed (RSN)
-dnsmasq-dhcp[1498]: DHCPREQUEST(br-lan) 192.168.31.101 90:b7:90:77:85:1d
-dnsmasq-dhcp[1498]: DHCPACK(br-lan) 192.168.31.101 90:b7:90:77:85:1d iPhone
+hostapd: wl0: STA [REDACTED_STA_MAC] IEEE 802.11: associated
+hostapd: wl0: STA [REDACTED_STA_MAC] WPA: pairwise key handshake completed (RSN)
+dnsmasq-dhcp[1498]: DHCPREQUEST(br-lan) 192.168.31.101 [REDACTED_STA_MAC]
+dnsmasq-dhcp[1498]: DHCPACK(br-lan) 192.168.31.101 [REDACTED_STA_MAC] iPhone
 ```
 - Re-association, WPA2 4-way handshake, and DHCP lease renewal succeeded without packet drops.
 - This empirical log confirms that the iPhone's "No Internet" status was strictly bounded between the physical reboot at 19:15:30 and the successful DHCP lease completion at 19:19:37 (~4 minutes total).
