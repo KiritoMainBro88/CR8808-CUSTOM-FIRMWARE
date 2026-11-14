@@ -290,13 +290,14 @@ fn collect_json(prev: &mut CpuStat) -> String {
         .parse::<i32>()
         .unwrap_or(65);
 
-    // 2. Memory
+    // 2. Memory (include SReclaimable kernel slab cache in reclaimable memory)
     let (mem_total, mem_used, mem_free, mem_buffers, mem_cached, mem_pct) = {
         let content = read_to_string_safe("/proc/meminfo");
         let mut total = 0u64;
         let mut free = 0u64;
         let mut buffers = 0u64;
         let mut cached = 0u64;
+        let mut sreclaimable = 0u64;
         for line in content.lines() {
             let p: Vec<&str> = line.split_whitespace().collect();
             if p.len() >= 2 {
@@ -308,10 +309,12 @@ fn collect_json(prev: &mut CpuStat) -> String {
                     buffers = p[1].parse().unwrap_or(0);
                 } else if p[0].starts_with("Cached:") {
                     cached = p[1].parse().unwrap_or(0);
+                } else if p[0].starts_with("SReclaimable:") {
+                    sreclaimable = p[1].parse().unwrap_or(0);
                 }
             }
         }
-        let avail_sum = free + buffers + cached;
+        let avail_sum = free + buffers + cached + sreclaimable;
         let used = total.saturating_sub(avail_sum);
         let pct = if total > 0 { (used * 100) / total } else { 50 };
         (total, used, avail_sum, buffers, cached, pct)
@@ -466,6 +469,7 @@ fn collect_json(prev: &mut CpuStat) -> String {
     for &(iface, band, def_proto, def_cap, def_phy) in &[
         ("wl0", "5GHz", "HE160 (160MHz)", "Wi-Fi 6", "HE160 (160MHz)"),
         ("wl1", "2.4GHz", "802.11ax/n", "Wi-Fi 6 (2.4GHz)", "HE40 (2.4GHz)"),
+        ("wl13", "2.4GHz (IoT)", "802.11n (HT20)", "Wi-Fi 4 (IoT)", "HT20 (2.4GHz)"),
     ] {
         let sta_out = run_cmd("wlanconfig", &[iface, "list", "sta"]);
         for line in sta_out.lines() {
@@ -478,41 +482,73 @@ fn collect_json(prev: &mut CpuStat) -> String {
                 let txr = p[3];
                 let rxr = p[4];
                 let rssi = p[5];
+                let rssi_val: i32 = rssi.parse().unwrap_or(-50);
+                let snr_val = (rssi_val - (-95)).clamp(5, 60);
                 let ip = lookup_arp_ip(&arp_c, &mac);
 
+                let (link_proto, phy_mode) = if line.contains("HE160") {
+                    ("HE160 (160MHz)", "HE160 (160MHz)")
+                } else if line.contains("HE80") {
+                    ("HE80 (80MHz)", "HE80 (80MHz)")
+                } else if line.contains("HE40") {
+                    ("HE40 (40MHz)", "HE40 (40MHz)")
+                } else if line.contains("HE20") {
+                    ("HE20 (20MHz)", "HE20 (20MHz)")
+                } else if line.contains("11AC") {
+                    ("VHT80 (80MHz)", "VHT80 (80MHz)")
+                } else if line.contains("11NG") {
+                    ("HT20/40 (2.4GHz)", "HT20/40 (2.4GHz)")
+                } else {
+                    (def_proto, def_phy)
+                };
+
                 let (mut name, mut model, mut hw_cap, mut dev_type) = (
-                    lookup_dhcp_name(&dhcp_c, &mac, &ip).unwrap_or_else(|| "Wi-Fi Client".to_string()),
-                    "Wi-Fi Device".to_string(),
+                    lookup_dhcp_name(&dhcp_c, &mac, &ip).unwrap_or_else(|| {
+                        if iface == "wl13" {
+                            "Xiaomi IoT Device".to_string()
+                        } else {
+                            "Wi-Fi Client".to_string()
+                        }
+                    }),
+                    if iface == "wl13" {
+                        "Smart IoT Device".to_string()
+                    } else {
+                        "Wi-Fi Device".to_string()
+                    },
                     def_cap.to_string(),
-                    "wifi".to_string(),
+                    if iface == "wl13" {
+                        "iot".to_string()
+                    } else {
+                        "wifi".to_string()
+                    },
                 );
                 let low_name = name.to_lowercase();
-                if low_name.contains("iphone") || low_name.contains("ipad") || low_name.contains("apple") {
+                if iface == "wl13" {
+                    dev_type = "iot".to_string();
+                } else if low_name.contains("iphone") || low_name.contains("ipad") || low_name.contains("apple") {
                     model = "Apple Device".to_string();
                     dev_type = "apple".to_string();
                     if line.contains("11AXA_HE160") {
                         hw_cap = "Wi-Fi 6/7 (HE160)".to_string();
+                    } else if line.contains("11AXA_HE80") {
+                        hw_cap = "Wi-Fi 6 (HE80)".to_string();
                     }
                 } else if low_name.contains("desktop") || low_name.contains("laptop") {
                     model = "Workstation / PC".to_string();
-                    hw_cap = "Wi-Fi 6 (160MHz)".to_string();
+                    hw_cap = if line.contains("HE160") {
+                        "Wi-Fi 6 (160MHz)".to_string()
+                    } else if line.contains("HE80") {
+                        "Wi-Fi 6 (80MHz)".to_string()
+                    } else {
+                        def_cap.to_string()
+                    };
                 } else if iface == "wl1" {
                     model = "2.4GHz Wi-Fi Client".to_string();
                     let _ = &mut name;
                 }
 
-                let link_proto = if iface == "wl0" && line.contains("HE160") {
-                    "HE160 (160MHz)"
-                } else if line.contains("HE40") {
-                    "HE40 (40MHz)"
-                } else if line.contains("HE20") {
-                    "HE20 (20MHz)"
-                } else {
-                    def_proto
-                };
-
                 clients.push(format!(
-                    r#"{{"mac":"{}","ip":"{}","name":"{}","model":"{}","hw_cap":"{}","link_proto":"{}","type":"{}","band":"{}","tx":"{}","rx":"{}","rssi":"{} dBm","snr":"54 dB","quality":100,"phy_mode":"{}","state":"Active"}}"#,
+                    r#"{{"mac":"{}","ip":"{}","name":"{}","model":"{}","hw_cap":"{}","link_proto":"{}","type":"{}","band":"{}","tx":"{}","rx":"{}","rssi":"{} dBm","snr":"{} dB","quality":100,"phy_mode":"{}","state":"Active"}}"#,
                     json_escape(&mac),
                     json_escape(&ip),
                     json_escape(&name),
@@ -524,7 +560,8 @@ fn collect_json(prev: &mut CpuStat) -> String {
                     json_escape(txr),
                     json_escape(rxr),
                     json_escape(rssi),
-                    def_phy
+                    snr_val,
+                    json_escape(phy_mode)
                 ));
             }
         }
